@@ -10,3 +10,4 @@ app/build/
 # Build artifacts
 *.db
 app/static/sql-wasm.wasm
+CLAUDE.md

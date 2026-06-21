@@ -1,11 +1,14 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* Biblical references in paragraph content */
 ref {
 	text-decoration: underline dotted;
 	text-decoration-color: theme(--color-stone-400);
 	text-underline-offset: 2px;
 	cursor: help;
+	position: relative;
 }
 ref:hover {
 	text-decoration-color: theme(--color-stone-600);
@@ -25,9 +28,17 @@ ref::after {
 	transform: translateY(-100%);
 	margin-top: -0.25rem;
 }
-ref {
-	position: relative;
-}
 ref:hover::after {
 	opacity: 1;
+}
+
+.dark ref {
+	text-decoration-color: theme(--color-stone-500);
+}
+.dark ref:hover {
+	text-decoration-color: theme(--color-stone-300);
+}
+.dark ref::after {
+	background: theme(--color-stone-600);
+	color: theme(--color-stone-100);
 }

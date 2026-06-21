@@ -21,25 +21,25 @@
 
 {#if book}
 	<main class="max-w-3xl mx-auto px-4 py-8">
-		<nav class="text-sm text-stone-400 mb-6">
-			<a href="/" class="hover:text-stone-600">Fontes</a>
+		<nav class="text-sm text-stone-400 dark:text-stone-500 mb-6">
+			<a href="/" class="hover:text-stone-600 dark:hover:text-stone-300">Fontes</a>
 			<span> / </span>
-			<span class="text-stone-600">{book.title}</span>
+			<span class="text-stone-600 dark:text-stone-300">{book.title}</span>
 		</nav>
 
 		<header class="mb-8">
-			<h2 class="text-2xl font-serif font-bold text-stone-800">{book.title}</h2>
-			<p class="text-stone-500 mt-1">{meta}</p>
+			<h2 class="text-2xl font-serif font-bold text-stone-800 dark:text-stone-100">{book.title}</h2>
+			<p class="text-stone-500 dark:text-stone-400 mt-1">{meta}</p>
 		</header>
 
 		<section>
-			<h3 class="text-lg font-serif text-stone-700 mb-3">Capitoli</h3>
+			<h3 class="text-lg font-serif text-stone-700 dark:text-stone-300 mb-3">Capitoli</h3>
 			<ul class="space-y-2">
 				{#each chapters as ch}
 					<li>
 						<a
 							href="/book/{bookId}/{ch.id}"
-							class="block p-3 rounded-lg border border-stone-200 hover:border-stone-400 transition-colors text-stone-700 hover:text-stone-900"
+							class="block p-3 rounded-lg border border-stone-200 dark:border-stone-700 hover:border-stone-400 dark:hover:border-stone-500 transition-colors text-stone-700 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100"
 						>
 							{ch.title}
 						</a>
@@ -50,6 +50,6 @@
 	</main>
 {:else}
 	<main class="max-w-3xl mx-auto px-4 py-8">
-		<p class="text-stone-500">Libro non trovato.</p>
+		<p class="text-stone-500 dark:text-stone-400">Libro non trovato.</p>
 	</main>
 {/if}
