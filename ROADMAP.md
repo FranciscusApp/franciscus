@@ -14,7 +14,7 @@ Status legend: `[ ]` planned | `[~]` in progress | `[x]` done
 
 - [ ] Complete **2Cel** (Vita Seconda) transcription
 - [ ] Complete **LMj** (Legenda Maior) transcription
-- [ ] Parse verse markers `[N]` during ingestion into `<v id="<paragraph-id>-N">N</v>` so verses are individually styleable and addressable client-side
+- [x] Parse verse markers `[N]` during ingestion into `<v id="<paragraph-id>-N">N</v>` so verses are individually styleable and addressable client-side
 - [ ] Assign positional IDs to `<aside>` elements during ingestion (auto-incrementing per chapter: `<chapter_id>-aside-1`, `<chapter_id>-aside-2`, ...)
 
 ### Search & Discovery
@@ -27,7 +27,7 @@ Status legend: `[ ]` planned | `[~]` in progress | `[x]` done
 
 - [ ] Full, first-class breadcrumbs (Home > Book > Chapter)
 - [ ] Scripture references (`<ref>` tags) rendered as links to [bibbiaedu.it Nova Vulgata](https://www.bibbiaedu.it/NOVAVULGATA/nt/) (`/nt/<book>/<ch>/`)
-- [ ] Verse-level styling and interaction via the generated `<v>` elements
+- [x] Verse-level styling and interaction via the generated `<v>` elements
 - [ ] Navigable links from relation and annotation badges to their target passages
 - [ ] Deep linking: stable, shareable URLs down to paragraph and verse (`/book/1Cel/c1#prolog-1`)
 - [ ] "Copy citation" action (copies a formatted reference to clipboard)

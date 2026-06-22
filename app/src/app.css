@@ -32,6 +32,35 @@ ref:hover::after {
 	opacity: 1;
 }
 
+/* Verse numbers */
+v {
+	font-size: 0.7rem;
+	font-weight: 600;
+	font-family: theme(--font-mono);
+	color: theme(--color-stone-400);
+	vertical-align: super;
+	line-height: 0;
+	cursor: pointer;
+	padding: 0 0.1em;
+	scroll-margin-top: 4rem;
+}
+v:hover {
+	color: theme(--color-stone-600);
+}
+v:target {
+	color: theme(--color-amber-600);
+}
+
+.dark v {
+	color: theme(--color-stone-500);
+}
+.dark v:hover {
+	color: theme(--color-stone-300);
+}
+.dark v:target {
+	color: theme(--color-amber-400);
+}
+
 .dark ref {
 	text-decoration-color: theme(--color-stone-500);
 }

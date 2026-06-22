@@ -61,6 +61,15 @@ fn parse_yaml_frontmatter(yaml: &str) -> Result<BookMeta, String> {
     })
 }
 
+fn replace_verse_markers(content: &str, paragraph_id: &str) -> String {
+    let re = Regex::new(r"\[(\d+)\]").unwrap();
+    re.replace_all(content, |caps: &regex::Captures| {
+        let n = &caps[1];
+        format!(r#"<v id="{paragraph_id}-{n}">{n}</v>"#)
+    })
+    .into_owned()
+}
+
 fn parse_body(body: &str) -> Result<Vec<ParsedChapter>, String> {
     let re_chapter = Regex::new(r#"^##\s+(.+?)\s*<a\s+id="([^"]+)"\s*>\s*</a>\s*$"#).unwrap();
     let re_p_open = Regex::new(r#"^<p\s+id="([^"]+)"(?:\s+label="([^"]+)")?\s*>"#).unwrap();
@@ -112,11 +121,13 @@ fn parse_body(body: &str) -> Result<Vec<ParsedChapter>, String> {
                     }
                     if re_p_close.is_match(line) {
                         block_pos += 1;
+                        let raw = lines.join("\n").trim().to_string();
+                        let content = replace_verse_markers(&raw, &id);
                         if let Some(ch) = chapters.last_mut() {
                             ch.blocks.push(Block::Paragraph {
                                 id,
                                 label,
-                                content: lines.join("\n").trim().to_string(),
+                                content,
                                 position: block_pos,
                             });
                         }
@@ -130,7 +141,8 @@ fn parse_body(body: &str) -> Result<Vec<ParsedChapter>, String> {
             State::InParagraph { id, label, lines } => {
                 if re_p_close.is_match(line) {
                     block_pos += 1;
-                    let content = lines.join("\n").trim().to_string();
+                    let raw = lines.join("\n").trim().to_string();
+                    let content = replace_verse_markers(&raw, id);
                     if let Some(ch) = chapters.last_mut() {
                         ch.blocks.push(Block::Paragraph {
                             id: id.clone(),

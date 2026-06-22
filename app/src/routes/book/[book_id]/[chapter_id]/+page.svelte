@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/stores';
+	import { tick } from 'svelte';
 	import {
 		getBook,
 		getChapters,
@@ -61,6 +62,21 @@
 	const nextChapter = $derived(
 		chapter ? chapters.find((c) => c.position === chapter.position + 1) : undefined
 	);
+
+	function onVerseClick(e: MouseEvent) {
+		const v = (e.target as HTMLElement).closest('v[id]');
+		if (!v) return;
+		history.replaceState(null, '', `#${v.id}`);
+	}
+
+	$effect(() => {
+		if (blocks.length === 0) return;
+		const hash = location.hash.slice(1);
+		if (!hash) return;
+		tick().then(() => {
+			document.getElementById(hash)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+		});
+	});
 </script>
 
 {#if book && chapter}
@@ -75,7 +91,8 @@
 
 		<h2 class="text-2xl font-serif font-bold text-stone-800 dark:text-stone-100 mb-6">{chapter.title}</h2>
 
-		<div class="chapter-content space-y-4">
+		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+		<div class="chapter-content space-y-4" onclick={onVerseClick}>
 			{#each blocks as block}
 				{#if block.kind === 'paragraph'}
 					{@const p = block.data}
