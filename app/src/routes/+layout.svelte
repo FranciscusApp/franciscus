@@ -2,6 +2,7 @@
 	import '../app.css';
 	import { initDb } from '$lib';
 	import LanguagePicker from '$lib/LanguagePicker.svelte';
+	import DecorativeImage from '$lib/DecorativeImage.svelte';
 	import { t } from '$lib/i18n';
 
 	let { children } = $props();
@@ -64,4 +65,5 @@
 	{:else}
 		{@render children()}
 	{/if}
+	<DecorativeImage />
 </div>
