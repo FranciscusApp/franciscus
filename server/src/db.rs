@@ -60,6 +60,14 @@ pub fn create_tables(conn: &Connection) {
             FOREIGN KEY (book_id, paragraph_id) REFERENCES paragraphs(book_id, id)
         );
 
+        CREATE TABLE IF NOT EXISTS attribute_pages (
+            attr_type       TEXT NOT NULL,
+            attr_value      TEXT NOT NULL,
+            title           TEXT NOT NULL,
+            content         TEXT NOT NULL,
+            PRIMARY KEY (attr_type, attr_value)
+        );
+
         CREATE TABLE IF NOT EXISTS relations (
             id                  INTEGER PRIMARY KEY AUTOINCREMENT,
             source_book_id      TEXT NOT NULL,
@@ -116,6 +124,15 @@ pub fn insert_book(conn: &Connection, book: &ParsedBook) {
             }
         }
     }
+}
+
+pub fn insert_attribute_page(conn: &Connection, page: &crate::models::AttributePage) {
+    conn.execute(
+        "INSERT OR REPLACE INTO attribute_pages (attr_type, attr_value, title, content)
+         VALUES (?1, ?2, ?3, ?4)",
+        params![page.meta.attr_type, page.meta.attr_value, page.meta.title, page.content],
+    )
+    .expect("Failed to insert attribute page");
 }
 
 pub fn insert_annotations(conn: &Connection, file: &AnnotationFile) {

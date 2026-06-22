@@ -34,7 +34,7 @@
 		<button
 			onclick={toggleTheme}
 			class="p-2 rounded-full text-stone-500 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
-			aria-label={dark ? 'Attiva modalità chiara' : 'Attiva modalità scura'}
+			aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
 		>
 			{#if dark}
 				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
@@ -50,11 +50,11 @@
 
 	{#if error}
 		<main class="min-h-screen flex items-center justify-center">
-			<p class="text-red-700 dark:text-red-400">Errore nel caricamento del database: {error}</p>
+			<p class="text-red-700 dark:text-red-400">Error loading database: {error}</p>
 		</main>
 	{:else if !ready}
 		<main class="min-h-screen flex items-center justify-center">
-			<p class="text-stone-500 dark:text-stone-400">Caricamento...</p>
+			<p class="text-stone-500 dark:text-stone-400">Loading...</p>
 		</main>
 	{:else}
 		{@render children()}

@@ -73,3 +73,16 @@ pub struct AnnotationFile {
     #[serde(default)]
     pub relations: Vec<RelationEntry>,
 }
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct AttributePageMeta {
+    pub attr_type: String,
+    pub attr_value: String,
+    pub title: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct AttributePage {
+    pub meta: AttributePageMeta,
+    pub content: String,
+}

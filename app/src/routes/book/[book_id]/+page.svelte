@@ -22,7 +22,7 @@
 {#if book}
 	<main class="max-w-3xl mx-auto px-4 py-8">
 		<nav class="text-sm text-stone-400 dark:text-stone-500 mb-6">
-			<a href="/" class="hover:text-stone-600 dark:hover:text-stone-300">Fontes</a>
+			<a href="/" class="hover:text-stone-600 dark:hover:text-stone-300">Sources</a>
 			<span> / </span>
 			<span class="text-stone-600 dark:text-stone-300">{book.title}</span>
 		</nav>
@@ -33,7 +33,7 @@
 		</header>
 
 		<section>
-			<h3 class="text-lg font-serif text-stone-700 dark:text-stone-300 mb-3">Capitoli</h3>
+			<h3 class="text-lg font-serif text-stone-700 dark:text-stone-300 mb-3">Chapters</h3>
 			<ul class="space-y-2">
 				{#each chapters as ch}
 					<li>
@@ -50,6 +50,6 @@
 	</main>
 {:else}
 	<main class="max-w-3xl mx-auto px-4 py-8">
-		<p class="text-stone-500 dark:text-stone-400">Libro non trovato.</p>
+		<p class="text-stone-500 dark:text-stone-400">Book not found.</p>
 	</main>
 {/if}

@@ -42,6 +42,13 @@ export interface Annotation {
 	evidence: string | null;
 }
 
+export interface AttributePage {
+	attr_type: string;
+	attr_value: string;
+	title: string;
+	content: string;
+}
+
 export interface Relation {
 	id: number;
 	source_book_id: string;

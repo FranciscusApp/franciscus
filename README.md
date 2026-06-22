@@ -27,6 +27,13 @@ franciscus-data/          server/                  app/
                                               (client-side queries)
 ```
 
+### Language conventions
+
+The app distinguishes two language layers:
+
+- **Application language (English):** All UI text (labels, navigation, error messages), annotation evidence strings, and attribute page descriptions are written in English. The HTML document declares `<html lang="en">`.
+- **Source language (Latin):** The source texts under `franciscus-data/books/` are in medieval Latin. Attribute values (e.g. `paupertas`, `conversio`) and relation types (e.g. `dipende_da`) use Latin/domain identifiers — these are machine keys, not user-facing labels.
+
 ### Design decisions
 
 - **No server for reads.** The corpus is small (<1GB), static, and changes only at editorial pace. The .db file is shipped as a static asset and queried client-side via sql.js (SQLite compiled to WASM). This enables free static hosting and offline capability.

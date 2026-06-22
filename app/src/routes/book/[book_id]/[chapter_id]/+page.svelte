@@ -82,7 +82,7 @@
 {#if book && chapter}
 	<main class="max-w-3xl mx-auto px-4 py-8">
 		<nav class="text-sm text-stone-400 dark:text-stone-500 mb-6">
-			<a href="/" class="hover:text-stone-600 dark:hover:text-stone-300">Fontes</a>
+			<a href="/" class="hover:text-stone-600 dark:hover:text-stone-300">Sources</a>
 			<span> / </span>
 			<a href="/book/{bookId}" class="hover:text-stone-600 dark:hover:text-stone-300">{book.title}</a>
 			<span> / </span>
@@ -107,17 +107,18 @@
 						{#if ann.length > 0}
 							<div class="mt-1 ml-10 flex flex-wrap gap-1">
 								{#each ann as a}
-									<span
-										class="inline-block text-xs px-2 py-0.5 rounded-full
-											{a.attr_type === 'virtue' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300' : ''}
-											{a.attr_type === 'topic' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : ''}
-											{a.attr_type === 'event' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300' : ''}
-											{a.attr_type === 'place' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300' : ''}
-											{a.attr_type === 'person' ? 'bg-rose-100 text-rose-700 dark:bg-rose-900 dark:text-rose-300' : ''}"
+									<a
+										href="/attributes/{a.attr_type}/{a.attr_value}"
+										class="inline-block text-xs px-2 py-0.5 rounded-full no-underline transition-colors
+											{a.attr_type === 'virtue' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300 hover:bg-emerald-200 dark:hover:bg-emerald-800' : ''}
+											{a.attr_type === 'topic' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800' : ''}
+											{a.attr_type === 'event' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-800' : ''}
+											{a.attr_type === 'place' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-800' : ''}
+											{a.attr_type === 'person' ? 'bg-rose-100 text-rose-700 dark:bg-rose-900 dark:text-rose-300 hover:bg-rose-200 dark:hover:bg-rose-800' : ''}"
 										title={a.evidence ?? ''}
 									>
 										{a.attr_value} ({a.attr_type}{a.verified ? ' ✓' : ''})
-									</span>
+									</a>
 								{/each}
 							</div>
 						{/if}
@@ -153,6 +154,6 @@
 	</main>
 {:else}
 	<main class="max-w-3xl mx-auto px-4 py-8">
-		<p class="text-stone-500 dark:text-stone-400">Capitolo non trovato.</p>
+		<p class="text-stone-500 dark:text-stone-400">Chapter not found.</p>
 	</main>
 {/if}

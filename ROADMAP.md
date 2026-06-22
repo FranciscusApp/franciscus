@@ -28,16 +28,17 @@ Status legend: `[ ]` planned | `[~]` in progress | `[x]` done
 - [ ] Full, first-class breadcrumbs (Home > Book > Chapter)
 - [ ] Scripture references (`<ref>` tags) rendered as links to [bibbiaedu.it Nova Vulgata](https://www.bibbiaedu.it/NOVAVULGATA/nt/) (`/nt/<book>/<ch>/`)
 - [x] Verse-level styling and interaction via the generated `<v>` elements
-- [ ] Navigable links from relation and annotation badges to their target passages
-- [ ] Deep linking: stable, shareable URLs down to paragraph and verse (`/book/1Cel/c1#prolog-1`)
+- [x] Navigable links from relation and annotation badges to their target passages
+- [x] Deep linking: stable, shareable URLs down to paragraph and verse (`/book/1Cel/c1#prolog-1`)
 - [ ] "Copy citation" action (copies a formatted reference to clipboard)
 - [ ] Mobile-responsive layout (long Latin paragraphs, comfortable reading on small screens)
 
 ### Annotations & Attributes
 
-- [ ] Annotation data model in the DB (paragraph-keyed, typed attributes, provenance field)
-- [ ] Attribute page ingestion in the Rust CLI (parse frontmatter + markdown, insert into DB, load translations)
-- [ ] Attribute page rendering: curated intro + auto-generated passage list for each virtue / topic / person / place
+- [x] Annotation data model in the DB (paragraph-keyed, typed attributes, provenance field)
+- [x] Attribute page ingestion in the Rust CLI (parse frontmatter + markdown, insert into DB, load translations)
+- [x] Attribute page rendering: curated intro + auto-generated passage list for each virtue / topic / person / place
+- [ ] Curated attribute list lock-down
 - [ ] AI annotation pipeline, pass 1: segmentation, themes, biblical allusions (high confidence)
 - [ ] AI annotation pipeline, pass 2: cross-work parallels seeded from *Fontes Franciscani* concordances (requires review)
 

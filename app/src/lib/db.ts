@@ -1,5 +1,5 @@
 import initSqlJs, { type Database, type BindParams } from 'sql.js';
-import type { BookMeta, Chapter, Paragraph, Aside, Annotation } from './types';
+import type { BookMeta, Chapter, Paragraph, Aside, Annotation, AttributePage } from './types';
 
 let db: Database | null = null;
 
@@ -70,6 +70,61 @@ export function getAsides(bookId: string, chapterId: string): Aside[] {
 		`SELECT id, book_id, chapter_id, position, content FROM asides
 		 WHERE book_id = $bookId AND chapter_id = $chapterId ORDER BY position`,
 		{ $bookId: bookId, $chapterId: chapterId }
+	);
+}
+
+export function getAttributePages(): AttributePage[] {
+	return queryAll<AttributePage>(
+		'SELECT attr_type, attr_value, title, content FROM attribute_pages ORDER BY attr_type, title'
+	);
+}
+
+export function getAttributePage(attrType: string, attrValue: string): AttributePage | null {
+	return queryOne<AttributePage>(
+		'SELECT attr_type, attr_value, title, content FROM attribute_pages WHERE attr_type = $type AND attr_value = $value',
+		{ $type: attrType, $value: attrValue }
+	);
+}
+
+export interface AttributeOccurrence {
+	book_id: string;
+	book_title: string;
+	chapter_id: string;
+	chapter_title: string;
+	paragraph_id: string;
+	paragraph_label: string | null;
+	content: string;
+	evidence: string | null;
+}
+
+export function getAttributeOccurrences(attrType: string, attrValue: string): AttributeOccurrence[] {
+	return queryAll<AttributeOccurrence>(
+		`SELECT a.book_id, b.title AS book_title, p.chapter_id, c.title AS chapter_title,
+		        a.paragraph_id, p.label AS paragraph_label, p.content, a.evidence
+		 FROM annotations a
+		 JOIN paragraphs p ON a.book_id = p.book_id AND a.paragraph_id = p.id
+		 JOIN books b ON a.book_id = b.id
+		 JOIN chapters c ON p.book_id = c.book_id AND p.chapter_id = c.id
+		 WHERE a.attr_type = $type AND a.attr_value = $value
+		 ORDER BY a.book_id, c.position, p.position`,
+		{ $type: attrType, $value: attrValue }
+	);
+}
+
+export interface AttributeSummary {
+	attr_type: string;
+	attr_value: string;
+	count: number;
+	has_page: number;
+}
+
+export function getDistinctAttributes(): AttributeSummary[] {
+	return queryAll<AttributeSummary>(
+		`SELECT a.attr_type, a.attr_value, COUNT(*) AS count,
+		        EXISTS(SELECT 1 FROM attribute_pages ap WHERE ap.attr_type = a.attr_type AND ap.attr_value = a.attr_value) AS has_page
+		 FROM annotations a
+		 GROUP BY a.attr_type, a.attr_value
+		 ORDER BY a.attr_type, a.attr_value`
 	);
 }
 
