@@ -24,8 +24,8 @@ Status legend: `[ ]` planned | `[~]` in progress | `[x]` done
 
 ### General UI
 - [x] Adopt an UI library to simplify pages (Shadcn seems to have a svelte integration)
-- [ ] Mobile-responsive layout
-- [ ] Fix all accessibility, a11y, and aria-* related issues, and ensure reader compatibility.
+- [x] Mobile-responsive layout
+- [x] Fix all accessibility, a11y, and aria-* related issues, and ensure reader compatibility.
 - [ ] Expressive style, golden-crimson-white (light mode) and golden-royal blue-dark night blue (dark mode) palette. Should be reminiscent of medieval manuscripts but with a modern, readable interpretation. 
 - [ ] Full, first-class breadcrumbs
 
