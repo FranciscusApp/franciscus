@@ -3,6 +3,7 @@
 		"title": "Franciscus",
 		"subtitle": "Franciscan Sources",
 		"loading": "Loading...",
+		"downloading": "Downloading the corpus…",
 		"dbError": "Error loading database:"
 	},
 	"nav": {

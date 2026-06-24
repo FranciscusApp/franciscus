@@ -3,6 +3,7 @@
 		"title": "Franciscus",
 		"subtitle": "Fonti Francescane",
 		"loading": "Caricamento...",
+		"downloading": "Scaricamento del corpus…",
 		"dbError": "Errore nel caricamento del database:"
 	},
 	"nav": {

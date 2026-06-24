@@ -1,6 +1,6 @@
 <script lang="ts">
 	import '../app.css';
-	import { initDb } from '$lib';
+	import { initDb, type DbProgress } from '$lib';
 	import LanguagePicker from '$lib/LanguagePicker.svelte';
 	import DecorativeImage from '$lib/DecorativeImage.svelte';
 	import TopNav from '$lib/TopNav.svelte';
@@ -12,6 +12,11 @@
 	let ready = $state(false);
 	let error = $state<string | null>(null);
 	let dark = $state(false);
+	let progress = $state<DbProgress | null>(null);
+
+	const pct = $derived(
+		progress && progress.total ? Math.round((progress.loaded / progress.total) * 100) : null
+	);
 
 	$effect(() => {
 		dark = document.documentElement.classList.contains('dark');
@@ -24,7 +29,7 @@
 	}
 
 	$effect(() => {
-		initDb()
+		initDb((p) => { progress = p; })
 			.then(() => { ready = true; })
 			.catch((e) => { error = String(e); });
 	});
@@ -64,8 +69,25 @@
 			<p class="text-red-700 dark:text-red-400">{t('app.dbError')} {error}</p>
 		</main>
 	{:else if !ready}
-		<main class="min-h-screen flex items-center justify-center">
-			<p class="text-stone-500 dark:text-stone-400">{t('app.loading')}</p>
+		<main class="min-h-screen flex items-center justify-center px-6">
+			<div class="w-full max-w-xs text-center">
+				<p class="text-stone-500 dark:text-stone-400 mb-3">
+					{progress?.cached ? t('app.loading') : t('app.downloading')}
+				</p>
+				<div class="h-1.5 w-full overflow-hidden rounded-full bg-stone-200 dark:bg-stone-800">
+					{#if pct !== null}
+						<div
+							class="h-full rounded-full bg-stone-500 dark:bg-stone-400 transition-[width] duration-150"
+							style="width: {pct}%"
+						></div>
+					{:else}
+						<div class="h-full w-1/3 animate-pulse rounded-full bg-stone-500 dark:bg-stone-400"></div>
+					{/if}
+				</div>
+				{#if pct !== null}
+					<p class="mt-2 text-xs tabular-nums text-stone-400 dark:text-stone-500">{pct}%</p>
+				{/if}
+			</div>
 		</main>
 	{:else}
 		{@render children()}

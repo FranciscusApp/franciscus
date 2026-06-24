@@ -5,17 +5,104 @@ import type { BookMeta, Chapter, Paragraph, Aside, Annotation, AttributePage, Pa
 
 let db: Database | null = null;
 
-export async function initDb(): Promise<Database> {
+const DB_URL = '/franciscus.db';
+// Bump this when the shipped database changes so stale copies are evicted.
+const DB_CACHE = 'franciscus-db-v1';
+
+export interface DbProgress {
+	/** bytes received so far */
+	loaded: number;
+	/** total bytes, or 0 when the server doesn't send Content-Length */
+	total: number;
+	/** true once the bytes are served from the local cache rather than the network */
+	cached: boolean;
+}
+
+export async function initDb(onProgress?: (p: DbProgress) => void): Promise<Database> {
 	if (db) return db;
 
 	const SQL = await (initSqlJs as any)({
 		locateFile: () => '/sql-wasm.wasm'
 	});
 
-	const response = await fetch('/franciscus.db');
-	const buffer = await response.arrayBuffer();
+	const buffer = await downloadDb(onProgress);
 	db = new SQL.Database(new Uint8Array(buffer)) as Database;
 	return db;
+}
+
+/**
+ * Fetch the database, reporting download progress. The response is stored in
+ * the Cache Storage API so repeat visits read from disk instead of the network
+ * (this also makes the corpus available offline). Falls back to a plain fetch
+ * where Cache Storage isn't available (e.g. insecure contexts).
+ */
+async function downloadDb(onProgress?: (p: DbProgress) => void): Promise<ArrayBuffer> {
+	let cache: Cache | null = null;
+	if (typeof caches !== 'undefined') {
+		try {
+			cache = await caches.open(DB_CACHE);
+			// Drop any older cache versions left behind by a previous release.
+			const keys = await caches.keys();
+			await Promise.all(
+				keys
+					.filter((k) => k.startsWith('franciscus-db-') && k !== DB_CACHE)
+					.map((k) => caches.delete(k))
+			);
+		} catch (e) {
+			console.warn('[db] Cache Storage unavailable, falling back to network', e);
+			cache = null;
+		}
+	}
+
+	const cached = cache ? await cache.match(DB_URL) : undefined;
+	if (cached) {
+		return readWithProgress(cached, true, onProgress);
+	}
+
+	const response = await fetch(DB_URL);
+	if (!response.ok) throw new Error(`Failed to fetch database: ${response.status}`);
+	// Cache a clone before the body stream is consumed by the progress reader.
+	if (cache) {
+		try {
+			await cache.put(DB_URL, response.clone());
+		} catch (e) {
+			console.warn('[db] Failed to cache database', e);
+		}
+	}
+	return readWithProgress(response, false, onProgress);
+}
+
+/** Read a response body, reporting progress as chunks arrive. */
+async function readWithProgress(
+	response: Response,
+	cached: boolean,
+	onProgress?: (p: DbProgress) => void
+): Promise<ArrayBuffer> {
+	const total = Number(response.headers.get('Content-Length')) || 0;
+	if (!onProgress || !response.body) {
+		const buffer = await response.arrayBuffer();
+		onProgress?.({ loaded: buffer.byteLength, total: total || buffer.byteLength, cached });
+		return buffer;
+	}
+
+	const reader = response.body.getReader();
+	const chunks: Uint8Array[] = [];
+	let loaded = 0;
+	for (;;) {
+		const { done, value } = await reader.read();
+		if (done) break;
+		chunks.push(value);
+		loaded += value.length;
+		onProgress({ loaded, total, cached });
+	}
+
+	const out = new Uint8Array(loaded);
+	let offset = 0;
+	for (const chunk of chunks) {
+		out.set(chunk, offset);
+		offset += chunk.length;
+	}
+	return out.buffer;
 }
 
 export function getDb(): Database {

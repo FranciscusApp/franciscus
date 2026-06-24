@@ -12,26 +12,29 @@ Status legend: `[ ]` planned | `[~]` in progress | `[x]` done
 
 ### Content
 - [x] Complete **1Cel** (Vita Prima) machine transcription
-- [~] Complete **2Cel** (Vita Seconda) machine transcription
-- [X] Complete **LMj** (Legenda Maior) machine transcription
+- [x] Complete **2Cel** (Vita Seconda) machine transcription
+- [x] Complete **LMj** (Legenda Maior) machine transcription
 - [x] Parse verse markers `[N]` during ingestion into `<v id="<paragraph-id>-N">N</v>` so verses are individually styleable and addressable client-side
 - [x] Assign positional IDs to `<aside>` elements during ingestion (auto-incrementing per chapter: `<chapter_id>-aside-1`, `<chapter_id>-aside-2`, ...)
 
 ### Search & Discovery
-
 - [x] Build FTS5 index in the Rust CLI alongside the main DB
 - [x] Search page: query input, ranked results with context snippets, click-through to the matching passage
 - [x] Highlight matched terms inside the reader when arriving from a search result
 
-### Reader UI
-
+### General UI
+- [ ] Adopt an UI library to simplify pages (Shadcn seems to have a svelte integration)
+- [ ] Mobile-responsive layout
+- [ ] Fix all accessibility, a11y, and aria-* related issues, and ensure reader compatibility.
+- [ ] Expressive style, golden-crimson-white (light mode) and golden-royal blue-dark night blue (dark mode) palette. Should be reminiscent of medieval manuscripts but with a modern, readable interpretation. 
 - [ ] Full, first-class breadcrumbs
-- [ ] Scripture references (`<ref>` tags) rendered as links to [bibbiaedu.it Nova Vulgata](https://www.bibbiaedu.it/NOVAVULGATA/nt/) (`/nt/<book>/<ch>/`)
+
+### Reader UI
 - [x] Verse-level styling and interaction via the generated `<v>` elements
 - [x] Navigable links from relation and annotation badges to their target passages
 - [x] Deep linking: stable, shareable URLs down to paragraph and verse (`/book/1Cel/c1#prolog-1`)
+- [ ] Scripture references (`<ref>` tags) rendered as links to [bibbiaedu.it Nova Vulgata](https://www.bibbiaedu.it/NOVAVULGATA/nt/) (`/nt/<book>/<ch>/`)
 - [ ] "Copy citation" action (copies a formatted reference to clipboard)
-- [ ] Mobile-responsive layout (long Latin paragraphs, comfortable reading on small screens)
 
 ### Annotations & Attributes
 
@@ -51,10 +54,11 @@ Status legend: `[ ]` planned | `[~]` in progress | `[x]` done
 
 ### Infrastructure
 
-- [ ] DB download with progress indicator after the app shell loads
-- [ ] Client-side caching strategy (Service Worker and/or IndexedDB) so repeat visits skip the download
-- [ ] PWA manifest + service worker for offline and installable mobile support
+- [x] DB download with progress indicator after the app shell loads
+- [x] Client-side caching strategy (Service Worker and/or IndexedDB) so repeat visits skip the download
+- [x] PWA manifest + service worker for offline and installable mobile support
 - [ ] Deployment pipeline (hosting provider TBD; the site is fully static)
+- [ ] Abstract all SQL queries into a primarily-data Rust library (compilable to WASM), reusable by both Rust APIs and the client
 
 ---
 
