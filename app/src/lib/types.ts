@@ -24,7 +24,7 @@ export interface Paragraph {
 }
 
 export interface Aside {
-	id: number;
+	id: string;
 	book_id: string;
 	chapter_id: string;
 	position: number;
@@ -70,8 +70,7 @@ export interface ParagraphTranslation {
 
 export interface AsideTranslation {
 	book_id: string;
-	chapter_id: string;
-	position: number;
+	aside_id: string;
 	lang: string;
 	content: string;
 }

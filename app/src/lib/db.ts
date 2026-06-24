@@ -174,15 +174,16 @@ export function getAsideTranslations(
 	bookId: string,
 	chapterId: string,
 	lang: string
-): Map<number, string> {
+): Map<string, string> {
 	const rows = queryAll<AsideTranslation>(
-		`SELECT book_id, chapter_id, position, lang, content
-		 FROM aside_translations
-		 WHERE book_id = $bookId AND chapter_id = $chapterId AND lang = $lang`,
+		`SELECT at.book_id, at.aside_id, at.lang, at.content
+		 FROM aside_translations at
+		 JOIN asides a ON at.book_id = a.book_id AND at.aside_id = a.id
+		 WHERE at.book_id = $bookId AND a.chapter_id = $chapterId AND at.lang = $lang`,
 		{ $bookId: bookId, $chapterId: chapterId, $lang: lang }
 	);
-	const map = new Map<number, string>();
-	for (const r of rows) map.set(r.position, r.content);
+	const map = new Map<string, string>();
+	for (const r of rows) map.set(r.aside_id, r.content);
 	return map;
 }
 

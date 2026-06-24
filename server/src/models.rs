@@ -21,6 +21,7 @@ pub enum Block {
         position: u32,
     },
     Aside {
+        id: String,
         content: String,
         position: u32,
     },

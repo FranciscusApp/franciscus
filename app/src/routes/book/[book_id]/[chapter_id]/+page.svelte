@@ -37,7 +37,7 @@
 	const asideTranslations = $derived(
 		corpusLang !== 'la' && book && chapter
 			? getAsideTranslations(bookId, chapterId, corpusLang)
-			: new Map<number, string>()
+			: new Map<string, string>()
 	);
 
 	const annotationsByParagraph = $derived.by(() => {
@@ -139,7 +139,7 @@
 	}
 
 	function asideContent(a: Aside): string {
-		return asideTranslations.get(a.position) ?? a.content;
+		return asideTranslations.get(a.id) ?? a.content;
 	}
 </script>
 

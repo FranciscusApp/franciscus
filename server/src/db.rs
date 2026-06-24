@@ -41,11 +41,12 @@ pub fn create_tables(conn: &Connection) {
         );
 
         CREATE TABLE IF NOT EXISTS asides (
-            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            id              TEXT NOT NULL,
             book_id         TEXT NOT NULL,
             chapter_id      TEXT NOT NULL,
             position        INTEGER NOT NULL,
             content         TEXT NOT NULL,
+            PRIMARY KEY (book_id, id),
             FOREIGN KEY (book_id, chapter_id) REFERENCES chapters(book_id, id)
         );
 
@@ -94,12 +95,11 @@ pub fn create_tables(conn: &Connection) {
 
         CREATE TABLE IF NOT EXISTS aside_translations (
             book_id         TEXT NOT NULL,
-            chapter_id      TEXT NOT NULL,
-            position        INTEGER NOT NULL,
+            aside_id        TEXT NOT NULL,
             lang            TEXT NOT NULL,
             content         TEXT NOT NULL,
-            PRIMARY KEY (book_id, chapter_id, position, lang),
-            FOREIGN KEY (book_id, chapter_id) REFERENCES chapters(book_id, id)
+            PRIMARY KEY (book_id, aside_id, lang),
+            FOREIGN KEY (book_id, aside_id) REFERENCES asides(book_id, id)
         );
         ",
     )
@@ -133,11 +133,11 @@ pub fn insert_book(conn: &Connection, book: &ParsedBook) {
                     )
                     .expect("Failed to insert paragraph");
                 }
-                Block::Aside { content, position } => {
+                Block::Aside { id, content, position } => {
                     conn.execute(
-                        "INSERT INTO asides (book_id, chapter_id, position, content)
-                         VALUES (?1, ?2, ?3, ?4)",
-                        params![m.id, ch.id, position, content],
+                        "INSERT OR REPLACE INTO asides (id, book_id, chapter_id, position, content)
+                         VALUES (?1, ?2, ?3, ?4, ?5)",
+                        params![id, m.id, ch.id, position, content],
                     )
                     .expect("Failed to insert aside");
                 }
@@ -168,11 +168,11 @@ pub fn insert_translations(conn: &Connection, book: &ParsedBook, lang: &str) {
                     )
                     .expect("Failed to insert paragraph translation");
                 }
-                Block::Aside { content, position } => {
+                Block::Aside { id, content, .. } => {
                     conn.execute(
-                        "INSERT OR REPLACE INTO aside_translations (book_id, chapter_id, position, lang, content)
-                         VALUES (?1, ?2, ?3, ?4, ?5)",
-                        params![book_id, ch.id, position, lang, content],
+                        "INSERT OR REPLACE INTO aside_translations (book_id, aside_id, lang, content)
+                         VALUES (?1, ?2, ?3, ?4)",
+                        params![book_id, id, lang, content],
                     )
                     .expect("Failed to insert aside translation");
                 }

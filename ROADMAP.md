@@ -15,7 +15,7 @@ Status legend: `[ ]` planned | `[~]` in progress | `[x]` done
 - [~] Complete **2Cel** (Vita Seconda) machine transcription
 - [X] Complete **LMj** (Legenda Maior) machine transcription
 - [x] Parse verse markers `[N]` during ingestion into `<v id="<paragraph-id>-N">N</v>` so verses are individually styleable and addressable client-side
-- [ ] Assign positional IDs to `<aside>` elements during ingestion (auto-incrementing per chapter: `<chapter_id>-aside-1`, `<chapter_id>-aside-2`, ...)
+- [x] Assign positional IDs to `<aside>` elements during ingestion (auto-incrementing per chapter: `<chapter_id>-aside-1`, `<chapter_id>-aside-2`, ...)
 
 ### Search & Discovery
 
@@ -38,7 +38,7 @@ Status legend: `[ ]` planned | `[~]` in progress | `[x]` done
 - [x] Annotation data model in the DB (paragraph-keyed, typed attributes, provenance field)
 - [x] Attribute page ingestion in the Rust CLI (parse frontmatter + markdown, insert into DB, load translations)
 - [x] Attribute page rendering: curated intro + auto-generated passage list for each virtue / topic / person / place
-- [ ] Curated attribute list lock-down
+- [~] Curated attribute list lock-down
 - [ ] AI annotation pipeline, pass 1: segmentation, themes, biblical allusions (high confidence)
 - [ ] AI annotation pipeline, pass 2: cross-work parallels seeded from *Fontes Franciscani* concordances (requires review)
 

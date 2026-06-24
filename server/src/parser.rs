@@ -88,6 +88,7 @@ fn parse_body(body: &str) -> Result<Vec<ParsedChapter>, String> {
 
     let mut state = State::Idle;
     let mut block_pos: u32 = 0;
+    let mut aside_pos: u32 = 0;
 
     for line in body.lines() {
         if let Some(caps) = re_chapter.captures(line) {
@@ -99,6 +100,7 @@ fn parse_body(body: &str) -> Result<Vec<ParsedChapter>, String> {
             let id = caps[2].to_string();
             chapter_pos += 1;
             block_pos = 0;
+            aside_pos = 0;
             chapters.push(ParsedChapter {
                 id,
                 title,
@@ -159,9 +161,12 @@ fn parse_body(body: &str) -> Result<Vec<ParsedChapter>, String> {
             State::InAside { lines } => {
                 if re_aside_close.is_match(line) {
                     block_pos += 1;
+                    aside_pos += 1;
                     let content = lines.join("\n").trim().to_string();
                     if let Some(ch) = chapters.last_mut() {
+                        let id = format!("{}-aside-{}", ch.id, aside_pos);
                         ch.blocks.push(Block::Aside {
+                            id,
                             content,
                             position: block_pos,
                         });
