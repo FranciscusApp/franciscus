@@ -12,8 +12,14 @@ ref {
 	cursor: help;
 	position: relative;
 }
-ref:hover {
+ref:hover,
+ref:focus-visible {
 	text-decoration-color: theme(--color-stone-600);
+}
+ref:focus-visible {
+	outline: 2px solid theme(--color-amber-400);
+	outline-offset: 2px;
+	border-radius: 2px;
 }
 ref::after {
 	content: attr(to);
@@ -30,7 +36,8 @@ ref::after {
 	transform: translateY(-100%);
 	margin-top: -0.25rem;
 }
-ref:hover::after {
+ref:hover::after,
+ref:focus-visible::after {
 	opacity: 1;
 }
 
@@ -46,8 +53,14 @@ v {
 	padding: 0 0.1em;
 	scroll-margin-top: 4rem;
 }
-v:hover {
+v:hover,
+v:focus-visible {
 	color: theme(--color-stone-600);
+}
+v:focus-visible {
+	outline: 2px solid theme(--color-amber-400);
+	outline-offset: 2px;
+	border-radius: 2px;
 }
 v:target {
 	color: theme(--color-amber-600);
@@ -206,5 +219,28 @@ mark.search-highlight {
 	}
 	html {
 		@apply font-sans;
+	}
+	/* Consistent amber focus ring on all keyboard-focused interactive elements. */
+	a:focus-visible,
+	button:focus-visible,
+	select:focus-visible,
+	[tabindex]:focus-visible,
+	[role="button"]:focus-visible {
+		outline: 2px solid theme(--color-amber-400);
+		outline-offset: 2px;
+		border-radius: 2px;
+	}
+}
+
+/* Honor users who prefer reduced motion: drop transitions, animations, and
+   smooth scrolling that the design otherwise applies. */
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
 	}
 }

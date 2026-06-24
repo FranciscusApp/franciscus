@@ -22,9 +22,9 @@
 </script>
 
 {#if book}
-	<main class="max-w-3xl mx-auto px-4 py-8">
+	<main id="main-content" tabindex="-1" class="max-w-3xl mx-auto px-4 py-8">
 		<Breadcrumb.Root class="mb-6">
-			<Breadcrumb.List class="text-sm text-stone-400 dark:text-stone-500">
+			<Breadcrumb.List class="text-sm text-stone-500 dark:text-stone-400">
 				<Breadcrumb.Item>
 					<Breadcrumb.Link href="/" class="hover:text-stone-600 dark:hover:text-stone-300">{t('nav.sources')}</Breadcrumb.Link>
 				</Breadcrumb.Item>
@@ -36,12 +36,12 @@
 		</Breadcrumb.Root>
 
 		<header class="mb-8">
-			<h2 class="text-2xl font-serif font-bold text-stone-800 dark:text-stone-100">{book.title}</h2>
+			<h1 class="text-2xl font-serif font-bold text-stone-800 dark:text-stone-100">{book.title}</h1>
 			<p class="text-stone-500 dark:text-stone-400 mt-1">{meta}</p>
 		</header>
 
 		<section>
-			<h3 class="text-lg font-serif text-stone-700 dark:text-stone-300 mb-3">{t('book.chaptersHeading')}</h3>
+			<h2 class="text-lg font-serif text-stone-700 dark:text-stone-300 mb-3">{t('book.chaptersHeading')}</h2>
 			<ul class="space-y-2">
 				{#each chapters as ch}
 					<li>
@@ -57,7 +57,7 @@
 		</section>
 	</main>
 {:else}
-	<main class="max-w-3xl mx-auto px-4 py-8">
+	<main id="main-content" tabindex="-1" class="max-w-3xl mx-auto px-4 py-8">
 		<p class="text-stone-500 dark:text-stone-400">{t('book.notFound')}</p>
 	</main>
 {/if}

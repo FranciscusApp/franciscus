@@ -52,5 +52,10 @@
 		"corpus": "Testo fonte",
 		"ui": "Interfaccia",
 		"original": "Latino (originale)"
+	},
+	"a11y": {
+		"skipToContent": "Vai al contenuto",
+		"primaryNav": "Principale",
+		"pagination": "Navigazione capitoli"
 	}
 }

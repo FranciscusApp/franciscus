@@ -24,7 +24,7 @@
 
 <DropdownMenu.Root>
 	<DropdownMenu.Trigger
-		class="p-2 rounded-full text-stone-500 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+		class="p-2 pointer-coarse:p-3 rounded-full text-stone-500 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
 		aria-label="Language settings"
 	>
 		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">

@@ -52,5 +52,10 @@
 		"corpus": "Source text",
 		"ui": "Interface",
 		"original": "Latin (original)"
+	},
+	"a11y": {
+		"skipToContent": "Skip to content",
+		"primaryNav": "Primary",
+		"pagination": "Chapter navigation"
 	}
 }

@@ -6,7 +6,7 @@
 	import TopNav from '$lib/TopNav.svelte';
 	import Footer from '$lib/Footer.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
-	import { t } from '$lib/i18n';
+	import { t, getUiLang } from '$lib/i18n';
 
 	let { children } = $props();
 
@@ -34,11 +34,26 @@
 			.then(() => { ready = true; })
 			.catch((e) => { error = String(e); });
 	});
+
+	// Keep <html lang> in sync with the active UI language (the page chrome).
+	// Source text gets its own lang attribute on the reader region.
+	$effect(() => {
+		document.documentElement.lang = getUiLang();
+	});
 </script>
 
 <svelte:head>
 	<title>{t('app.title')}</title>
 </svelte:head>
+
+<a
+	href="#main-content"
+	class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-1/2 focus:-translate-x-1/2 focus:z-[60]
+	       focus:rounded-md focus:bg-white dark:focus:bg-stone-800 focus:px-4 focus:py-2 focus:shadow-lg
+	       focus:text-stone-800 dark:focus:text-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
+>
+	{t('a11y.skipToContent')}
+</a>
 
 <div class="flex min-h-screen flex-col bg-white dark:bg-stone-900 transition-colors pt-20 md:pt-24 md:pb-20">
 	<div class="fixed top-4 left-4 z-50 flex items-center gap-1">
@@ -52,7 +67,7 @@
 			variant="ghost"
 			size="icon"
 			onclick={toggleTheme}
-			class="rounded-full text-stone-500 dark:text-stone-400 hover:text-stone-500 dark:hover:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800"
+			class="rounded-full pointer-coarse:size-11 text-stone-500 dark:text-stone-400 hover:text-stone-500 dark:hover:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800"
 			aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
 		>
 			{#if dark}
@@ -68,11 +83,11 @@
 	</div>
 
 	{#if error}
-		<main class="min-h-screen flex items-center justify-center">
+		<main id="main-content" tabindex="-1" class="min-h-screen flex items-center justify-center">
 			<p class="text-red-700 dark:text-red-400">{t('app.dbError')} {error}</p>
 		</main>
 	{:else if !ready}
-		<main class="min-h-screen flex items-center justify-center px-6">
+		<main id="main-content" tabindex="-1" class="min-h-screen flex items-center justify-center px-6">
 			<div class="w-full max-w-xs text-center">
 				<p class="text-stone-500 dark:text-stone-400 mb-3">
 					{progress?.cached ? t('app.loading') : t('app.downloading')}
@@ -88,7 +103,7 @@
 					{/if}
 				</div>
 				{#if pct !== null}
-					<p class="mt-2 text-xs tabular-nums text-stone-400 dark:text-stone-500">{pct}%</p>
+					<p class="mt-2 text-xs tabular-nums text-stone-500 dark:text-stone-400">{pct}%</p>
 				{/if}
 			</div>
 		</main>

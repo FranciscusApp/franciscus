@@ -34,7 +34,7 @@
 	}
 </script>
 
-<main class="max-w-3xl mx-auto px-4 py-8">
+<main id="main-content" tabindex="-1" class="max-w-3xl mx-auto px-4 py-8">
 	<header class="mb-6">
 		<h1 class="text-3xl font-serif font-bold text-stone-800 dark:text-stone-100">{t('app.title')}</h1>
 		<p class="text-stone-500 dark:text-stone-400 mt-1">{t('app.subtitle')}</p>
@@ -44,6 +44,7 @@
 		type="search"
 		bind:value={inputValue}
 		placeholder={t('search.placeholder')}
+		aria-label={t('search.placeholder')}
 		class="w-full px-4 py-3 rounded-lg border border-stone-300 dark:border-stone-600
 		       bg-white dark:bg-stone-800 text-stone-800 dark:text-stone-100
 		       placeholder:text-stone-400 dark:placeholder:text-stone-500
@@ -52,7 +53,7 @@
 	/>
 
 	{#if searching}
-		<p class="text-sm text-stone-400 dark:text-stone-500 mb-2">
+		<p class="text-sm text-stone-500 dark:text-stone-400 mb-2">
 			{results.length} {results.length === 1 ? t('search.resultCountOne') : t('search.resultCount')}
 		</p>
 
@@ -70,7 +71,7 @@
 								<span> &mdash; </span>
 								<span>{r.chapter_title}</span>
 								{#if r.paragraph_label}
-									<span class="text-stone-400 dark:text-stone-500"> &sect;{r.paragraph_label}</span>
+									<span class="text-stone-500 dark:text-stone-400"> &sect;{r.paragraph_label}</span>
 								{/if}
 							</div>
 							<p class="font-serif text-stone-700 dark:text-stone-300 leading-relaxed">
@@ -84,7 +85,7 @@
 			<p class="text-stone-500 dark:text-stone-400 mt-6 font-serif">{t('search.noResults')}</p>
 		{/if}
 	{:else}
-		<nav class="mb-6 flex gap-4">
+		<nav aria-label={t('nav.attributes')} class="mb-6 flex gap-4">
 			<a href="/attributes" class="text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors font-serif">
 				{t('nav.attributes')} &rarr;
 			</a>
@@ -99,7 +100,7 @@
 							<strong class="font-serif text-lg text-stone-800 dark:text-stone-100 group-hover:text-stone-950 dark:group-hover:text-white">{book.title}</strong>
 							<span class="text-stone-500 dark:text-stone-400"> — {book.author}</span>
 							{#if book.date}
-								<span class="text-stone-400 dark:text-stone-500"> ({book.date})</span>
+								<span class="text-stone-500 dark:text-stone-400"> ({book.date})</span>
 							{/if}
 						</a>
 					</li>

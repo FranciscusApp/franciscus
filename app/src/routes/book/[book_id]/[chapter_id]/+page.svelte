@@ -80,9 +80,14 @@
 		chapter ? chapters.find((c) => c.position === chapter.position + 1) : undefined
 	);
 
-	function onVerseClick(e: MouseEvent) {
-		const v = (e.target as HTMLElement).closest('v[id]');
-		if (!v) return;
+	function prefersReducedMotion(): boolean {
+		return (
+			typeof matchMedia !== 'undefined' &&
+			matchMedia('(prefers-reduced-motion: reduce)').matches
+		);
+	}
+
+	function selectVerse(v: Element) {
 		history.replaceState(null, '', `#${v.id}`);
 	}
 
@@ -91,8 +96,59 @@
 		const hash = location.hash.slice(1);
 		if (!hash) return;
 		tick().then(() => {
-			document.getElementById(hash)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+			document.getElementById(hash)?.scrollIntoView({
+				behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+				block: 'center'
+			});
 		});
+	});
+
+	// Make verses (deep-link targets) and scripture refs (tooltips) reachable by
+	// keyboard and touch. The content is injected via {@html}, so we enhance the
+	// rendered nodes after each render rather than authoring the markup directly.
+	$effect(() => {
+		// re-run when the rendered content changes
+		void blocks;
+		void corpusLang;
+		const container = document.querySelector('.chapter-content') as HTMLElement | null;
+		if (!container) return;
+
+		tick().then(() => {
+			for (const v of container.querySelectorAll('v[id]')) {
+				v.setAttribute('tabindex', '0');
+				v.setAttribute('role', 'button');
+			}
+			for (const ref of container.querySelectorAll('ref')) {
+				ref.setAttribute('tabindex', '0');
+				const to = ref.getAttribute('to');
+				if (to && !ref.getAttribute('aria-label')) ref.setAttribute('aria-label', to);
+			}
+		});
+
+		function onClick(e: MouseEvent) {
+			const v = (e.target as HTMLElement).closest('v[id]');
+			if (v) selectVerse(v);
+		}
+		function onKeydown(e: KeyboardEvent) {
+			const target = e.target as HTMLElement;
+			if (e.key === 'Escape' && target.tagName === 'REF') {
+				target.blur();
+				return;
+			}
+			if (e.key !== 'Enter' && e.key !== ' ') return;
+			const v = target.closest('v[id]');
+			if (v) {
+				e.preventDefault();
+				selectVerse(v);
+			}
+		}
+
+		container.addEventListener('click', onClick);
+		container.addEventListener('keydown', onKeydown);
+		return () => {
+			container.removeEventListener('click', onClick);
+			container.removeEventListener('keydown', onKeydown);
+		};
 	});
 
 	const searchTerms = $derived(
@@ -146,9 +202,9 @@
 </script>
 
 {#if book && chapter}
-	<main class="max-w-3xl mx-auto px-4 py-8">
+	<main id="main-content" tabindex="-1" class="max-w-3xl mx-auto px-4 py-8">
 		<Breadcrumb.Root class="mb-6">
-			<Breadcrumb.List class="text-sm text-stone-400 dark:text-stone-500">
+			<Breadcrumb.List class="text-sm text-stone-500 dark:text-stone-400">
 				<Breadcrumb.Item>
 					<Breadcrumb.Link href="/" class="hover:text-stone-600 dark:hover:text-stone-300">{t('nav.sources')}</Breadcrumb.Link>
 				</Breadcrumb.Item>
@@ -163,27 +219,26 @@
 			</Breadcrumb.List>
 		</Breadcrumb.Root>
 
-		<h2 class="text-2xl font-serif font-bold text-stone-800 dark:text-stone-100 mb-6">{chapter.title}</h2>
+		<h1 class="text-2xl font-serif font-bold text-stone-800 dark:text-stone-100 mb-6">{chapter.title}</h1>
 
-		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-		<div class="chapter-content space-y-4" onclick={onVerseClick}>
+		<div class="chapter-content space-y-4" lang={corpusLang}>
 			{#each blocks as block}
 				{#if block.kind === 'paragraph'}
 					{@const p = block.data}
 					{@const ann = block.annotations}
 					<div class="paragraph group" id={p.id}>
-						<span class="inline-block min-w-8 text-xs text-stone-400 dark:text-stone-500 font-mono mr-2 align-top pt-1">
+						<span class="inline-block min-w-8 text-xs text-stone-500 dark:text-stone-400 font-mono mr-2 align-top pt-1">
 							{p.label ?? p.id}
 						</span>
 						<span class="para-text font-serif text-stone-800 dark:text-stone-200 leading-relaxed">
 							{@html paragraphContent(p)}
 						</span>
 						{#if ann.length > 0}
-							<div class="mt-1 ml-10 flex flex-wrap gap-1">
+							<div class="mt-1 ml-0 sm:ml-10 flex flex-wrap gap-1">
 								{#each ann as a}
 									<a
 										href="/attributes/{a.attr_type}/{a.attr_value}"
-										class="inline-block text-xs px-2 py-0.5 rounded-full no-underline transition-colors {attrColors(a.attr_type, true)}"
+										class="inline-block max-w-full break-words text-xs px-2 py-0.5 rounded-full no-underline transition-colors {attrColors(a.attr_type, true)}"
 										title={a.evidence ?? ''}
 									>
 										{a.attr_value} ({a.attr_type}{a.verified ? ' ✓' : ''})
@@ -193,18 +248,18 @@
 						{/if}
 					</div>
 				{:else}
-					<aside class="text-sm italic text-stone-400 dark:text-stone-500 font-serif py-2">
+					<aside class="text-sm italic text-stone-500 dark:text-stone-400 font-serif py-2">
 						{asideContent(block.data)}
 					</aside>
 				{/if}
 			{/each}
 		</div>
 
-		<nav class="flex justify-between mt-12 pt-6 border-t border-stone-200 dark:border-stone-700">
+		<nav aria-label={t('a11y.pagination')} class="flex justify-between gap-4 mt-12 pt-6 border-t border-stone-200 dark:border-stone-700">
 			{#if prevChapter}
 				<a
 					href="/book/{bookId}/{prevChapter.id}"
-					class="text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors w-1/2 block text-left"
+					class="text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors flex-1 min-w-0 text-left"
 				>
 					&larr; {prevChapter.title}
 				</a>
@@ -214,7 +269,7 @@
 			{#if nextChapter}
 				<a
 					href="/book/{bookId}/{nextChapter.id}"
-					class="text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors w-1/2 block text-right"
+					class="text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors flex-1 min-w-0 text-right"
 				>
 					{nextChapter.title} &rarr;
 				</a>
@@ -222,7 +277,7 @@
 		</nav>
 	</main>
 {:else}
-	<main class="max-w-3xl mx-auto px-4 py-8">
+	<main id="main-content" tabindex="-1" class="max-w-3xl mx-auto px-4 py-8">
 		<p class="text-stone-500 dark:text-stone-400">{t('chapter.notFound')}</p>
 	</main>
 {/if}

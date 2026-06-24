@@ -20,9 +20,9 @@
 	const displayTitle = $derived(attrPage?.title ?? attrValue.replaceAll('_', ' '));
 </script>
 
-<main class="max-w-3xl mx-auto px-4 py-8">
+<main id="main-content" tabindex="-1" class="max-w-3xl mx-auto px-4 py-8">
 	<Breadcrumb.Root class="mb-6">
-		<Breadcrumb.List class="text-sm text-stone-400 dark:text-stone-500">
+		<Breadcrumb.List class="text-sm text-stone-500 dark:text-stone-400">
 			<Breadcrumb.Item>
 				<Breadcrumb.Link href="/" class="hover:text-stone-600 dark:hover:text-stone-300">{t('nav.sources')}</Breadcrumb.Link>
 			</Breadcrumb.Item>
@@ -41,7 +41,7 @@
 		<Badge class="mb-2 rounded-full font-normal {attrColors(attrType)}">
 			{t(`attributes.types.${attrType}`)}
 		</Badge>
-		<h2 class="text-2xl font-serif font-bold text-stone-800 dark:text-stone-100">{displayTitle}</h2>
+		<h1 class="text-2xl font-serif font-bold text-stone-800 dark:text-stone-100">{displayTitle}</h1>
 	</div>
 
 	{#if attrPage}
@@ -52,13 +52,13 @@
 
 	{#if occurrences.length > 0}
 		<section>
-			<h3 class="text-lg font-serif text-stone-700 dark:text-stone-300 mb-4">
+			<h2 class="text-lg font-serif text-stone-700 dark:text-stone-300 mb-4">
 				{t('attributes.passagesHeading')} ({occurrences.length})
-			</h3>
+			</h2>
 			<div class="space-y-4">
 				{#each occurrences as occ}
 					<div class="border border-stone-200 dark:border-stone-700 rounded-lg p-4">
-						<div class="text-sm text-stone-400 dark:text-stone-500 mb-2">
+						<div class="text-sm text-stone-500 dark:text-stone-400 mb-2">
 							<a
 								href="/book/{occ.book_id}"
 								class="hover:text-stone-600 dark:hover:text-stone-300"
@@ -74,7 +74,7 @@
 								class="hover:text-stone-600 dark:hover:text-stone-300"
 							>{occ.paragraph_label ?? occ.paragraph_id}</a>
 						</div>
-						<div class="font-serif text-stone-800 dark:text-stone-200 leading-relaxed">
+						<div lang="la" class="font-serif text-stone-800 dark:text-stone-200 leading-relaxed">
 							{@html occ.content}
 						</div>
 						{#if occ.evidence}
