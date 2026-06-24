@@ -3,6 +3,8 @@
 	import { initDb } from '$lib';
 	import LanguagePicker from '$lib/LanguagePicker.svelte';
 	import DecorativeImage from '$lib/DecorativeImage.svelte';
+	import TopNav from '$lib/TopNav.svelte';
+	import Footer from '$lib/Footer.svelte';
 	import { t } from '$lib/i18n';
 
 	let { children } = $props();
@@ -32,7 +34,10 @@
 	<title>{t('app.title')}</title>
 </svelte:head>
 
-<div class="min-h-screen bg-white dark:bg-stone-900 transition-colors">
+<div class="min-h-screen bg-white dark:bg-stone-900 transition-colors pt-20 md:pt-24 pb-16 md:pb-20">
+	<div class="fixed top-4 left-4 z-50 flex items-center gap-1">
+		<TopNav />
+	</div>
 	<div class="fixed top-3 right-3 z-50 flex items-center gap-1">
 		{#if ready}
 			<LanguagePicker />
@@ -66,4 +71,5 @@
 		{@render children()}
 	{/if}
 	<DecorativeImage />
+	<Footer {dark} />
 </div>
