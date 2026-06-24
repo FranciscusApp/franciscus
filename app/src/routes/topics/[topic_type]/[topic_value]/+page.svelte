@@ -1,23 +1,43 @@
 <script lang="ts">
 	import { page } from '$app/stores';
+	import { goto } from '$app/navigation';
 	import {
 		getTopicPage,
 		getTopicOccurrences,
+		resolveTopicSlug,
 		type TopicPage,
 		type TopicOccurrence
 	} from '$lib';
 	import * as Breadcrumb from '$lib/components/ui/breadcrumb/index.js';
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import { topicColors } from '$lib/topicColors';
-	import { t } from '$lib/i18n';
+	import { t, getCorpusLang, getUiLang } from '$lib/i18n';
 
 	const topicType = $derived($page.params.topic_type ?? '');
-	const topicValue = $derived($page.params.topic_value ?? '');
+	const urlSlug = $derived($page.params.topic_value ?? '');
+	const corpusLang = $derived(getCorpusLang());
+	const uiLang = $derived(getUiLang());
 
-	const topicPage = $derived(getTopicPage(topicType, topicValue));
-	const occurrences = $derived(getTopicOccurrences(topicType, topicValue));
+	// Canonical URL is /topics/<type>/<topic_value> (the source-file value).
+	// A request for a lang_slug (e.g. .../st_chiara_di_assisi) is resolved to
+	// the canonical pair and redirected. Unknown slugs fall through and the
+	// template renders the "no page" state.
+	const canonical = $derived(resolveTopicSlug(topicType, urlSlug));
+	const topicValue = $derived(canonical?.topic_value ?? urlSlug);
 
-	const displayTitle = $derived(topicPage?.title ?? topicValue.replaceAll('_', ' '));
+	$effect(() => {
+		if (canonical && canonical.topic_value !== urlSlug) {
+			goto(`/topics/${canonical.topic_type}/${canonical.topic_value}`, { replaceState: true });
+		}
+	});
+
+	// Topic page chrome (description, body, lang_slug) follows the UI language;
+	// the occurrence list shows source-corpus material (book/chapter titles,
+	// paragraph bodies), so it follows the corpus language instead.
+	const topicPage = $derived(getTopicPage(topicType, topicValue, uiLang));
+	const occurrences = $derived(getTopicOccurrences(topicType, topicValue, corpusLang));
+
+	const displayTitle = $derived(topicPage?.description ?? topicValue.replaceAll('_', ' '));
 </script>
 
 <main id="main-content" tabindex="-1" class="max-w-3xl mx-auto px-4 py-8">
@@ -74,7 +94,7 @@
 								class="hover:text-primary"
 							>{occ.paragraph_label ?? occ.paragraph_id}</a>
 						</div>
-						<div lang="la" class="font-serif text-foreground leading-relaxed">
+						<div lang={corpusLang} class="font-serif text-foreground leading-relaxed">
 							{@html occ.content}
 						</div>
 						{#if occ.comment}

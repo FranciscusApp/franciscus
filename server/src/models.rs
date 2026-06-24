@@ -70,15 +70,22 @@ pub struct Annotation {
     pub comment: Option<String>,
 }
 
+/// Topic-page YAML frontmatter. The `topic_value` is NOT carried here — it is
+/// derived from the filename (see `<type>:<value>[.<lang>].md`). The `type:`
+/// field is duplicated so we can sanity-check it against the filename prefix.
 #[derive(Debug, Clone, Deserialize)]
-pub struct TopicPageMeta {
+pub struct TopicPageFrontmatter {
+    #[serde(rename = "type")]
     pub topic_type: String,
-    pub topic_value: String,
-    pub title: String,
+    pub description: String,
+    /// Translation files only: alternative URL slug for that language. Source
+    /// files MUST NOT set this; translation files MAY.
+    #[serde(default)]
+    pub lang_slug: Option<String>,
 }
 
 #[derive(Debug, Clone)]
 pub struct TopicPage {
-    pub meta: TopicPageMeta,
+    pub frontmatter: TopicPageFrontmatter,
     pub content: String,
 }

@@ -9,20 +9,33 @@
 		getChapterAnnotations,
 		getParagraphTranslations,
 		getAsideTranslations,
+		getTopicLangSlugs,
 		type Paragraph,
 		type Aside,
 		type Annotation
 	} from '$lib';
-	import { t, getCorpusLang } from '$lib/i18n';
+	import { t, getCorpusLang, getUiLang } from '$lib/i18n';
 	import * as Breadcrumb from '$lib/components/ui/breadcrumb/index.js';
 	import { topicColors } from '$lib/topicColors';
 
 	const bookId = $derived($page.params.book_id ?? '');
 	const chapterId = $derived($page.params.chapter_id ?? '');
 
-	const book = $derived(getBook(bookId));
-	const chapters = $derived(book ? getChapters(bookId) : []);
+	const corpusLang = $derived(getCorpusLang());
+	const uiLang = $derived(getUiLang());
+	const book = $derived(getBook(bookId, corpusLang));
+	const chapters = $derived(book ? getChapters(bookId, corpusLang) : []);
 	const chapter = $derived(chapters.find((c) => c.id === chapterId));
+
+	// Per-topic UI-lang slug used as the pill label, with `_` rendered as a
+	// space. Missing entries fall back to the canonical topic_value at the
+	// render site (also slug-with-underscores in the source language).
+	const topicLangSlugs = $derived(getTopicLangSlugs(uiLang));
+
+	function topicLabel(topicType: string, topicValue: string): string {
+		const slug = topicLangSlugs.get(`${topicType}:${topicValue}`) ?? topicValue;
+		return slug.replaceAll('_', ' ');
+	}
 
 	const paragraphs = $derived(book && chapter ? getParagraphs(bookId, chapterId) : []);
 	const asides = $derived(book && chapter ? getAsides(bookId, chapterId) : []);
@@ -30,7 +43,6 @@
 		book && chapter ? getChapterAnnotations(bookId, chapterId) : []
 	);
 
-	const corpusLang = $derived(getCorpusLang());
 	const paraTranslations = $derived(
 		corpusLang !== 'la' && book && chapter
 			? getParagraphTranslations(bookId, chapterId, corpusLang)
@@ -241,7 +253,7 @@
 										class="inline-block max-w-full break-words text-xs px-2 py-0.5 rounded-full no-underline transition-colors {topicColors(a.topic_type, true)}"
 										title={a.comment ?? ''}
 									>
-										{a.topic_value} ({a.topic_type}{a.verified ? ' ✓' : ''})
+										{topicLabel(a.topic_type, a.topic_value)} ({t(`topics.types.${a.topic_type}`).toLowerCase()}{a.verified ? ' ✓' : ''})
 									</a>
 								{/each}
 							</div>

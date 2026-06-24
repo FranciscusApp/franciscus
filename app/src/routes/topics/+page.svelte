@@ -2,9 +2,10 @@
 	import { getDistinctTopics, type TopicSummary } from '$lib';
 	import * as Breadcrumb from '$lib/components/ui/breadcrumb/index.js';
 	import { topicColors } from '$lib/topicColors';
-	import { t } from '$lib/i18n';
+	import { t, getUiLang } from '$lib/i18n';
 
-	const topics = getDistinctTopics();
+	const uiLang = $derived(getUiLang());
+	const topics = $derived(getDistinctTopics(uiLang));
 
 	const grouped = $derived.by(() => {
 		const map = new Map<string, TopicSummary[]>();
@@ -50,7 +51,7 @@
 							href="/topics/{topic.topic_type}/{topic.topic_value}"
 							class="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full transition-colors {topicColors(topic.topic_type, true)}"
 						>
-							{topic.topic_value.replaceAll('_', ' ')}
+							{(topic.lang_slug ?? topic.topic_value).replaceAll('_', ' ')}
 							<span class="text-xs opacity-60">({topic.count})</span>
 						</a>
 					{/each}

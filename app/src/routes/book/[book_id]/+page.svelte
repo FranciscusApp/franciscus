@@ -2,11 +2,12 @@
 	import { page } from '$app/stores';
 	import { getBook, getChapters, type BookMeta, type Chapter } from '$lib';
 	import * as Breadcrumb from '$lib/components/ui/breadcrumb/index.js';
-	import { t } from '$lib/i18n';
+	import { t, getCorpusLang } from '$lib/i18n';
 
 	const bookId = $derived($page.params.book_id ?? '');
-	const book = $derived(getBook(bookId));
-	const chapters = $derived(book ? getChapters(bookId) : []);
+	const corpusLang = $derived(getCorpusLang());
+	const book = $derived(getBook(bookId, corpusLang));
+	const chapters = $derived(book ? getChapters(bookId, corpusLang) : []);
 
 	const meta = $derived(
 		book

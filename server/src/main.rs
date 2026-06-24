@@ -38,9 +38,27 @@ fn parse_topic_page(text: &str) -> Result<models::TopicPage, String> {
     let end = after_first.find("---").ok_or("Missing closing --- in frontmatter")?;
     let yaml_str = &after_first[..end];
     let body = after_first[end + 3..].trim().to_string();
-    let meta: models::TopicPageMeta =
+    let frontmatter: models::TopicPageFrontmatter =
         serde_yaml::from_str(yaml_str).map_err(|e| format!("YAML parse error: {e}"))?;
-    Ok(models::TopicPage { meta, content: body })
+    Ok(models::TopicPage { frontmatter, content: body })
+}
+
+/// Decompose a topic-page filename stem into `(topic_type, topic_value, lang)`.
+/// Stems look like `person:st_clare_of_assisi` (source) or
+/// `person:st_clare_of_assisi.it` (translation). The `:` always precedes any
+/// `.<lang>` suffix.
+fn parse_topic_filename(stem: &str) -> Result<(String, String, Option<String>), String> {
+    let (topic_type, rest) = stem
+        .split_once(':')
+        .ok_or_else(|| format!("topic filename missing ':' separator: {stem}"))?;
+    let (topic_value, lang) = match rest.split_once('.') {
+        Some((value, lang)) => (value, Some(lang.to_string())),
+        None => (rest, None),
+    };
+    if topic_type.is_empty() || topic_value.is_empty() {
+        return Err(format!("topic filename has empty type or value: {stem}"));
+    }
+    Ok((topic_type.to_string(), topic_value.to_string(), lang))
 }
 
 fn run_build(data_dir: &PathBuf, output: &PathBuf) {
@@ -125,21 +143,75 @@ fn run_build(data_dir: &PathBuf, output: &PathBuf) {
     }
 
     let topics_dir = data_dir.join("topics");
+    let mut topic_translation_files: Vec<PathBuf> = Vec::new();
+    let mut topic_page_translation_count = 0u32;
+
     if topics_dir.is_dir() {
+        // First pass: ingest source (canonical) topic pages so the FK on the
+        // translations table is satisfied. Defer translations to a second pass.
         for entry in std::fs::read_dir(&topics_dir).expect("Cannot read topics dir") {
             let entry = entry.expect("Cannot read entry");
             let path = entry.path();
-            if path.extension().is_some_and(|e| e == "md") {
-                let text = std::fs::read_to_string(&path).expect("Cannot read topic file");
-                match parse_topic_page(&text) {
-                    Ok(page) => {
-                        println!("  topic: {} / {}", page.meta.topic_type, page.meta.topic_value);
-                        db::insert_topic_page(&conn, &page);
-                        topic_page_count += 1;
+            if !path.extension().is_some_and(|e| e == "md") {
+                continue;
+            }
+            let stem = path.file_stem().unwrap().to_string_lossy();
+            let (topic_type, topic_value, lang) = match parse_topic_filename(&stem) {
+                Ok(parts) => parts,
+                Err(e) => {
+                    eprintln!("  error parsing topic filename {}: {e}", path.display());
+                    continue;
+                }
+            };
+            if lang.is_some() {
+                topic_translation_files.push(path);
+                continue;
+            }
+            let text = std::fs::read_to_string(&path).expect("Cannot read topic file");
+            match parse_topic_page(&text) {
+                Ok(page) => {
+                    if page.frontmatter.topic_type != topic_type {
+                        eprintln!(
+                            "  warning: topic {} / {}: frontmatter type '{}' disagrees with filename prefix '{}'; using filename",
+                            topic_type, topic_value, page.frontmatter.topic_type, topic_type
+                        );
                     }
-                    Err(e) => {
-                        eprintln!("  error parsing {}: {e}", path.display());
+                    if page.frontmatter.lang_slug.is_some() {
+                        eprintln!(
+                            "  warning: topic {} / {}: 'lang_slug' is only valid in translation files; ignoring",
+                            topic_type, topic_value
+                        );
                     }
+                    println!("  topic: {} / {}", topic_type, topic_value);
+                    db::insert_topic_page(&conn, &topic_value, &page);
+                    topic_page_count += 1;
+                }
+                Err(e) => {
+                    eprintln!("  error parsing {}: {e}", path.display());
+                }
+            }
+        }
+
+        for path in &topic_translation_files {
+            let stem = path.file_stem().unwrap().to_string_lossy();
+            let (topic_type, topic_value, lang) = parse_topic_filename(&stem)
+                .expect("topic filename validated in first pass");
+            let lang = lang.expect("translation files always carry a lang");
+            let text = std::fs::read_to_string(path).expect("Cannot read topic translation");
+            match parse_topic_page(&text) {
+                Ok(page) => {
+                    if page.frontmatter.topic_type != topic_type {
+                        eprintln!(
+                            "  warning: topic {} / {} [{}]: frontmatter type '{}' disagrees with filename prefix '{}'; using filename",
+                            topic_type, topic_value, lang, page.frontmatter.topic_type, topic_type
+                        );
+                    }
+                    println!("  topic translation: {} / {} [{}]", topic_type, topic_value, lang);
+                    db::insert_topic_page_translation(&conn, &topic_value, &lang, &page);
+                    topic_page_translation_count += 1;
+                }
+                Err(e) => {
+                    eprintln!("  error parsing translation {}: {e}", path.display());
                 }
             }
         }
@@ -149,11 +221,12 @@ fn run_build(data_dir: &PathBuf, output: &PathBuf) {
     println!("  fts5 search index built");
 
     println!(
-        "Build complete: {} book(s), {} translation(s), {} annotation(s), {} topic page(s) -> {}",
+        "Build complete: {} book(s), {} translation(s), {} annotation(s), {} topic page(s), {} topic translation(s) -> {}",
         book_count,
         translation_count,
         annotation_count,
         topic_page_count,
+        topic_page_translation_count,
         output.display()
     );
 }

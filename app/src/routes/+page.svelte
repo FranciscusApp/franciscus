@@ -2,8 +2,6 @@
 	import { getBooks, searchParagraphs, type BookMeta } from '$lib';
 	import { t, getCorpusLang } from '$lib/i18n';
 
-	const books: BookMeta[] = getBooks();
-
 	let inputValue = $state('');
 	let query = $state('');
 
@@ -16,6 +14,7 @@
 	});
 
 	const corpusLang = $derived(getCorpusLang());
+	const books: BookMeta[] = $derived(getBooks(corpusLang));
 
 	const results = $derived.by(() => {
 		if (!query.trim()) return [];

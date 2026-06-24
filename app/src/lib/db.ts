@@ -7,7 +7,7 @@ let db: Database | null = null;
 
 const DB_URL = '/franciscus.db';
 // Bump this when the shipped database changes so stale copies are evicted.
-const DB_CACHE = 'franciscus-db-v1.3';
+const DB_CACHE = 'franciscus-db-v1.4';
 
 export interface DbProgress {
 	/** bytes received so far */
@@ -138,23 +138,40 @@ function queryOne<T>(sql: string, params: BindParams = {}): T | null {
 	return results[0] ?? null;
 }
 
-export function getBooks(): BookMeta[] {
+export function getBooks(lang: string = 'la'): BookMeta[] {
 	return queryAll<BookMeta>(
-		'SELECT id, title, author, date, ref_edition, license FROM books ORDER BY id'
+		`SELECT b.id,
+		        COALESCE(bt.title, b.title) AS title,
+		        b.author, b.date, b.ref_edition, b.license
+		 FROM books b
+		 LEFT JOIN book_translations bt ON bt.book_id = b.id AND bt.lang = $lang
+		 ORDER BY b.id`,
+		{ $lang: lang }
 	);
 }
 
-export function getBook(bookId: string): BookMeta | null {
+export function getBook(bookId: string, lang: string = 'la'): BookMeta | null {
 	return queryOne<BookMeta>(
-		'SELECT id, title, author, date, ref_edition, license FROM books WHERE id = $id',
-		{ $id: bookId }
+		`SELECT b.id,
+		        COALESCE(bt.title, b.title) AS title,
+		        b.author, b.date, b.ref_edition, b.license
+		 FROM books b
+		 LEFT JOIN book_translations bt ON bt.book_id = b.id AND bt.lang = $lang
+		 WHERE b.id = $id`,
+		{ $id: bookId, $lang: lang }
 	);
 }
 
-export function getChapters(bookId: string): Chapter[] {
+export function getChapters(bookId: string, lang: string = 'la'): Chapter[] {
 	return queryAll<Chapter>(
-		'SELECT id, book_id, position, title FROM chapters WHERE book_id = $bookId ORDER BY position',
-		{ $bookId: bookId }
+		`SELECT c.id, c.book_id, c.position,
+		        COALESCE(ct.title, c.title) AS title
+		 FROM chapters c
+		 LEFT JOIN chapter_translations ct
+		        ON ct.book_id = c.book_id AND ct.chapter_id = c.id AND ct.lang = $lang
+		 WHERE c.book_id = $bookId
+		 ORDER BY c.position`,
+		{ $bookId: bookId, $lang: lang }
 	);
 }
 
@@ -174,16 +191,63 @@ export function getAsides(bookId: string, chapterId: string): Aside[] {
 	);
 }
 
-export function getTopicPages(): TopicPage[] {
+export function getTopicPages(lang: string = 'la'): TopicPage[] {
 	return queryAll<TopicPage>(
-		'SELECT topic_type, topic_value, title, content FROM topic_pages ORDER BY topic_type, title'
+		`SELECT tp.topic_type, tp.topic_value,
+		        COALESCE(tt.description, tp.description) AS description,
+		        COALESCE(tt.content,     tp.content)     AS content,
+		        tt.lang_slug AS lang_slug
+		 FROM topic_pages tp
+		 LEFT JOIN topic_page_translations tt
+		        ON tt.topic_type = tp.topic_type AND tt.topic_value = tp.topic_value AND tt.lang = $lang
+		 ORDER BY tp.topic_type, description`,
+		{ $lang: lang }
 	);
 }
 
-export function getTopicPage(topicType: string, topicValue: string): TopicPage | null {
+export function getTopicPage(
+	topicType: string,
+	topicValue: string,
+	lang: string = 'la'
+): TopicPage | null {
 	return queryOne<TopicPage>(
-		'SELECT topic_type, topic_value, title, content FROM topic_pages WHERE topic_type = $type AND topic_value = $value',
-		{ $type: topicType, $value: topicValue }
+		`SELECT tp.topic_type, tp.topic_value,
+		        COALESCE(tt.description, tp.description) AS description,
+		        COALESCE(tt.content,     tp.content)     AS content,
+		        tt.lang_slug AS lang_slug
+		 FROM topic_pages tp
+		 LEFT JOIN topic_page_translations tt
+		        ON tt.topic_type = tp.topic_type AND tt.topic_value = tp.topic_value AND tt.lang = $lang
+		 WHERE tp.topic_type = $type AND tp.topic_value = $value`,
+		{ $type: topicType, $value: topicValue, $lang: lang }
+	);
+}
+
+/**
+ * Resolve a possibly-localized URL slug back to the canonical (topic_type,
+ * topic_value). `slug` is the value taken from the URL (`/topics/<type>/<slug>`).
+ * Returns the canonical pair when `slug` is either the canonical value or a
+ * `lang_slug` registered under any language. Returns null when nothing matches.
+ *
+ * The route uses this to redirect lang_slug URLs to their canonical form
+ * (FORMAT.md §11.2 — canonical URL is always the source value).
+ */
+export function resolveTopicSlug(
+	topicType: string,
+	slug: string
+): { topic_type: string; topic_value: string } | null {
+	const direct = queryOne<{ topic_type: string; topic_value: string }>(
+		`SELECT topic_type, topic_value FROM topic_pages
+		 WHERE topic_type = $type AND topic_value = $slug`,
+		{ $type: topicType, $slug: slug }
+	);
+	if (direct) return direct;
+
+	return queryOne<{ topic_type: string; topic_value: string }>(
+		`SELECT topic_type, topic_value FROM topic_page_translations
+		 WHERE topic_type = $type AND lang_slug = $slug
+		 LIMIT 1`,
+		{ $type: topicType, $slug: slug }
 	);
 }
 
@@ -198,17 +262,33 @@ export interface TopicOccurrence {
 	comment: string | null;
 }
 
-export function getTopicOccurrences(topicType: string, topicValue: string): TopicOccurrence[] {
+export function getTopicOccurrences(
+	topicType: string,
+	topicValue: string,
+	lang: string = 'la'
+): TopicOccurrence[] {
 	return queryAll<TopicOccurrence>(
-		`SELECT a.book_id, b.title AS book_title, p.chapter_id, c.title AS chapter_title,
-		        a.paragraph_id, p.label AS paragraph_label, p.content, a.comment
+		`SELECT a.book_id,
+		        COALESCE(bt.title, b.title)   AS book_title,
+		        p.chapter_id,
+		        COALESCE(ct.title, c.title)   AS chapter_title,
+		        a.paragraph_id,
+		        p.label                        AS paragraph_label,
+		        COALESCE(pt.content, p.content) AS content,
+		        a.comment
 		 FROM annotations a
 		 JOIN paragraphs p ON a.book_id = p.book_id AND a.paragraph_id = p.id
-		 JOIN books b ON a.book_id = b.id
-		 JOIN chapters c ON p.book_id = c.book_id AND p.chapter_id = c.id
+		 JOIN books b      ON a.book_id = b.id
+		 JOIN chapters c   ON p.book_id = c.book_id AND p.chapter_id = c.id
+		 LEFT JOIN book_translations bt
+		        ON bt.book_id = b.id AND bt.lang = $lang
+		 LEFT JOIN chapter_translations ct
+		        ON ct.book_id = c.book_id AND ct.chapter_id = c.id AND ct.lang = $lang
+		 LEFT JOIN paragraph_translations pt
+		        ON pt.book_id = p.book_id AND pt.paragraph_id = p.id AND pt.lang = $lang
 		 WHERE a.topic_type = $type AND a.topic_value = $value
 		 ORDER BY a.book_id, c.position, p.position`,
-		{ $type: topicType, $value: topicValue }
+		{ $type: topicType, $value: topicValue, $lang: lang }
 	);
 }
 
@@ -217,16 +297,40 @@ export interface TopicSummary {
 	topic_value: string;
 	count: number;
 	has_page: number;
+	/** lang_slug registered for `uiLang`, when one exists. */
+	lang_slug: string | null;
 }
 
-export function getDistinctTopics(): TopicSummary[] {
+export function getDistinctTopics(uiLang: string = 'en'): TopicSummary[] {
 	return queryAll<TopicSummary>(
 		`SELECT a.topic_type, a.topic_value, COUNT(*) AS count,
-		        EXISTS(SELECT 1 FROM topic_pages ap WHERE ap.topic_type = a.topic_type AND ap.topic_value = a.topic_value) AS has_page
+		        EXISTS(SELECT 1 FROM topic_pages ap WHERE ap.topic_type = a.topic_type AND ap.topic_value = a.topic_value) AS has_page,
+		        tt.lang_slug AS lang_slug
 		 FROM annotations a
+		 LEFT JOIN topic_page_translations tt
+		        ON tt.topic_type = a.topic_type AND tt.topic_value = a.topic_value AND tt.lang = $uiLang
 		 GROUP BY a.topic_type, a.topic_value
-		 ORDER BY a.topic_type, a.topic_value`
+		 ORDER BY a.topic_type, a.topic_value`,
+		{ $uiLang: uiLang }
 	);
+}
+
+/**
+ * Bulk-fetch the UI-lang lang_slug for every annotated topic, keyed by
+ * `${topic_type}:${topic_value}`. Used by surfaces that render topic pills
+ * (chapter reader, topic listing) so each pill displays the language-local
+ * slug when one exists, falling back to the canonical value otherwise.
+ */
+export function getTopicLangSlugs(uiLang: string): Map<string, string> {
+	const rows = queryAll<{ topic_type: string; topic_value: string; lang_slug: string }>(
+		`SELECT topic_type, topic_value, lang_slug
+		 FROM topic_page_translations
+		 WHERE lang = $uiLang AND lang_slug IS NOT NULL`,
+		{ $uiLang: uiLang }
+	);
+	const map = new Map<string, string>();
+	for (const r of rows) map.set(`${r.topic_type}:${r.topic_value}`, r.lang_slug);
+	return map;
 }
 
 export interface AvailableLanguage {
@@ -296,14 +400,21 @@ export function searchParagraphs(query: string, lang: string): SearchResult[] {
 	console.log('[db] FTS5 query', { raw: query, sanitized, lang });
 
 	return queryAll<SearchResult>(
-		`SELECT s.book_id, b.title AS book_title, s.chapter_id, c.title AS chapter_title,
+		`SELECT s.book_id,
+		        COALESCE(bt.title, b.title) AS book_title,
+		        s.chapter_id,
+		        COALESCE(ct.title, c.title) AS chapter_title,
 		        s.paragraph_id, p.label AS paragraph_label, s.lang,
 		        snippet(search_index, 4, '<mark>', '</mark>', '…', 40) AS snippet,
 		        rank
 		 FROM search_index s
-		 JOIN books b ON s.book_id = b.id
-		 JOIN chapters c ON s.book_id = c.book_id AND s.chapter_id = c.id
+		 JOIN books b      ON s.book_id = b.id
+		 JOIN chapters c   ON s.book_id = c.book_id AND s.chapter_id = c.id
 		 JOIN paragraphs p ON s.book_id = p.book_id AND s.paragraph_id = p.id
+		 LEFT JOIN book_translations bt
+		        ON bt.book_id = b.id AND bt.lang = $lang
+		 LEFT JOIN chapter_translations ct
+		        ON ct.book_id = c.book_id AND ct.chapter_id = c.id AND ct.lang = $lang
 		 WHERE search_index MATCH $query AND s.lang = $lang
 		 ORDER BY rank
 		 LIMIT 50`,

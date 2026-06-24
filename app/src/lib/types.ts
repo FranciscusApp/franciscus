@@ -47,8 +47,10 @@ export interface Annotation {
 export interface TopicPage {
 	topic_type: string;
 	topic_value: string;
-	title: string;
+	description: string;
 	content: string;
+	/** Localized URL slug for the active corpus lang, when one exists. */
+	lang_slug?: string | null;
 }
 
 export interface Relation {

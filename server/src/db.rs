@@ -67,8 +67,8 @@ pub fn create_tables(conn: &Connection) {
         CREATE TABLE IF NOT EXISTS topic_pages (
             topic_type       TEXT NOT NULL,
             topic_value      TEXT NOT NULL,
-            title           TEXT NOT NULL,
-            content         TEXT NOT NULL,
+            description      TEXT NOT NULL,
+            content          TEXT NOT NULL,
             PRIMARY KEY (topic_type, topic_value)
         );
 
@@ -104,6 +104,37 @@ pub fn create_tables(conn: &Connection) {
             PRIMARY KEY (book_id, aside_id, lang),
             FOREIGN KEY (book_id, aside_id) REFERENCES asides(book_id, id)
         );
+
+        CREATE TABLE IF NOT EXISTS book_translations (
+            book_id  TEXT NOT NULL,
+            lang     TEXT NOT NULL,
+            title    TEXT NOT NULL,
+            PRIMARY KEY (book_id, lang),
+            FOREIGN KEY (book_id) REFERENCES books(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS chapter_translations (
+            book_id     TEXT NOT NULL,
+            chapter_id  TEXT NOT NULL,
+            lang        TEXT NOT NULL,
+            title       TEXT NOT NULL,
+            PRIMARY KEY (book_id, chapter_id, lang),
+            FOREIGN KEY (book_id, chapter_id) REFERENCES chapters(book_id, id)
+        );
+
+        CREATE TABLE IF NOT EXISTS topic_page_translations (
+            topic_type   TEXT NOT NULL,
+            topic_value  TEXT NOT NULL,
+            lang         TEXT NOT NULL,
+            lang_slug    TEXT,
+            description  TEXT NOT NULL,
+            content      TEXT NOT NULL,
+            PRIMARY KEY (topic_type, topic_value, lang),
+            FOREIGN KEY (topic_type, topic_value) REFERENCES topic_pages(topic_type, topic_value)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_topic_lang_slug
+            ON topic_page_translations(lang, lang_slug);
         ",
     )
     .expect("Failed to create tables");
@@ -149,18 +180,68 @@ pub fn insert_book(conn: &Connection, book: &ParsedBook) {
     }
 }
 
-pub fn insert_topic_page(conn: &Connection, page: &crate::models::TopicPage) {
+/// Insert the source (canonical) topic page. `topic_value` is provided
+/// separately because it comes from the filename, not the frontmatter.
+pub fn insert_topic_page(conn: &Connection, topic_value: &str, page: &crate::models::TopicPage) {
     conn.execute(
-        "INSERT OR REPLACE INTO topic_pages (topic_type, topic_value, title, content)
+        "INSERT OR REPLACE INTO topic_pages (topic_type, topic_value, description, content)
          VALUES (?1, ?2, ?3, ?4)",
-        params![page.meta.topic_type, page.meta.topic_value, page.meta.title, page.content],
+        params![
+            page.frontmatter.topic_type,
+            topic_value,
+            page.frontmatter.description,
+            page.content
+        ],
     )
     .expect("Failed to insert topic page");
 }
 
+/// Insert a translated topic page (`<type>:<value>.<lang>.md`). `topic_value`
+/// is the canonical id from the filename; `lang_slug` is the optional
+/// localized URL slug from the frontmatter.
+pub fn insert_topic_page_translation(
+    conn: &Connection,
+    topic_value: &str,
+    lang: &str,
+    page: &crate::models::TopicPage,
+) {
+    conn.execute(
+        "INSERT OR REPLACE INTO topic_page_translations
+            (topic_type, topic_value, lang, lang_slug, description, content)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+        params![
+            page.frontmatter.topic_type,
+            topic_value,
+            lang,
+            page.frontmatter.lang_slug,
+            page.frontmatter.description,
+            page.content,
+        ],
+    )
+    .expect("Failed to insert topic page translation");
+}
+
 pub fn insert_translations(conn: &Connection, book: &ParsedBook, lang: &str) {
     let book_id = &book.meta.id;
+
+    // Book and chapter titles from the translation file's own frontmatter /
+    // ## headings. The source book row already exists (translation files are
+    // ingested after sources), so the FK is satisfied.
+    conn.execute(
+        "INSERT OR REPLACE INTO book_translations (book_id, lang, title)
+         VALUES (?1, ?2, ?3)",
+        params![book_id, lang, book.meta.title],
+    )
+    .expect("Failed to insert book translation");
+
     for ch in &book.chapters {
+        conn.execute(
+            "INSERT OR REPLACE INTO chapter_translations (book_id, chapter_id, lang, title)
+             VALUES (?1, ?2, ?3, ?4)",
+            params![book_id, ch.id, lang, ch.title],
+        )
+        .expect("Failed to insert chapter translation");
+
         for block in &ch.blocks {
             match block {
                 Block::Paragraph { id, content, .. } => {
