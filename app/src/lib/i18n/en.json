@@ -9,7 +9,14 @@
 	"nav": {
 		"sources": "Sources",
 		"topics": "Topics",
-		"search": "Search"
+		"search": "Search",
+		"home": "Home",
+		"about": "About",
+		"contribute": "Contribute",
+		"contact": "Contact"
+	},
+	"footer": {
+		"projectBy": "A project by"
 	},
 	"home": {
 		"sourcesHeading": "Sources"
@@ -56,6 +63,25 @@
 	"a11y": {
 		"skipToContent": "Skip to content",
 		"primaryNav": "Primary",
-		"pagination": "Chapter navigation"
+		"pagination": "Chapter navigation",
+		"menu": "Menu",
+		"toggleMenu": "Toggle menu",
+		"languageSettings": "Language settings"
+	},
+	"pages": {
+		"about": {
+			"title": "About",
+			"body": "<p class='mb-4'>Who was Brother Francis <em>really</em>? Eight hundred years after his death, the question still fascinates a great many people — those near to the Catholic faith and those far from it.</p><p class='mb-4'>Popular accounts often tell of Francis by speaking of his love for poverty as though it were a simple choice of a <em>simpler life</em>, a release from the cares of ownership. The little friar's passion for creation, too, is frequently portrayed as a kind of environmentalism, indebted to its Christian background only by accident of birth or convention.</p><p class='mb-4'>This reading is often paired with a narrative in which the Church is bent on normalising this controversial figure: first by imposing limits and controls on his charism, and then, after his death, by gradually replacing the authentic testimonies about him with contrived, domesticated, and embellished versions of his story.</p><p class='mb-4'>Thus would be born Saint Francis — or rather the <em>holy-card</em> Francis: a little shrine, an icon, something that has little or nothing left to do with the poor man <em>Brother Francis</em>.</p><p class='mb-4'>So who really was this man of Assisi? The friar or the holy card? The answer lies in the primary sources, and in his most precious Testament, and it is unequivocal: neither one nor the other. Between Celano, Bonaventure, the Three Companions, the Testament, and the other sources there are, to be sure, dissonances of interest and purpose: to bear witness to a friend, to recount the birth of a saint, to reflect theologically on his story so as to give a rule to an order that had grown beyond all expectation.</p><p class='mb-4'>Yet there is no difference of substance. Saint Francis — who was not, but <em>is</em>! — is the man whom all the sources recount in a chorus that is polyphonic but not dissonant: a man radically in love with Christ, and with Christ alone. And it is from this love that everything Francis was descends: a son of the Church, obedient to excess; a dramatic prophet who does not fear to serve a crust of begged bread in the house of a cardinal; a wonderworker; an awestruck lover of Creation — not of mere nature.</p><p class='mb-4'>This <em>alter Christus</em>, who conformed himself to his Lord even to the point of receiving the stigmata, surely suffers to see his memory divided; suffers, certainly, at pietistic and trivial portrayals, but above all at seeing himself used as a foil to paint the Church as revisionist and censorious.</p><p class='mb-4'>This is the very reason for this project: to hand you the primary sources — readable, searchable, explorable — in a way that is easy and pleasant.</p><p class='mb-4'>So that you may come to know, without filters or assumptions, the harmony they recount.</p><p class='mb-4 font-semibold'>Sancte Francisce, Sancte Bonaventura, orate pro nobis</p>",
+			"techHeading": "Technical notes",
+			"techBody": "<p class='mb-4'>This portal is an entirely static site: the texts are stored as plain text files, compiled into a small database that your browser queries directly. No server watches what you read or search, and the search runs entirely on your own device.</p><p class='mb-4'>The sources are drawn from the standard critical editions, transcribed and marked up according to an open, documented format. The translations and thematic annotations are produced with the help of artificial-intelligence models and then reviewed: they are meant as aids to reading and study, not as scholarly editions. The Latin text always remains available for reference.</p><p class='mb-4'>Everything — the code, the texts, and the content — is offered free of charge, with no advertising and no tracking.</p>"
+		},
+		"contact": {
+			"title": "Contact",
+			"body": "<p class='mb-4'>I am Alfredo Salata, a simple believer — a software developer by profession and an amateur writer by passion. You can visit my site <a href='https://verbumcaro.it' target='_blank' rel='noopener noreferrer' class='underline'>verbumcaro.it</a> and reach me at <a href='mailto:info@verbumcaro.it' class='text-primary hover:underline'>info@verbumcaro.it</a>.</p>"
+		},
+		"contribute": {
+			"title": "Contribute",
+			"body": "<p class='mb-4'>Franciscus is an open project: anyone can report mistakes, propose corrections, or offer new translations.</p><p class='mb-4'>The project lives in two public repositories on GitHub, a platform where the code and texts are visible to all and where every change is kept on record:</p><ul class='list-disc pl-6 mb-4 space-y-1'><li>the application — the site you are using: <a href='https://github.com/snowstorm-alfredosalata/franciscus' target='_blank' rel='noopener noreferrer' class='underline'>github.com/snowstorm-alfredosalata/franciscus</a></li><li>the texts, translations, and annotations: <a href='https://github.com/snowstorm-alfredosalata/franciscus-data' target='_blank' rel='noopener noreferrer' class='underline'>github.com/snowstorm-alfredosalata/franciscus-data</a></li></ul><p class='mb-4'>The two repositories are published under two free licences. The application code is distributed under the AGPL-3.0, which keeps the program free and requires that every modified version remain free in turn, with its source available. The texts, translations, and data are released under CC0 — that is, given over to the public domain, free of any restriction. To contribute is to accept that your work will be distributed under the same licence as the part it belongs to.</p><p class='mb-4'>You need not be a technical expert. If you know how to use Git, you can open an <em>issue</em> or propose a change directly (a <em>pull request</em>). If you would rather not — and especially if you are a scholar wishing to offer verified translations, not machine-produced ones — it is enough to write to <a href='mailto:info@verbumcaro.it' class='underline'>info@verbumcaro.it</a>, clearly identifying the passages you have translated and including an explicit declaration releasing them under CC0.</p>"
+		}
 	}
 }

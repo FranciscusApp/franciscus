@@ -1,9 +1,10 @@
+<script lang="ts">
+    import { t } from '$lib/i18n';
+</script>
+
 <main id="main-content" tabindex="-1" class="max-w-4xl mx-auto px-4 py-12">
-    <h1 class="text-2xl font-semibold mb-4">Contribute</h1>
-    <p class="text-foreground mb-4">Thank you for your interest in contributing. You can help by reporting issues, sending suggested corrections, or contributing source texts.</p>
-    <ul class="list-disc pl-6 text-muted-foreground">
-        <li>Open issues on the project repository describing the problem or suggestion.</li>
-        <li>Send patches or pull requests with edits or additional sources.</li>
-        <li>If you have scanned texts or transcriptions, contact us at <a href="mailto:hello@verbumcaro.it" class="underline">hello@verbumcaro.it</a>.</li>
-    </ul>
+    <h1 class="text-2xl font-display font-bold text-foreground mb-6">{t('pages.contribute.title')}</h1>
+    <div class="text-foreground leading-relaxed">
+        {@html t('pages.contribute.body')}
+    </div>
 </main>

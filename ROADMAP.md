@@ -63,7 +63,7 @@ Status legend: `[ ]` planned | `[~]` in progress | `[x]` done
 - [x] DB download with progress indicator after the app shell loads
 - [x] Client-side caching strategy (Service Worker and/or IndexedDB) so repeat visits skip the download
 - [x] PWA manifest + service worker for offline and installable mobile support
-- [] Deployment pipeline (Github Pages)
+- [~] Deployment pipeline (Github Pages)
 
 ---
 

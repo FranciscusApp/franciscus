@@ -25,7 +25,7 @@
 <DropdownMenu.Root>
 	<DropdownMenu.Trigger
 		class="p-2 pointer-coarse:p-3 rounded-full text-muted-foreground hover:bg-accent transition-colors"
-		aria-label="Language settings"
+		aria-label={t('a11y.languageSettings')}
 	>
 		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
 			<path fill-rule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-1.5 0a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0Z" clip-rule="evenodd"/>

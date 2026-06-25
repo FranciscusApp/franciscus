@@ -1,5 +1,10 @@
+<script lang="ts">
+    import { t } from '$lib/i18n';
+</script>
+
 <main id="main-content" tabindex="-1" class="max-w-4xl mx-auto px-4 py-12">
-    <h1 class="text-2xl font-semibold mb-4">Contact</h1>
-    <p class="text-foreground mb-4">For inquiries about this project, please email <a href="mailto:hello@verbumcaro.it" class="text-primary hover:underline">hello@verbumcaro.it</a>.</p>
-    <p class="text-sm text-muted-foreground">You can also visit <a href="https://verbumcaro.it" target="_blank" rel="noopener noreferrer" class="underline">verbumcaro.it</a> for more information.</p>
+    <h1 class="text-2xl font-display font-bold text-foreground mb-6">{t('pages.contact.title')}</h1>
+    <div class="text-foreground leading-relaxed">
+        {@html t('pages.contact.body')}
+    </div>
 </main>
