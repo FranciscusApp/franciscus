@@ -10,5 +10,21 @@
 	"icons": [
 		{ "src": "/icon-192.png", "type": "image/png", "sizes": "192x192", "purpose": "any" },
 		{ "src": "/icon-512.png", "type": "image/png", "sizes": "512x512", "purpose": "any" }
+	],
+	"screenshots": [
+		{
+			"src": "/screenshot-wide.png",
+			"type": "image/png",
+			"sizes": "1280x720",
+			"form_factor": "wide",
+			"label": "Browse the Franciscan source texts"
+		},
+		{
+			"src": "/screenshot-narrow.png",
+			"type": "image/png",
+			"sizes": "720x1280",
+			"form_factor": "narrow",
+			"label": "Browse the Franciscan source texts"
+		}
 	]
 }
