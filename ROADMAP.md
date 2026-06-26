@@ -1,8 +1,13 @@
 # Roadmap
 
-A digital portal for the Franciscan source texts.
-The app ships as a static SvelteKit SPA with client-side SQLite (sql.js);
-a Rust CLI builds the `.db` from the markdown corpus at editorial pace.
+The single roadmap for the whole Franciscus project — app, corpus, and scripts.
+It records where the project has been and where it's going. Once there are
+contributors, granular work may move to GitHub issues; for now the direction
+lives here, in one place.
+
+**v1.0.0 has shipped.** Its checklist is kept below as a record of what the first
+release covered. Everything under [Post v1.0.0](#post-v100) is grouped roughly by
+priority — top groups are nearer-term.
 
 Status legend: `[ ]` planned | `[~]` in progress | `[x]` done
 
@@ -12,15 +17,17 @@ Status legend: `[ ]` planned | `[~]` in progress | `[x]` done
 
 ### Content
 - [x] Complete **1Cel** (Vita Prima) machine transcription
-- [x] Complete **2Cel** (Vita Seconda) machine transcription
+- [x] Complete **2Cel** (Vita Secunda) machine transcription
 - [x] Complete **LMj** (Legenda Maior) machine transcription
-- [x] (BONUS, NOT INITIALLY MEANT FOR v1.0.0) Complete **3Soc* (Legenda Triorum Sociorum) machine transcription
-- [x] (BONUS, NOT INITIALLY MEANT FOR v1.0.0) Complete **Testamentum* (Testamentum Frate Francisci) machine transcription
-- [x] (BONUS, NOT INITIALLY MEANT FOR v1.0.0) Italian Machine translation for all sources
-- [x] (BONUS, NOT INITIALLY MEANT FOR v1.0.0) Italian machine annotation for all sources
+- [x] Complete **3Soc** (Legenda Trium Sociorum) machine transcription *(bonus)*
+- [x] Complete **Testamentum** (Testamentum Fratris Francisci) machine transcription *(bonus)*
+- [x] Italian machine translation for all sources *(bonus)*
+- [x] Italian machine annotation for all sources *(bonus)*
 - [x] Parse verse markers `[N]` during ingestion into `<v id="<paragraph-id>-N">N</v>` so verses are individually styleable and addressable client-side
 - [x] Assign positional IDs to `<aside>` elements during ingestion (auto-incrementing per chapter: `<chapter_id>-aside-1`, `<chapter_id>-aside-2`, ...)
 - [x] Draft wiki-like pages for topics (persons, places, events)
+
+*(Items marked bonus were not in the original v1.0.0 scope but landed in the first release anyway.)*
 
 ### Search & Discovery
 - [x] Build FTS5 index in the Rust CLI alongside the main DB
@@ -28,11 +35,11 @@ Status legend: `[ ]` planned | `[~]` in progress | `[x]` done
 - [x] Highlight matched terms inside the reader when arriving from a search result
 
 ### General UI
-- [x] Adopt an UI library to simplify pages (Shadcn seems to have a svelte integration)
+- [x] Adopt a UI library to simplify pages (shadcn-svelte)
 - [x] Mobile-responsive layout
-- [x] Fix all accessibility, a11y, and aria-* related issues, and ensure reader compatibility.
-- [x] Expressive style, golden-crimson-white (light mode) and golden-royal blue-dark night blue (dark mode) palette. Should be reminiscent of medieval manuscripts but with a modern, readable interpretation. 
-- [x] Italian and English machine translation
+- [x] Fix all accessibility, a11y, and aria-* related issues, and ensure reader compatibility
+- [x] Expressive style: golden-crimson-white (light) and golden-royal-blue / night-blue (dark) palette, reminiscent of medieval manuscripts but with a modern, readable interpretation
+- [x] Italian and English UI machine translation
 - [x] Full, first-class breadcrumbs. Breadcrumbs now follow the path the user actually traversed
       (a session-persisted trail among content pages), not the static site map. Going from a chapter
       to a topic page keeps the chapter in the trail; hubs (home, topics index, About/Contact/etc.)
@@ -44,7 +51,6 @@ Status legend: `[ ]` planned | `[~]` in progress | `[x]` done
 - [x] Deep linking: stable, shareable URLs down to paragraph and verse (`/book/1Cel/c1#prolog-1`)
 
 ### Annotations & Topics
-
 - [x] Annotation data model in the DB (paragraph-keyed, typed topics, provenance field)
 - [x] Topic page ingestion in the Rust CLI (parse frontmatter + markdown, insert into DB, load translations)
 - [x] Topic page rendering: curated intro + auto-generated passage list for each virtue / theme / person / place
@@ -52,32 +58,52 @@ Status legend: `[ ]` planned | `[~]` in progress | `[x]` done
 - [x] AI annotation pipeline, pass 1: segmentation, themes, biblical allusions (high confidence)
 
 ### Internationalization
-
 - [x] Implement content translation ingestion in the Rust CLI (walk `books/<id>.<lang>.md`, parse, insert into translation tables)
 - [x] Add `paragraph_translations` and `aside_translations` tables to the DB schema
 - [x] App UI i18n setup (JSON key files, language switcher component)
 - [x] UI for selecting corpus language and UI language independently (default: Latin corpus, English UI)
 
 ### Infrastructure
-
 - [x] DB download with progress indicator after the app shell loads
 - [x] Client-side caching strategy (Service Worker and/or IndexedDB) so repeat visits skip the download
 - [x] PWA manifest + service worker for offline and installable mobile support
-- [~] Deployment pipeline (Github Pages)
+- [x] Deployment pipeline (GitHub Pages)
 
 ---
 
 ## Post v1.0.0
 
-- [ ] **Side-by-side reader** for comparing parallel texts or translations
-- [ ] **GitHub login + in-app contributions** (translations, corrections, annotation proposals)
-- [ ] **Axum API backend** to support user auth, contribution submission, and moderation
-- [ ] "Copy citation" action (copies a formatted reference to clipboard)
-- [ ] Scripture references (`<ref>` tags) rendered as links to [bibbiaedu.it Nova Vulgata](https://www.bibbiaedu.it/NOVAVULGATA/nt/) (`/nt/<book>/<ch>/`)
-- [ ] **Vulgata edition** added to the corpus
-- [ ] **Fuller Wiki-like entity pages** (persons, places, events) with cross-referenced passages
-- [ ] **Language-aware Bible links** (choose Bible edition based on the active corpus language; Nova Vulgata is hardcoded for v1)
-- [ ] **Full manual review of latin sources**
-- [ ] **Full manual review of translation**
-- [ ] AI annotation pipeline, pass 2: cross-work parallels seeded from *Fontes Franciscani* concordances (requires review)
-- [ ] Abstract all SQL queries into a primarily-data Rust library (compilable to WASM), reusable by both Rust APIs and the client
+### Polish & fixes — next
+- [ ] **UI flourish.** The gold primary colour barely appears anywhere. Bring it (and secondary crimson / royal-blue accents) into title underlines and `<hr>` dividers so pages read richer and more manuscript-like.
+- [ ] **Reader layout fixes.**
+      - The navbar overlays body text once the page is scrolled. Give it a body-matched background plus a fade-on-scroll shadow so text passes cleanly underneath.
+      - Some pages scroll horizontally on mobile. Most likely cause: `<ref>` popovers overflowing the viewport — constrain them to screen width.
+- [ ] **Domain redirect.** Add a GitHub Pages `CNAME` and redirect `www.franciscus.app` to the naked domain.
+- [ ] **Typography.** Slightly larger base text, ideally a user-tweakable size control.
+- [ ] **Version visibility.** Surface the DB and app version somewhere in-app (footer or About page) so a reader can tell which build and corpus snapshot they're on.
+
+### Data corrections — next
+- [ ] **Phantom topics.** AI annotation invented topic values outside the controlled vocabulary (e.g. `virtue:prayer`). Reconcile every annotation against `topics.toml`, mapping or dropping the strays.
+- [ ] **Untranslated book titles.** Titles still render in Latin under translated UIs; add their translations.
+- [ ] **English translations.** Machine-translate all sources into English (the corpus currently ships Latin + Italian).
+
+### Reader features
+- [ ] **Bookmarks & reading progress.** Let readers mark passages and resume where they left off — client-side only, no account required.
+- [ ] **Side-by-side reader.** Parallel-column view for comparing two works, or two translations of the same passage.
+- [ ] **Copy citation.** One-click copy of a formatted, shareable reference for any passage.
+- [ ] **Fuller entity pages.** Grow the persons / places / events topic pages into wiki-like entries with cross-referenced passages and richer curated context.
+
+### Scripture cross-referencing
+- [ ] **Scripture links.** Render `<ref>` tags as links to the [Nova Vulgata on bibbiaedu.it](https://www.bibbiaedu.it/NOVAVULGATA/nt/) (`/nt/<book>/<ch>/`).
+- [ ] **Vulgata in the corpus.** Add a Vulgate edition as a first-class text so scripture can be cross-referenced *internally* — not just linked out.
+- [ ] **Language-aware Bible links.** Choose the Bible edition by the active corpus language (Nova Vulgata is hardcoded for v1).
+
+### In-app contributions
+- [ ] **GitHub login + contribution flow.** Sign in to propose corrections, translations, and annotation edits from within the app.
+- [ ] **Axum backend API.** A server to handle auth, submission, and moderation for those contributions — the project's first backend on the write path.
+
+### Long-term & ongoing
+- [ ] **Manual review of the Latin sources.** Human verification of the machine transcriptions.
+- [ ] **Manual review of translations.** Human verification of machine translations. Today a translation file is all-or-nothing with no per-passage provenance; this likely needs a format change to mark reviewed passages.
+- [ ] **AI annotation pass 2.** Cross-work parallels seeded from *Fontes Franciscani* concordances (requires human review).
+- [ ] **Shared query library.** Extract the SQL layer into a data-focused Rust crate (compilable to WASM), reusable by both the client and any future Rust API.

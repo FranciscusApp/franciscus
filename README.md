@@ -1,142 +1,143 @@
+<div align="center">
+
 # Franciscus
 
-Web portal for exploring Franciscan sources: texts by Celano, Bonaventure and others, with thematic annotations and cross-work parallels.
+**A digital portal for the Franciscan source texts.**
 
-## Architecture
+The early biographies of Francis of Assisi — in the original medieval Latin,
+with translations, full-text search, and thematic cross-references — as a fast,
+offline-capable web app.
 
-The app is a **client-side rendered SPA** that ships a pre-built SQLite database to the browser. There is no application server for the read path — the entire site is static files.
+[**▶ Open the app — franciscus.app**](https://franciscus.app)
+
+[![Live](https://img.shields.io/badge/live-franciscus.app-green)](https://franciscus.app)
+[![App license: AGPL-3.0](https://img.shields.io/badge/app-AGPL--3.0-blue)](LICENSE)
+[![Corpus license: CC0](https://img.shields.io/badge/corpus-CC0--1.0-lightgrey)](https://github.com/snowstorm-alfredosalata/franciscus-data)
+[![Built with SvelteKit](https://img.shields.io/badge/SvelteKit-5-ff3e00?logo=svelte&logoColor=white)](https://kit.svelte.dev)
+[![Pipeline: Rust](https://img.shields.io/badge/pipeline-Rust-dea584?logo=rust&logoColor=black)](server/)
+
+</div>
+
+---
+
+<!-- Drop screenshots into docs/ and uncomment:
+<div align="center">
+  <img src="docs/reader.png"  alt="Reader view" width="48%">
+  <img src="docs/search.png"  alt="Search view" width="48%">
+</div>
+-->
+
+## What it is
+
+Franciscus collects the **early sources for the life of Francis of Assisi** and
+makes them genuinely readable on the web — searchable, deep-linkable, and
+annotated, without losing the original Latin.
+
+### The corpus
+
+| Source | Title | Author |
+|---|---|---|
+| **1Cel** | Vita Prima | Thomas of Celano |
+| **2Cel** | Vita Secunda | Thomas of Celano |
+| **LMj**  | Legenda Maior | Bonaventure |
+| **3Soc** | Legenda Trium Sociorum | The Three Companions |
+| **Testamentum** | Testamentum Sancti Francisci | Francis of Assisi |
+
+### What you can do
+
+- 📖 **Read** each work chapter by chapter, in the original **Latin**, in **Italian**, or in **English**, with a reading interface in **English or Italian**.
+- 🔎 **Search** the whole corpus full-text and jump straight to the matching
+  passage, with the matched terms highlighted in the reader.
+- 🏷️ **Follow themes** — virtues, persons, places and events get their own
+  topic pages that gather every relevant passage across all the works.
+- 🔗 **Link deeply** — every paragraph and verse has a stable, shareable URL
+  (e.g. `/book/1Cel/c1#prolog-1`).
+- 📑 **View scriptural citations** — biblical quotations highlit, straight from the reference editions.
+- 📱 **Install it / go offline** — it's a PWA: the database is cached after the
+  first visit, so it works without a connection and installs like an app.
+- ♿ **Read it any way you like** — mobile-responsive, accessible, with a
+  light/dark medieval-manuscript palette.
+
+## How it works (the short version)
+
+Franciscus is a **fully static site with no backend on the read path**. A Rust
+CLI compiles the Markdown corpus into a single SQLite database (with an FTS5
+search index); the SvelteKit app ships that `.db` as a static asset and queries
+it **directly in the browser** via `sql.js` (SQLite compiled to WebAssembly).
 
 ```
-franciscus/
-  server/       Rust CLI — parses franciscus-data sources into a .db file
-  app/          SvelteKit SPA — loads the .db client-side via sql.js
+franciscus-data/        server/ (Rust CLI)        app/ (SvelteKit SPA)
+  books/*.md       →   parse + import   →   franciscus.db  →  sql.js (WASM)
+  annotations/*.json                        (static asset)     in the browser
 ```
 
-Source texts and annotations live in a separate repo ([franciscus-data](../franciscus-data), CC0 licensed). This repo contains only the application code (AGPL-3.0).
+That's the whole architecture: free to host, fast to read, offline by default.
 
-### Data flow
+| Component | Technology |
+|---|---|
+| Frontend | SvelteKit 2 / Svelte 5 (SPA, `adapter-static`) |
+| Styling | Tailwind CSS 4 + shadcn-svelte |
+| Client DB | `sql.js` (SQLite + FTS5 in WASM) |
+| Data pipeline | Rust (`rusqlite`, `clap`, `serde`, `regex`) |
+| Hosting | GitHub Pages (static) |
 
-```
-franciscus-data/          server/                  app/
-  books/*.md        →   parse + import    →   franciscus.db
-  annotations/*.json      (Rust CLI)          (static asset)
-                                                   ↓
-                                              sql.js (WASM)
-                                                   ↓
-                                              SvelteKit SPA
-                                              (client-side queries)
-```
+The source texts and annotations live in a **separate repository**,
+[`franciscus-data`](https://github.com/snowstorm-alfredosalata/franciscus-data)
+(CC0). This repo holds only the application code.
 
-### Language conventions
-
-The app distinguishes two language layers:
-
-- **Application language (English):** All UI text (labels, navigation, error messages), annotation evidence strings, and topic page descriptions are written in English. The HTML document declares `<html lang="en">`.
-- **Source language (Latin):** The source texts under `franciscus-data/books/` are in medieval Latin. Topic values (e.g. `paupertas`, `conversio`) and relation types (e.g. `dipende_da`) use Latin/domain identifiers — these are machine keys, not user-facing labels.
-
-### Design decisions
-
-- **No server for reads.** The corpus is small (<1GB), static, and changes only at editorial pace. The .db file is shipped as a static asset and queried client-side via sql.js (SQLite compiled to WASM). This enables free static hosting and offline capability.
-- **Rust for the data pipeline.** The server crate parses a custom Markdown format (see franciscus-data FORMAT.md) and JSON annotations into SQLite. It is a build tool, not a web server (though Axum API endpoints will be added here when user auth/contributions are needed).
-- **SvelteKit for the frontend.** Chosen over Leptos SSR for contributor accessibility — mainstream JS framework with a gentler learning curve. Configured as a pure SPA (adapter-static, no SSR).
-- **Tailwind CSS.** Utility-first styling, no component library. The app is primarily a reading interface — typography, layout, annotation badges.
-- **Paragraph content rendered as raw HTML.** The source Markdown already contains inline `<ref to="...">text</ref>` tags and `[n]` verse markers. The app injects this via `{@html}` and styles `<ref>` elements with CSS (dotted underline, tooltip showing the reference on hover). No client-side parser port needed.
-- **SQLite, not NoSQL.** The data is relational (books → chapters → paragraphs, annotations keyed to paragraphs, relations linking paragraph pairs across works). SQLite is the right fit and doubles as the client distribution format.
-- **No ORM.** Six tables, hand-written SQL on both sides. The Rust side only writes; the TypeScript side only reads.
-- **No shared type generation.** The type interfaces are simple enough (6 types) that manual synchronization is preferable to a codegen pipeline.
-- **FTS5 for full-text search.** The Rust CLI builds an FTS5 index alongside the main database. Search runs client-side like all other queries.
-- **Verse and aside IDs assigned during ingestion.** The CLI transforms `[N]` verse markers into `<v id="<paragraph-id>-N">` elements and assigns positional IDs to `<aside>` blocks (`<chapter_id>-aside-1`, `<chapter_id>-aside-2`, …). Source files stay clean; addressable elements are a build artifact.
-- **Scripture references link to Nova Vulgata.** `<ref>` tags are rendered as links to [bibbiaedu.it](https://www.bibbiaedu.it/NOVAVULGATA/nt/) (`/nt/<book>/<ch>/`). Post-v1: language-aware Bible edition selection.
-- **Deep linking to paragraph and verse.** Stable, shareable URLs: `/book/<book_id>/<chapter_id>#<paragraph_id>` (e.g. `/book/1Cel/c1#prolog-1`).
-- **Content translations in separate DB tables.** Latin stays in the main `paragraphs` and `asides` tables. Translations go to `paragraph_translations(paragraph_id, lang, content)` and `aside_translations(aside_id, lang, content)`.
-- **App UI i18n via JSON keys.** The UI string count is small; PO/gettext tooling would be overkill. JSON key files with a library like Paraglide or svelte-i18n.
-- **Offline-first via Service Worker.** The database is downloaded with a progress indicator after the app shell loads. Service Worker and/or IndexedDB caching ensures repeat visits skip the download. PWA manifest enables installable mobile support.
-
-### Future plans
-
-- Axum API in `server/` for authenticated user contributions
-- Vulgata edition for biblical reference lookup
-- Wiki-like entity pages (places, people, virtues)
-- Parallel text viewer (synoptic reading across works)
-
-## Requirements
-
-- Rust 1.75+ (edition 2021)
-- Node.js 18+
-- The [franciscus-data](../franciscus-data) repo at `../franciscus-data`
-
-## Quick start
+## Run it locally
 
 ```bash
-# Build the database from source texts
-cargo run --manifest-path server/Cargo.toml -- build \
-  --data-dir ../franciscus-data \
-  --output app/static/franciscus.db
-
-# Copy sql.js WASM file (first time only)
-cp app/node_modules/sql.js/dist/sql-wasm.wasm app/static/
-
-# Install frontend dependencies and start dev server
-cd app && npm install && npm run dev
+# from a parent dir holding both ./franciscus and ./franciscus-data side by side
+cd franciscus
+make dev        # builds the .db from ../franciscus-data and starts the dev server
 ```
 
-The app will be available at `http://localhost:5173`.
+Then open <http://localhost:5173>. Requires **Rust** (stable) and **Node.js 22+**.
 
-### Full production build
+For a production build (`app/build/` — a self-contained static site), run
+`make app`. More detail, and how the GitHub Pages deploy works, is in
+[CONTRIBUTING.md](CONTRIBUTING.md).
 
-```bash
-# Or use the Makefile: make all
-cargo run --manifest-path server/Cargo.toml -- build \
-  --data-dir ../franciscus-data \
-  --output app/static/franciscus.db
-cd app && npm run build
-```
+## Future plans
 
-The output in `app/build/` is a self-contained static site deployable to any host.
+- 📚 **Side-by-side reader** for comparing parallel texts and translations.
+- 📜 **Nova Vulgata edition** added to the corpus, with language-aware
+  scripture links.
+- 🧭 **Fuller wiki-like pages** for persons, places, and events, with
+  cross-referenced passages.
+- ✍️ **In-app contributions** — GitHub login for proposing corrections,
+  translations, and annotations (backed by an Axum API).
 
-## Stack
+See [ROADMAP.md](ROADMAP.md) for the full list.
 
-| Component   | Technology                             |
-|-------------|----------------------------------------|
-| Data pipeline | Rust (rusqlite, regex, serde, clap)  |
-| Frontend    | SvelteKit 2 (SPA mode, adapter-static) |
-| Styling     | Tailwind CSS 4                         |
-| Client DB   | sql.js (SQLite compiled to WASM)       |
-| Database    | SQLite                                 |
+## Contributing
 
-## Structure
+Corrections to the texts, translations, annotations, and code are all welcome —
+see **[CONTRIBUTING.md](CONTRIBUTING.md)**.
 
-```
-server/src/
-  main.rs        CLI entry point (build command)
-  parser.rs      Parser for the source Markdown format
-  db.rs          SQLite schema creation and data insertion
-  models.rs      Rust data structures (BookMeta, ParsedChapter, Block, AnnotationFile)
+## A note on AI
 
-app/src/
-  lib/
-    db.ts        sql.js wrapper and query functions
-    types.ts     TypeScript interfaces (BookMeta, Chapter, Paragraph, Annotation, ...)
-    index.ts     Public API re-exports
-  routes/
-    +layout.svelte        Root layout — initializes sql.js, loading state
-    +layout.ts            SPA configuration (ssr=false, prerender=false)
-    +page.svelte          Home — list of works
-    book/[book_id]/
-      +page.svelte        Book detail — metadata and chapter list
-      [chapter_id]/
-        +page.svelte      Chapter reading view — paragraphs, asides, annotations, navigation
-  app.css                 Tailwind import + <ref> element styling
-```
-
-## Routes
-
-| Path                            | Page                 |
-|---------------------------------|----------------------|
-| `/`                             | List of works        |
-| `/book/:book_id`                | Chapters of a work   |
-| `/book/:book_id/:chapter_id`    | Chapter reading view |
+Much of the corpus is **machine-generated and not yet fully reviewed by a
+human** — transcriptions, translations, and annotations alike — so expect
+occasional errors. Treat Franciscus as a reading and discovery tool, **not** a
+critical edition. Details are in the
+[corpus repo's README](https://github.com/snowstorm-alfredosalata/franciscus-data);
+reporting mistakes helps — see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
-[AGPL-3.0-or-later](LICENSE) — see the LICENSE file for the full text.
+- **Application code** (this repo): [AGPL-3.0-or-later](LICENSE).
+- **Corpus** ([`franciscus-data`](https://github.com/snowstorm-alfredosalata/franciscus-data)):
+  CC0-1.0 (public domain).
+
+## Get in touch
+
+<div align="center">
+
+<a href="https://verbumcaro.it"><img src="https://raw.githubusercontent.com/snowstorm-alfredosalata/franciscus/refs/heads/master/app/static/vc-inline-dark.png" alt="Verbum Caro" width="240"></a>
+
+</div>
+
+A **Verbum Caro** project. Questions, corrections, or collaboration —
+reach us at [info@verbumcaro.it](mailto:info@verbumcaro.it).
