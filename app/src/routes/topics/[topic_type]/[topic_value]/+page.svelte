@@ -11,6 +11,7 @@
 	import Breadcrumbs from '$lib/Breadcrumbs.svelte';
 	import { recordPage } from '$lib/trail.svelte.js';
 	import { Badge } from '$lib/components/ui/badge/index.js';
+	import { groupByChapter } from '$lib/utils';
 	import { topicColors } from '$lib/topicColors';
 	import { t, getCorpusLang, getUiLang } from '$lib/i18n';
 
@@ -37,6 +38,7 @@
 	// paragraph bodies), so it follows the corpus language instead.
 	const topicPage = $derived(getTopicPage(topicType, topicValue, uiLang));
 	const occurrences = $derived(getTopicOccurrences(topicType, topicValue, corpusLang));
+	const groups = $derived(groupByChapter(occurrences));
 
 	const displayTitle = $derived(topicPage?.description ?? topicValue.replaceAll('_', ' '));
 
@@ -70,32 +72,38 @@
 				{t('topics.passagesHeading')} ({occurrences.length})
 			</h2>
 			<div class="space-y-4">
-				{#each occurrences as occ}
+				{#each groups as g}
 					<div class="border border-border rounded-lg p-4">
 						<div class="text-sm text-muted-foreground mb-2">
 							<a
-								href="/book/{occ.book_id}"
+								href="/book/{g.book_id}"
 								class="hover:text-primary"
-							>{occ.book_title}</a>
+							>{g.book_title}</a>
 							<span> / </span>
 							<a
-								href="/book/{occ.book_id}/{occ.chapter_id}"
+								href="/book/{g.book_id}/{g.chapter_id}"
 								class="hover:text-primary"
-							>{occ.chapter_title}</a>
-							<span> / </span>
-							<a
-								href="/book/{occ.book_id}/{occ.chapter_id}#{occ.paragraph_id}"
-								class="hover:text-primary"
-							>{occ.paragraph_label ?? occ.paragraph_id}</a>
+							>{g.chapter_title}</a>
 						</div>
-						<div lang={corpusLang} class="font-serif text-foreground leading-relaxed">
-							{@html occ.content}
-						</div>
-						{#if occ.comment}
-							<p class="mt-2 text-sm text-muted-foreground italic">
-								{occ.comment}
-							</p>
-						{/if}
+						{#each g.items as occ, i}
+							{#if i > 0 && occ.position !== g.items[i - 1].position + 1}
+								<div class="text-center text-muted-foreground font-serif my-1" aria-hidden="true">[…]</div>
+							{/if}
+							<div>
+								<a
+									href="/book/{g.book_id}/{g.chapter_id}#{occ.paragraph_id}"
+									class="text-xs text-muted-foreground hover:text-primary"
+								>&sect;{occ.paragraph_label ?? occ.paragraph_id}</a>
+								<div lang={corpusLang} class="font-serif text-foreground leading-relaxed">
+									{@html occ.content}
+								</div>
+								{#if occ.comment}
+									<p class="mt-2 text-sm text-muted-foreground italic">
+										{occ.comment}
+									</p>
+								{/if}
+							</div>
+						{/each}
 					</div>
 				{/each}
 			</div>

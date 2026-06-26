@@ -89,6 +89,7 @@ Also the gold should match the Verbum Caro logo gold.
 - [x] **English translations.** Machine-translate all sources into English (the corpus currently ships Latin + Italian).
 
 ### Reader features
+- [x] Search results and topic references grouped by book and chapter (one "box entry" per chapter, with paragraphs joined by [...])
 - [ ] **Bookmarks & reading progress.** Let readers mark passages and resume where they left off — client-side only, no account required.
 - [ ] **Side-by-side reader.** Parallel-column view for comparing two works, or two translations of the same passage.
 - [ ] **Copy citation.** One-click copy of a formatted, shareable reference for any passage.

@@ -5,6 +5,40 @@ export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));
 }
 
+export interface ChapterGroup<T> {
+	book_id: string;
+	book_title: string;
+	chapter_id: string;
+	chapter_title: string;
+	items: T[];
+}
+
+/**
+ * Collapse a list of paragraph-level rows (search results, topic occurrences)
+ * into one group per book+chapter. Rows must already be ordered by book then
+ * chapter then position (both queries are), so a sequential pass suffices.
+ */
+export function groupByChapter<
+	T extends { book_id: string; book_title: string; chapter_id: string; chapter_title: string }
+>(rows: T[]): ChapterGroup<T>[] {
+	const groups: ChapterGroup<T>[] = [];
+	let cur: ChapterGroup<T> | null = null;
+	for (const r of rows) {
+		if (!cur || cur.book_id !== r.book_id || cur.chapter_id !== r.chapter_id) {
+			cur = {
+				book_id: r.book_id,
+				book_title: r.book_title,
+				chapter_id: r.chapter_id,
+				chapter_title: r.chapter_title,
+				items: []
+			};
+			groups.push(cur);
+		}
+		cur.items.push(r);
+	}
+	return groups;
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type WithoutChild<T> = T extends { child?: any } ? Omit<T, "child"> : T;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

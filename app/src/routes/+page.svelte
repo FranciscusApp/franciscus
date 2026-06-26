@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { getBooks, searchParagraphs, type BookMeta } from '$lib';
+	import { groupByChapter } from '$lib/utils';
 	import { t, getCorpusLang } from '$lib/i18n';
 
 	let inputValue = $state('');
@@ -25,6 +26,8 @@
 			return [];
 		}
 	});
+
+	const groups = $derived(groupByChapter(results));
 
 	const searching = $derived(query.trim().length > 0);
 
@@ -56,27 +59,26 @@
 			{results.length} {results.length === 1 ? t('search.resultCountOne') : t('search.resultCount')}
 		</p>
 
-		{#if results.length > 0}
+		{#if groups.length > 0}
 			<ul class="space-y-4">
-				{#each results as r}
-					<li>
-						<a
-							href={resultUrl(r)}
-							class="block p-4 rounded-lg border border-border
-							       hover:border-ring transition-colors group"
-						>
-							<div class="text-sm text-muted-foreground mb-1">
-								<span class="font-medium text-foreground">{r.book_title}</span>
-								<span> &mdash; </span>
-								<span>{r.chapter_title}</span>
-								{#if r.paragraph_label}
-									<span class="text-muted-foreground"> &sect;{r.paragraph_label}</span>
-								{/if}
-							</div>
-							<p class="font-serif text-foreground leading-relaxed">
-								{@html r.snippet}
-							</p>
-						</a>
+				{#each groups as g}
+					<li class="block p-4 rounded-lg border border-border hover:border-ring transition-colors">
+						<div class="text-sm text-muted-foreground mb-1">
+							<span class="font-medium text-foreground">{g.book_title}</span>
+							<span> &mdash; </span>
+							<a
+								href="/book/{g.book_id}/{g.chapter_id}?q={encodeURIComponent(query)}"
+								class="hover:text-primary"
+							>{g.chapter_title}</a>
+						</div>
+						<p class="font-serif text-foreground leading-relaxed">
+							{#each g.items as r, i}
+								{#if i > 0}<span class="text-muted-foreground">{r.position === g.items[i - 1].position + 1 ? ' ' : ' […] '}</span>{/if}<a
+									href={resultUrl(r)}
+									class="hover:text-primary"
+								>{#if r.paragraph_label}<span class="text-muted-foreground">&sect;{r.paragraph_label} </span>{/if}{@html r.snippet}</a>
+							{/each}
+						</p>
 					</li>
 				{/each}
 			</ul>

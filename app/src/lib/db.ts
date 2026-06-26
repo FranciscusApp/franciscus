@@ -283,6 +283,7 @@ export interface TopicOccurrence {
 	chapter_title: string;
 	paragraph_id: string;
 	paragraph_label: string | null;
+	position: number;
 	content: string;
 	comment: string | null;
 }
@@ -299,6 +300,7 @@ export function getTopicOccurrences(
 		        COALESCE(ct.title, c.title)   AS chapter_title,
 		        a.paragraph_id,
 		        p.label                        AS paragraph_label,
+		        p.position                     AS position,
 		        COALESCE(pt.content, p.content) AS content,
 		        a.comment
 		 FROM annotations a
@@ -424,25 +426,31 @@ export function searchParagraphs(query: string, lang: string): SearchResult[] {
 	if (!sanitized) return [];
 	console.log('[db] FTS5 query', { raw: query, sanitized, lang });
 
+	// Pick the top matches by relevance (rank), then re-sort that set by
+	// book → chapter → paragraph so groupByChapter sees contiguous chapters.
 	return queryAll<SearchResult>(
-		`SELECT s.book_id,
-		        COALESCE(bt.title, b.title) AS book_title,
-		        s.chapter_id,
-		        COALESCE(ct.title, c.title) AS chapter_title,
-		        s.paragraph_id, p.label AS paragraph_label, s.lang,
-		        snippet(search_index, 4, '<mark>', '</mark>', '…', 40) AS snippet,
-		        rank
-		 FROM search_index s
-		 JOIN books b      ON s.book_id = b.id
-		 JOIN chapters c   ON s.book_id = c.book_id AND s.chapter_id = c.id
-		 JOIN paragraphs p ON s.book_id = p.book_id AND s.paragraph_id = p.id
-		 LEFT JOIN book_translations bt
-		        ON bt.book_id = b.id AND bt.lang = $lang
-		 LEFT JOIN chapter_translations ct
-		        ON ct.book_id = c.book_id AND ct.chapter_id = c.id AND ct.lang = $lang
-		 WHERE search_index MATCH $query AND s.lang = $lang
-		 ORDER BY rank
-		 LIMIT 50`,
+		`SELECT * FROM (
+		   SELECT s.book_id,
+		          COALESCE(bt.title, b.title) AS book_title,
+		          s.chapter_id,
+		          COALESCE(ct.title, c.title) AS chapter_title,
+		          s.paragraph_id, p.label AS paragraph_label,
+		          p.position, c.position AS chapter_position, s.lang,
+		          snippet(search_index, 4, '<mark>', '</mark>', '…', 40) AS snippet,
+		          rank
+		   FROM search_index s
+		   JOIN books b      ON s.book_id = b.id
+		   JOIN chapters c   ON s.book_id = c.book_id AND s.chapter_id = c.id
+		   JOIN paragraphs p ON s.book_id = p.book_id AND s.paragraph_id = p.id
+		   LEFT JOIN book_translations bt
+		          ON bt.book_id = b.id AND bt.lang = $lang
+		   LEFT JOIN chapter_translations ct
+		          ON ct.book_id = c.book_id AND ct.chapter_id = c.id AND ct.lang = $lang
+		   WHERE search_index MATCH $query AND s.lang = $lang
+		   ORDER BY rank
+		   LIMIT 50
+		 )
+		 ORDER BY book_id, chapter_position, position`,
 		{ $query: sanitized, $lang: lang }
 	);
 }

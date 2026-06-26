@@ -87,6 +87,7 @@ export interface SearchResult {
 	chapter_title: string;
 	paragraph_id: string;
 	paragraph_label: string | null;
+	position: number;
 	lang: string;
 	snippet: string;
 	rank: number;
