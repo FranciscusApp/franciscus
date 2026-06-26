@@ -11,6 +11,7 @@
 		"topics": "Argomenti",
 		"search": "Ricerca",
 		"home": "Home",
+		"bookmarks": "Segnalibri",
 		"about": "Il progetto",
 		"contribute": "Contribuisci",
 		"contact": "Contatti"
@@ -28,10 +29,15 @@
 	},
 	"book": {
 		"notFound": "Libro non trovato.",
-		"chaptersHeading": "Capitoli"
+		"chaptersHeading": "Capitoli",
+		"continueReading": "Continua a leggere"
 	},
 	"chapter": {
 		"notFound": "Capitolo non trovato."
+	},
+	"bookmarks": {
+		"heading": "Segnalibri",
+		"empty": "Nessun segnalibro. Tocca l'icona del segnalibro accanto a un passo per salvarlo qui."
 	},
 	"topics": {
 		"heading": "Argomenti",
@@ -71,7 +77,9 @@
 		"pagination": "Navigazione capitoli",
 		"menu": "Menu",
 		"toggleMenu": "Apri o chiudi il menu",
-		"languageSettings": "Impostazioni lingua"
+		"languageSettings": "Impostazioni lingua",
+		"addBookmark": "Aggiungi questo passo ai segnalibri",
+		"removeBookmark": "Rimuovi il segnalibro"
 	},
 	"pages": {
 		"about": {

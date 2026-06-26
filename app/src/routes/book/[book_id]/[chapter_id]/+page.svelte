@@ -17,6 +17,9 @@
 	import { t, getCorpusLang, getUiLang } from '$lib/i18n';
 	import Breadcrumbs from '$lib/Breadcrumbs.svelte';
 	import { recordPage } from '$lib/trail.svelte.js';
+	import { recordProgress } from '$lib/progress.svelte.js';
+	import { isBookmarked, toggleBookmark } from '$lib/bookmarks.svelte.js';
+	import BookmarkIcon from '@lucide/svelte/icons/bookmark';
 	import { topicColors } from '$lib/topicColors';
 
 	const bookId = $derived($page.params.book_id ?? '');
@@ -39,6 +42,18 @@
 				parentId: `/book/${bookId}`
 			}
 		]);
+	});
+
+	// Advance reading progress only when this chapter is the next step forward
+	// from the saved point (see progress.svelte.ts); consulting a late chapter
+	// via search or a topic page is non-contiguous and leaves it untouched.
+	$effect(() => {
+		if (!book || !chapter || chapters.length === 0) return;
+		recordProgress(bookId, chapters[0].position, {
+			position: chapter.position,
+			href: `/book/${bookId}/${chapterId}`,
+			label: chapter.title
+		});
 	});
 
 	// Per-topic UI-lang slug used as the pill label, with `_` rendered as a
@@ -225,6 +240,13 @@
 	function asideContent(a: Aside): string {
 		return asideTranslations.get(a.id) ?? a.content;
 	}
+
+	function paraHref(p: Paragraph): string {
+		return `/book/${bookId}/${chapterId}#${p.id}`;
+	}
+	function paraLabel(p: Paragraph): string {
+		return `${chapter?.title ?? ''} — ${p.label ?? p.id}`;
+	}
 </script>
 
 {#if book && chapter}
@@ -239,6 +261,15 @@
 					{@const p = block.data}
 					{@const ann = block.annotations}
 					<div class="paragraph group" id={p.id}>
+						<button
+							type="button"
+							onclick={() => toggleBookmark(paraHref(p), paraLabel(p))}
+							aria-pressed={isBookmarked(paraHref(p))}
+							aria-label={isBookmarked(paraHref(p)) ? t('a11y.removeBookmark') : t('a11y.addBookmark')}
+							class="float-right ml-2 p-1 pointer-coarse:p-2 rounded text-muted-foreground hover:text-primary focus:outline-none focus:ring-2 focus:ring-ring opacity-40 group-hover:opacity-100 focus:opacity-100 aria-pressed:opacity-100 aria-pressed:text-primary transition"
+						>
+							<BookmarkIcon class="w-4 h-4" fill={isBookmarked(paraHref(p)) ? 'currentColor' : 'none'} />
+						</button>
 						<span class="inline-block min-w-8 text-xs text-muted-foreground font-mono mr-2 align-top pt-1">
 							{p.label ?? p.id}
 						</span>

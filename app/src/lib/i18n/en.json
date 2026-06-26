@@ -11,6 +11,7 @@
 		"topics": "Topics",
 		"search": "Search",
 		"home": "Home",
+		"bookmarks": "Bookmarks",
 		"about": "About",
 		"contribute": "Contribute",
 		"contact": "Contact"
@@ -28,10 +29,15 @@
 	},
 	"book": {
 		"notFound": "Book not found.",
-		"chaptersHeading": "Chapters"
+		"chaptersHeading": "Chapters",
+		"continueReading": "Continue reading"
 	},
 	"chapter": {
 		"notFound": "Chapter not found."
+	},
+	"bookmarks": {
+		"heading": "Bookmarks",
+		"empty": "No bookmarks yet. Tap the bookmark icon next to any passage to save it here."
 	},
 	"topics": {
 		"heading": "Topics",
@@ -71,7 +77,9 @@
 		"pagination": "Chapter navigation",
 		"menu": "Menu",
 		"toggleMenu": "Toggle menu",
-		"languageSettings": "Language settings"
+		"languageSettings": "Language settings",
+		"addBookmark": "Bookmark this passage",
+		"removeBookmark": "Remove bookmark"
 	},
 	"pages": {
 		"about": {

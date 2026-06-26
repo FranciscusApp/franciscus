@@ -7,6 +7,7 @@
     <!-- Desktop / tablet: simple inline links -->
     <div class="hidden xl:flex items-center gap-4">
         <a href="/" class="text-foreground hover:text-primary">{t('nav.home')}</a>
+        <a href="/bookmarks" class="text-muted-foreground hover:text-primary">{t('nav.bookmarks')}</a>
         <a href="/about" class="text-muted-foreground hover:text-primary">{t('nav.about')}</a>
         <a href="/contribute" class="text-muted-foreground hover:text-primary">{t('nav.contribute')}</a>
         <a href="/contact" class="text-muted-foreground hover:text-primary">{t('nav.contact')}</a>
@@ -29,6 +30,11 @@
                     <Sheet.Close>
                         {#snippet child({ props })}
                             <a href="/" {...props} class="block rounded-md py-2.5 text-foreground">{t('nav.home')}</a>
+                        {/snippet}
+                    </Sheet.Close>
+                    <Sheet.Close>
+                        {#snippet child({ props })}
+                            <a href="/bookmarks" {...props} class="block rounded-md py-2.5 text-foreground">{t('nav.bookmarks')}</a>
                         {/snippet}
                     </Sheet.Close>
                     <Sheet.Close>
