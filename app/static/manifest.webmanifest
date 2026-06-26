@@ -1,15 +1,23 @@
 {
+	"id": "/",
 	"name": "Franciscus — Franciscan Sources",
 	"short_name": "Franciscus",
-	"description": "A digital portal for the Franciscan source texts.",
+	"description": "A digital portal to the Franciscan sources: the medieval Latin lives of Saint Francis of Assisi, with translations, annotations, and full-text search.",
+	"lang": "en",
+	"dir": "ltr",
+	"categories": ["education", "books", "reference"],
 	"start_url": "/",
 	"scope": "/",
 	"display": "standalone",
+	"orientation": "any",
 	"background_color": "#070e1d",
 	"theme_color": "#070e1d",
 	"icons": [
+		{ "src": "/favicon.svg", "type": "image/svg+xml", "sizes": "any" },
 		{ "src": "/icon-192.png", "type": "image/png", "sizes": "192x192", "purpose": "any" },
-		{ "src": "/icon-512.png", "type": "image/png", "sizes": "512x512", "purpose": "any" }
+		{ "src": "/icon-512.png", "type": "image/png", "sizes": "512x512", "purpose": "any" },
+		{ "src": "/icon-maskable-192.png", "type": "image/png", "sizes": "192x192", "purpose": "maskable" },
+		{ "src": "/icon-maskable-512.png", "type": "image/png", "sizes": "512x512", "purpose": "maskable" }
 	],
 	"screenshots": [
 		{

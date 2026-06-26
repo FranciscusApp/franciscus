@@ -79,7 +79,7 @@
 </script>
 
 <svelte:head>
-	<title>{t('app.title')}</title>
+	<title>{t('app.title')} — {t('app.subtitle')}</title>
 </svelte:head>
 
 <a
