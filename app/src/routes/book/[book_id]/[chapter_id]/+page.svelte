@@ -166,6 +166,53 @@
 			}
 		});
 
+		// Scripture-ref tooltip: one shared element, positioned on show and clamped
+		// to the viewport so it never overflows (and so the page can't scroll
+		// horizontally on mobile). Shown on hover and keyboard/touch focus.
+		const tooltip = document.createElement('div');
+		tooltip.className = 'ref-tooltip';
+		tooltip.setAttribute('role', 'tooltip');
+		document.body.appendChild(tooltip);
+		let activeRef: HTMLElement | null = null;
+
+		function showTooltip(ref: HTMLElement) {
+			const to = ref.getAttribute('to');
+			if (!to) return;
+			activeRef = ref;
+			tooltip.textContent = to;
+			tooltip.setAttribute('data-show', '');
+			const margin = 8;
+			const r = ref.getBoundingClientRect();
+			const tip = tooltip.getBoundingClientRect();
+			const left = Math.min(Math.max(margin, r.left), window.innerWidth - tip.width - margin);
+			let top = r.top - tip.height - 6;
+			if (top < margin) top = r.bottom + 6; // flip below when no room above
+			tooltip.style.left = `${Math.max(margin, left)}px`;
+			tooltip.style.top = `${top}px`;
+		}
+		function hideTooltip(ref: HTMLElement | null = null) {
+			if (ref && ref !== activeRef) return;
+			activeRef = null;
+			tooltip.removeAttribute('data-show');
+		}
+		function onRefIn(e: Event) {
+			const ref = (e.target as HTMLElement).closest('ref') as HTMLElement | null;
+			if (ref) showTooltip(ref);
+		}
+		function onRefOut(e: Event) {
+			const ref = (e.target as HTMLElement).closest('ref') as HTMLElement | null;
+			if (ref) hideTooltip(ref);
+		}
+
+		container.addEventListener('pointerover', onRefIn);
+		container.addEventListener('pointerout', onRefOut);
+		container.addEventListener('focusin', onRefIn);
+		container.addEventListener('focusout', onRefOut);
+		// A fixed tooltip detaches from its ref on scroll/resize — just dismiss it.
+		const dismiss = () => hideTooltip();
+		window.addEventListener('scroll', dismiss, { passive: true });
+		window.addEventListener('resize', dismiss);
+
 		function onClick(e: MouseEvent) {
 			const v = (e.target as HTMLElement).closest('v[id]');
 			if (v) selectVerse(v);
@@ -189,6 +236,13 @@
 		return () => {
 			container.removeEventListener('click', onClick);
 			container.removeEventListener('keydown', onKeydown);
+			container.removeEventListener('pointerover', onRefIn);
+			container.removeEventListener('pointerout', onRefOut);
+			container.removeEventListener('focusin', onRefIn);
+			container.removeEventListener('focusout', onRefOut);
+			window.removeEventListener('scroll', dismiss);
+			window.removeEventListener('resize', dismiss);
+			tooltip.remove();
 		};
 	});
 
