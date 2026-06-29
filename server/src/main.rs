@@ -135,7 +135,7 @@ fn run_build(data_dir: &PathBuf, output: &PathBuf) {
                     }
                 }
                 // Annotation sidecar; deferred so its paragraphs exist first (FK).
-                Some("json") => annotation_files.push(path),
+                Some("yaml") | Some("yml") => annotation_files.push(path),
                 _ => {}
             }
         }
@@ -162,7 +162,7 @@ fn run_build(data_dir: &PathBuf, output: &PathBuf) {
     for path in &annotation_files {
         let book_id = path.file_stem().unwrap().to_string_lossy();
         let text = std::fs::read_to_string(path).expect("Cannot read annotation file");
-        match serde_json::from_str::<Vec<models::Annotation>>(&text) {
+        match serde_yaml::from_str::<Vec<models::Annotation>>(&text) {
             Ok(annotations) => {
                 let (topic_rows, rel_rows) = db::insert_annotations(&conn, &book_id, &annotations);
                 println!("  annotations: {book_id} ({} entries, {topic_rows} topic + {rel_rows} relation rows)", annotations.len());

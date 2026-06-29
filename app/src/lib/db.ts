@@ -167,7 +167,7 @@ export function getBooks(lang: string = 'la'): BookMeta[] {
 	return queryAll<BookMeta>(
 		`SELECT b.id,
 		        COALESCE(bt.title, b.title) AS title,
-		        b.author, b.date, b.ref_edition, b.license
+		        b.author, b.date, b.ref_edition
 		 FROM books b
 		 LEFT JOIN book_translations bt ON bt.book_id = b.id AND bt.lang = $lang
 		 ORDER BY b.id`,
@@ -179,7 +179,7 @@ export function getBook(bookId: string, lang: string = 'la'): BookMeta | null {
 	return queryOne<BookMeta>(
 		`SELECT b.id,
 		        COALESCE(bt.title, b.title) AS title,
-		        b.author, b.date, b.ref_edition, b.license
+		        b.author, b.date, b.ref_edition
 		 FROM books b
 		 LEFT JOIN book_translations bt ON bt.book_id = b.id AND bt.lang = $lang
 		 WHERE b.id = $id`,
@@ -345,7 +345,7 @@ export function getAsideTranslations(
 
 export function getChapterAnnotations(bookId: string, chapterId: string): Annotation[] {
 	return queryAll<Annotation>(
-		`SELECT a.id, a.book_id, a.paragraph_id, a.paragraph_to_id, a.topic_type, a.topic_value, a.by_whom, a.by_type, a.verified, a.comment
+		`SELECT a.id, a.book_id, a.paragraph_id, a.paragraph_to_id, a.topic_type, a.topic_value, a.by_whom, a.provenance, a.comment
 		 FROM annotations a
 		 JOIN paragraphs p ON a.book_id = p.book_id AND a.paragraph_id = p.id
 		 WHERE a.book_id = $bookId AND p.chapter_id = $chapterId`,

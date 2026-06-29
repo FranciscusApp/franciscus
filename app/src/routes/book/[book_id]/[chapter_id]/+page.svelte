@@ -338,7 +338,7 @@
 										class="inline-block max-w-full break-words text-xs px-2 py-0.5 rounded-full no-underline transition-colors {topicColors(a.topic_type, true)}"
 										title={a.comment ?? ''}
 									>
-										{topicLabel(a.topic_type, a.topic_value)} ({t(`topics.types.${a.topic_type}`).toLowerCase()}{a.verified ? ' ✓' : ''})
+										{topicLabel(a.topic_type, a.topic_value)} ({t(`topics.types.${a.topic_type}`).toLowerCase()}{a.provenance !== 'ai' ? ' ✓' : ''})
 									</a>
 								{/each}
 							</div>

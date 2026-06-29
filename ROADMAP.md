@@ -84,7 +84,7 @@ Also the gold should match the Verbum Caro logo gold.
 - [ ] **Version visibility.** Surface the DB and app version somewhere in-app (footer or About page) so a reader can tell which build and corpus snapshot they're on.
 
 ### Data corrections — next
-- [x] **Phantom topics.** AI annotation invented topic values outside the controlled vocabulary (e.g. `virtue:prayer`). Reconcile every annotation against `topics.toml`, mapping or dropping the strays.
+- [x] **Phantom topics.** AI annotation invented topic values outside the controlled vocabulary (e.g. `virtue:prayer`). Reconcile every annotation against `topics/topics.yaml`, mapping or dropping the strays.
 - [x] **Untranslated book titles.** Titles still render in Latin under translated UIs; add their translations.
 - [x] **English translations.** Machine-translate all sources into English (the corpus currently ships Latin + Italian).
 

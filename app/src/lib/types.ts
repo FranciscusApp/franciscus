@@ -4,7 +4,6 @@ export interface BookMeta {
 	author: string;
 	date: string | null;
 	ref_edition: string | null;
-	license: string;
 }
 
 export interface Chapter {
@@ -39,8 +38,7 @@ export interface Annotation {
 	topic_type: string;
 	topic_value: string;
 	by_whom: string;
-	by_type: string;
-	verified: boolean;
+	provenance: string;
 	comment: string | null;
 }
 
@@ -59,8 +57,7 @@ export interface Relation {
 	target_paragraph_id: string;
 	relation_type: string;
 	by_whom: string;
-	by_type: string;
-	verified: boolean;
+	provenance: string;
 	comment: string | null;
 }
 
