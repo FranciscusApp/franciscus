@@ -4,6 +4,8 @@ export interface BookMeta {
 	author: string;
 	date: string | null;
 	ref_edition: string | null;
+	/** One-line description (localized); stored, not yet surfaced in the UI. */
+	description_short: string | null;
 }
 
 export interface Chapter {
@@ -100,6 +102,8 @@ export interface ManifestBook {
 	title: string;
 	author: string;
 	date: string | null;
+	/** Source-language one-line description; stored, not yet surfaced. */
+	description_short: string | null;
 	translations: string[];
 }
 

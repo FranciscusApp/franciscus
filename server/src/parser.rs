@@ -43,6 +43,7 @@ fn parse_yaml_frontmatter(yaml: &str) -> Result<BookMeta, String> {
     let mut author = None;
     let mut date = None;
     let mut reference_edition = None;
+    let mut description_short = None;
     let mut translator = None;
     let mut provenance = None;
     let mut status = None;
@@ -60,6 +61,8 @@ fn parse_yaml_frontmatter(yaml: &str) -> Result<BookMeta, String> {
                 "author" => author = Some(val.to_string()),
                 "date" => date = Some(val.trim().to_string()),
                 "reference_edition" => reference_edition = Some(val.to_string()),
+                // Empty (bare `key:`) stays None; only a non-empty value is stored.
+                "description_short" if !val.is_empty() => description_short = Some(val.to_string()),
                 "translator" => translator = Some(val.to_string()),
                 "provenance" => provenance = Some(val.to_string()),
                 "status" => status = Some(val.to_string()),
@@ -75,6 +78,7 @@ fn parse_yaml_frontmatter(yaml: &str) -> Result<BookMeta, String> {
         author: author.ok_or("Missing 'author' in frontmatter")?,
         date,
         reference_edition,
+        description_short,
         translator,
         provenance,
         status,
@@ -231,4 +235,21 @@ fn parse_body(body: &str) -> Result<Vec<ParsedChapter>, String> {
     }
 
     Ok(chapters)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parses_description_short_and_treats_bare_key_as_none() {
+        let with = "title: T\nauthor: A\ndescription_short: \"A short blurb\"\n";
+        assert_eq!(
+            parse_yaml_frontmatter(with).unwrap().description_short.as_deref(),
+            Some("A short blurb")
+        );
+
+        let without = "title: T\nauthor: A\ndescription_short:\n";
+        assert_eq!(parse_yaml_frontmatter(without).unwrap().description_short, None);
+    }
 }

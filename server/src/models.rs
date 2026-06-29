@@ -9,6 +9,9 @@ pub struct BookMeta {
     pub author: String,
     pub date: Option<String>,
     pub reference_edition: Option<String>,
+    /// One-line description; localized in translation files. Stored, not yet
+    /// surfaced in the UI.
+    pub description_short: Option<String>,
     // Translation-only frontmatter; None on source `<id>.md` files.
     pub translator: Option<String>,
     pub provenance: Option<String>,
@@ -100,7 +103,7 @@ pub struct TopicPage {
 // `app/src/lib/types.ts`; keep them in sync manually (no codegen).
 
 /// Bump when the manifest layout changes incompatibly (the app may gate on it).
-pub const MANIFEST_SCHEMA: u32 = 2;
+pub const MANIFEST_SCHEMA: u32 = 3;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Manifest {
@@ -127,6 +130,8 @@ pub struct ManifestBook {
     pub title: String,
     pub author: String,
     pub date: Option<String>,
+    /// Source-language one-line description (see `BookMeta::description_short`).
+    pub description_short: Option<String>,
     /// Languages this book has a translation in.
     pub translations: Vec<String>,
 }

@@ -6,7 +6,7 @@ use crate::models::*;
 /// Shape version of the DB the app expects. Bump whenever the table layout
 /// changes; mirrored into `PRAGMA user_version` and a `meta` row so the app
 /// can detect an incompatible build. Stored but not gated on yet.
-pub const SCHEMA_VERSION: u32 = 2;
+pub const SCHEMA_VERSION: u32 = 3;
 
 pub fn open_or_create(path: &str) -> Connection {
     let conn = Connection::open(path).expect("Failed to open database");
@@ -23,7 +23,8 @@ pub fn create_tables(conn: &Connection) {
             title           TEXT NOT NULL,
             author          TEXT NOT NULL,
             date            TEXT,
-            ref_edition     TEXT
+            ref_edition     TEXT,
+            description_short TEXT
         );
 
         CREATE TABLE IF NOT EXISTS chapters (
@@ -114,6 +115,7 @@ pub fn create_tables(conn: &Connection) {
             book_id  TEXT NOT NULL,
             lang     TEXT NOT NULL,
             title    TEXT NOT NULL,
+            description_short TEXT,
             PRIMARY KEY (book_id, lang),
             FOREIGN KEY (book_id) REFERENCES books(id)
         );
@@ -232,7 +234,7 @@ pub fn build_manifest(conn: &Connection) -> Manifest {
 
     let books: Vec<ManifestBook> = {
         let mut stmt = conn
-            .prepare("SELECT id, title, author, date FROM books ORDER BY id")
+            .prepare("SELECT id, title, author, date, description_short FROM books ORDER BY id")
             .expect("prepare books");
         let rows = stmt
             .query_map([], |r| {
@@ -241,6 +243,7 @@ pub fn build_manifest(conn: &Connection) -> Manifest {
                     title: r.get(1)?,
                     author: r.get(2)?,
                     date: r.get(3)?,
+                    description_short: r.get(4)?,
                     translations: Vec::new(),
                 })
             })
@@ -349,9 +352,9 @@ pub fn build_manifest(conn: &Connection) -> Manifest {
 pub fn insert_book(conn: &Connection, book: &ParsedBook) {
     let m = &book.meta;
     conn.execute(
-        "INSERT OR REPLACE INTO books (id, title, author, date, ref_edition)
-         VALUES (?1, ?2, ?3, ?4, ?5)",
-        params![m.id, m.title, m.author, m.date, m.reference_edition],
+        "INSERT OR REPLACE INTO books (id, title, author, date, ref_edition, description_short)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+        params![m.id, m.title, m.author, m.date, m.reference_edition, m.description_short],
     )
     .expect("Failed to insert book");
 
@@ -427,9 +430,9 @@ pub fn insert_translations(conn: &Connection, book: &ParsedBook, lang: &str) {
     // ## headings. The source book row already exists (translation files are
     // ingested after sources), so the FK is satisfied.
     conn.execute(
-        "INSERT OR REPLACE INTO book_translations (book_id, lang, title)
-         VALUES (?1, ?2, ?3)",
-        params![book_id, lang, book.meta.title],
+        "INSERT OR REPLACE INTO book_translations (book_id, lang, title, description_short)
+         VALUES (?1, ?2, ?3, ?4)",
+        params![book_id, lang, book.meta.title, book.meta.description_short],
     )
     .expect("Failed to insert book translation");
 

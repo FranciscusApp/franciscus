@@ -167,7 +167,8 @@ export function getBooks(lang: string = 'la'): BookMeta[] {
 	return queryAll<BookMeta>(
 		`SELECT b.id,
 		        COALESCE(bt.title, b.title) AS title,
-		        b.author, b.date, b.ref_edition
+		        b.author, b.date, b.ref_edition,
+		        COALESCE(bt.description_short, b.description_short) AS description_short
 		 FROM books b
 		 LEFT JOIN book_translations bt ON bt.book_id = b.id AND bt.lang = $lang
 		 ORDER BY b.id`,
@@ -179,7 +180,8 @@ export function getBook(bookId: string, lang: string = 'la'): BookMeta | null {
 	return queryOne<BookMeta>(
 		`SELECT b.id,
 		        COALESCE(bt.title, b.title) AS title,
-		        b.author, b.date, b.ref_edition
+		        b.author, b.date, b.ref_edition,
+		        COALESCE(bt.description_short, b.description_short) AS description_short
 		 FROM books b
 		 LEFT JOIN book_translations bt ON bt.book_id = b.id AND bt.lang = $lang
 		 WHERE b.id = $id`,
