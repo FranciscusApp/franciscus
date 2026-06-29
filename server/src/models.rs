@@ -50,8 +50,8 @@ pub struct ParsedBook {
     pub chapters: Vec<ParsedChapter>,
 }
 
-// --- JSON annotation sidecar (FORMAT.md §10) ---
-// File is `books/<book_id>.json`, a flat array; book_id comes from the filename.
+// --- YAML annotation sidecar (spec/annotations.md) ---
+// File is `books/<book_id>.yaml`, a flat list; book_id comes from the filename.
 
 fn default_provenance() -> String {
     "ai".to_string()

@@ -68,7 +68,7 @@ it **directly in the browser** via `sql.js` (SQLite compiled to WebAssembly).
 ```
 franciscus-data/        server/ (Rust CLI)        app/ (SvelteKit SPA)
   books/*.md       →   parse + import   →   franciscus.db  →  sql.js (WASM)
-  annotations/*.json                        (static asset)     in the browser
+  annotations/*.yaml                        (static asset)     in the browser
 ```
 
 That's the whole architecture: free to host, fast to read, offline by default.
