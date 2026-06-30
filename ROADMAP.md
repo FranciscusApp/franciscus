@@ -81,7 +81,7 @@ Also the gold should match the Verbum Caro logo gold.
       - Some pages scroll horizontally on mobile. Most likely cause: `<ref>` popovers overflowing the viewport — constrain them to screen width.
 - [x] **Domain redirect.** Add a GitHub Pages `CNAME` and redirect `www.franciscus.app` to the naked domain.
 - [x] **Typography.** Slightly larger base text, ideally a user-tweakable size control.
-- [ ] **Version visibility.** Surface the DB and app version somewhere in-app (footer or About page) so a reader can tell which build and corpus snapshot they're on.
+- [x] **Version visibility.** Surface the DB and app version somewhere in-app (footer or About page) so a reader can tell which build and corpus snapshot they're on.
 
 ### Data corrections — next
 - [x] **Phantom topics.** AI annotation invented topic values outside the controlled vocabulary (e.g. `virtue:prayer`). Reconcile every annotation against `topics/topics.yaml`, mapping or dropping the strays.
@@ -93,7 +93,6 @@ Also the gold should match the Verbum Caro logo gold.
 - [x] **Bookmarks & reading progress.** Let readers mark passages and resume where they left off — client-side only, no account required.
 - [ ] **Side-by-side reader.** Parallel-column view for comparing two works, or two translations of the same passage.
 - [ ] **Copy citation.** One-click copy of a formatted, shareable reference for any passage.
-- [ ] **Fuller entity pages.** Grow the persons / places / events topic pages into wiki-like entries with cross-referenced passages and richer curated context.
 
 ### Scripture cross-referencing
 - [ ] **Scripture links.** Render `<ref>` tags as links to the [Nova Vulgata on bibbiaedu.it](https://www.bibbiaedu.it/NOVAVULGATA/nt/) (`/nt/<book>/<ch>/`).
@@ -104,8 +103,9 @@ Also the gold should match the Verbum Caro logo gold.
 - [ ] **GitHub login + contribution flow.** Sign in to propose corrections, translations, and annotation edits from within the app.
 - [ ] **Axum backend API.** A server to handle auth, submission, and moderation for those contributions — the project's first backend on the write path.
 
-### Long-term & ongoing
+### Long-term & ongoing / Content quality
 - [ ] **Manual review of the Latin sources.** Human verification of the machine transcriptions.
 - [ ] **Manual review of translations.** Human verification of machine translations. Today a translation file is all-or-nothing with no per-passage provenance; this likely needs a format change to mark reviewed passages.
 - [ ] **AI annotation pass 2.** Cross-work parallels seeded from *Fontes Franciscani* concordances (requires human review).
 - [ ] **Shared query library.** Extract the SQL layer into a data-focused Rust crate (compilable to WASM), reusable by both the client and any future Rust API.
+- [ ] **Fuller entity pages.** Grow the persons / places / events topic pages into wiki-like entries with cross-referenced passages and richer curated context.

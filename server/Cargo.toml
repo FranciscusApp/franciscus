@@ -1,6 +1,16 @@
 [package]
 name = "franciscus-server"
-version = "0.2.0"
+
+# *******************************************************************************************
+# NOTICE:
+#   This Rust Pipeline has an indipendent Rs-SemVer version tracking 
+#   (minor breaking until release).
+#   
+#   Compatible App Version: 1.1.0
+#
+# *******************************************************************************************
+version = "0.3.0" 
+
 edition = "2021"
 license = "AGPL-3.0-or-later"
 

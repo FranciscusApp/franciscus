@@ -1,7 +1,7 @@
 {
 	"name": "franciscus-app",
 	"private": true,
-	"version": "1.0.0",
+	"version": "1.1.0",
 	"type": "module",
 	"scripts": {
 		"db:build": "cargo run --manifest-path ../server/Cargo.toml -- build --data-dir ../../franciscus-data --output static/franciscus.db",
