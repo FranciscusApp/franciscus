@@ -8,6 +8,9 @@ export interface DbState {
 	readonly ready: boolean;
 	readonly error: string | null;
 	readonly progress: DbProgress | null;
+	/** True while recovering from a schema mismatch (fetching the new build and
+	 *  reloading). DB-gated routes show an "updating" screen instead of an error. */
+	readonly updating: boolean;
 }
 
 const KEY = Symbol('franciscus-db-state');

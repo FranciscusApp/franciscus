@@ -10,6 +10,38 @@ const DB_URL = '/franciscus.db';
 // (see downloadDb), so a rebuilt db refreshes without bumping anything here.
 const DB_CACHE = 'franciscus-db';
 
+// Table-shape version this build of the app expects. Mirrors `SCHEMA_VERSION`
+// in `server/src/db.rs` (stamped into the db's `PRAGMA user_version`); keep the
+// two in sync by hand, per the repo's no-codegen convention. Because the db is
+// revalidated eagerly over HTTP while the app code only refreshes through the
+// service-worker lifecycle, a rebuilt db can reach an out-of-date client — this
+// guard catches that mismatch instead of running old code against a new schema.
+const EXPECTED_SCHEMA_VERSION = 3;
+
+/** Thrown when the loaded db's schema doesn't match this build of the app.
+ *  The layout treats it as "app out of date" and drives a service-worker
+ *  update + reload rather than surfacing a hard error. */
+export class SchemaMismatchError extends Error {
+	constructor(
+		readonly found: number,
+		readonly expected: number
+	) {
+		super(`Database schema v${found} does not match app schema v${expected}`);
+		this.name = 'SchemaMismatchError';
+	}
+}
+
+/** Delete the cached corpus db so the next load refetches a fresh copy. Used by
+ *  the schema-mismatch recovery path (see `recoverFromSchemaMismatch`). */
+export async function evictDbCache(): Promise<void> {
+	if (typeof caches === 'undefined') return;
+	try {
+		await caches.delete(DB_CACHE);
+	} catch (e) {
+		console.warn('[db] Failed to evict db cache', e);
+	}
+}
+
 export interface DbProgress {
 	/** bytes received so far */
 	loaded: number;
@@ -27,8 +59,26 @@ export async function initDb(onProgress?: (p: DbProgress) => void): Promise<Data
 	});
 
 	const buffer = await downloadDb(onProgress);
-	db = new SQL.Database(new Uint8Array(buffer)) as Database;
+	const loaded = new SQL.Database(new Uint8Array(buffer)) as Database;
+
+	// Reject a db built for a different app version before it can be queried
+	// with mismatched SQL. `PRAGMA user_version` is stamped by the CLI build
+	// (server/src/db.rs); a fresh db defaults to 0.
+	const found = readSchemaVersion(loaded);
+	if (found !== EXPECTED_SCHEMA_VERSION) {
+		loaded.close();
+		throw new SchemaMismatchError(found, EXPECTED_SCHEMA_VERSION);
+	}
+
+	db = loaded;
 	return db;
+}
+
+/** Read `PRAGMA user_version` from a loaded db (0 when unset). */
+function readSchemaVersion(database: Database): number {
+	const res = database.exec('PRAGMA user_version');
+	const value = res[0]?.values?.[0]?.[0];
+	return typeof value === 'number' ? value : 0;
 }
 
 /**

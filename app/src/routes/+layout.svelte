@@ -2,7 +2,10 @@
 	import '../app.css';
 	import { afterNavigate } from '$app/navigation';
 	import { page } from '$app/stores';
+	import { onMount } from 'svelte';
 	import { initDb, type DbProgress } from '$lib';
+	import { SchemaMismatchError } from '$lib/db';
+	import { initServiceWorkerUpdates, recoverFromSchemaMismatch, resetSchemaRecovery } from '$lib/sw';
 	import { resetTrail } from '$lib/trail.svelte.js';
 	import { setDbState } from '$lib/dbState';
 	import LanguagePicker from '$lib/LanguagePicker.svelte';
@@ -27,6 +30,7 @@
 
 	let ready = $state(false);
 	let error = $state<string | null>(null);
+	let updating = $state(false);
 	let dark = $state(false);
 	let progress = $state<DbProgress | null>(null);
 	let scrolled = $state(false);
@@ -42,8 +46,15 @@
 		},
 		get progress() {
 			return progress;
+		},
+		get updating() {
+			return updating;
 		}
 	});
+
+	// Keep the installed PWA's code current: auto-reload when a new service
+	// worker takes control, and re-check for one when the app regains focus.
+	onMount(initServiceWorkerUpdates);
 
 	// Reader text-size knob (only shown on the chapter reader). Scales the
 	// reader's --reader-scale CSS var; persisted and applied early in app.html.
@@ -80,8 +91,19 @@
 
 	$effect(() => {
 		initDb((p) => { progress = p; })
-			.then(() => { ready = true; })
-			.catch((e) => { error = String(e); });
+			.then(() => { resetSchemaRecovery(); ready = true; })
+			.catch((e) => {
+				// A schema mismatch means this client is running against a db built
+				// for a different app version: drive an update + reload rather than
+				// showing a scary error. If recovery gives up (loop guard tripped),
+				// it throws and we fall through to the generic error.
+				if (e instanceof SchemaMismatchError) {
+					updating = true;
+					recoverFromSchemaMismatch().catch((re) => { updating = false; error = String(re); });
+					return;
+				}
+				error = String(e);
+			});
 	});
 
 	// Keep <html lang> in sync with the active UI language (the page chrome).

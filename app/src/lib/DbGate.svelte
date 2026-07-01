@@ -14,6 +14,10 @@
 	<main id="main-content" tabindex="-1" class="min-h-screen flex items-center justify-center">
 		<p class="text-destructive">{t('app.dbError')} {db.error}</p>
 	</main>
+{:else if db.updating}
+	<main id="main-content" tabindex="-1" class="min-h-screen flex items-center justify-center px-6">
+		<p class="text-muted-foreground">{t('app.updating')}</p>
+	</main>
 {:else if !db.ready}
 	<main id="main-content" tabindex="-1" class="min-h-screen flex items-center justify-center px-6">
 		<div class="w-full max-w-xs">

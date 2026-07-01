@@ -28,10 +28,26 @@ sw.addEventListener('install', (event) => {
 	event.waitUntil(
 		caches
 			.open(CACHE)
-			.then((cache) => cache.addAll(ASSETS))
+			.then((cache) => precache(cache))
 			.then(() => sw.skipWaiting())
 	);
 });
+
+// `addAll` is atomic: a single transiently-stale/404 asset at the CDN edge
+// (assets propagate slightly out of step after a deploy) would reject the whole
+// batch, fail `install`, and leave the *old* worker in control — the app then
+// serves stale JS until enough manual reloads happen to catch the edge in a
+// consistent state. Fall back to best-effort per-asset caching so the new
+// worker still installs and activates; the fetch handler backfills anything
+// skipped from the network on demand.
+async function precache(cache: Cache): Promise<void> {
+	try {
+		await cache.addAll(ASSETS);
+	} catch (err) {
+		console.warn('[sw] atomic precache failed, falling back to best-effort', err);
+		await Promise.allSettled(ASSETS.map((asset) => cache.add(asset)));
+	}
+}
 
 sw.addEventListener('activate', (event) => {
 	event.waitUntil(
