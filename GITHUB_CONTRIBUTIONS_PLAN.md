@@ -225,9 +225,10 @@ still no network writes.
   add/remove/verify/comment labels + a11y, confirm/cancel a11y, pending-state
   copy, and the "My Contributions" empty/section headings.
 
-**Phase 3 consequence to remember:** `verify` (provenance) and `comment` are
-**structured YAML fields**, not part of the CSV `topics` string — so the Phase 3
-reverse-mapping can't be CSV-only; see that phase's note.
+**Superseded by Phase 2C:** the old CSV-vs-structured-field concern is resolved
+by the 2C format — every annotation is one addressable paragraph-grouped item, so
+`verify` becomes setting `by:` (AI→human) and `comment` an item field. The
+editor-mode verify/comment popover also becomes **AI-only** in 2C. See Phase 2C.
 
 **Local dev gotcha (bit us in Phase 1):** run the app with `make dev` (or at
 least `make install`) from [`franciscus/`](franciscus/) — plain `npm run dev`
@@ -239,7 +240,85 @@ are gitignored.
 
 ---
 
+## Phase 2C — Annotation schema normalization (paragraph-grouped, implicit authorship)
+
+Reshape the annotation source format so a staged edit maps to **one addressable
+item**, and so authorship/provenance stop being repeated boilerplate. Spans the
+**data** and **scripts** repos plus the Rust ingest; **no DB schema change** —
+emitted rows keep their shape, so `SCHEMA_VERSION`, `models.rs`, and `types.ts`
+are untouched.
+
+### Decisions (locked)
+
+- **One annotation = one `(topic | relation)`** + optional comment. The
+  multi-pair CSV entry with a shared comment/provenance is retired. The DB is
+  already flat on `(paragraph, type:value)`; the source now matches it.
+- **Grouped by paragraph**, not by contributor. Contributor is an *attribute*,
+  not a navigation axis — grouping mirrors how the UI and Phase 3 address an
+  annotation (by paragraph + topic) and keeps the unique key local to one list:
+
+  ```yaml
+  annotations:
+    '40':
+      - theme:prayer                 # AI-authored (implicit)
+      - topic: virtue:fortitude      # map form when a pair needs overrides
+        by: alfredo
+        comment: courage fits the Latin better than fortitude
+  ```
+
+- **Authorship is implicit.** No `by` ⇒ authored by the project AI (Claude); a
+  `by: <handle>` ⇒ human-authored. **The presence of `by` is the human signal**,
+  so the annotation-level `provenance` field is **dropped entirely**. Ingest
+  derives the DB columns: `by_whom` = resolve(`by`) else the Claude default;
+  `provenance` = `human` when `by` is present, else `ai`.
+- **`provenance` survives at paragraph level only**, solely for the
+  non-derivable **`reviewed`** state (a human vetted the AI text); see
+  [`books.md`](../franciscus-data/spec/books.md). `ai`/`human` there stay
+  defaulted/derivable.
+- **`contributors.yaml`** (new, in `franciscus-data/`) lists **humans only**,
+  `handle → { name, email, github }`. Claude is never listed (it is the
+  default). Resolves `by:` for commits/PRs and DB `by_whom`; `CREDITS.md` can be
+  generated from it.
+
+### Work items
+
+1. **Spec** — rewrite [`spec/annotations.md`](../franciscus-data/spec/annotations.md)
+   to the grouped, one-pair-per-item format: the scalar-or-map item, implicit
+   authorship, and that annotations carry **no** `provenance`.
+2. **`contributors.yaml`** — new registry, documented in the spec.
+3. **Ingest (Rust)** — new parser for the grouped shape; derive
+   `by_whom`/`provenance` as above. Row output unchanged ⇒ no schema bump.
+4. **Migration** (franciscus-scripts) — one-time: explode existing multi-topic
+   CSV entries into paragraph-grouped bare scalars (all default = Claude/ai).
+   Idempotent — re-running on already-grouped files is a no-op.
+
+### UI tweak (editor mode)
+
+- **Verify + comment are AI-only.** The popover opens only on AI-authored
+  annotations (`provenance === 'ai'`, i.e. no `by`). Human-authored annotations
+  expose **remove** only — a human acts on the AI's annotations, not on another
+  human's. (Verify already required `ai`; this extends the gate to the whole
+  popover.) In `AnnotationPills.svelte`, gate `openPopover` on AI provenance;
+  the pill body is inert for human annotations.
+
+### Exit criteria
+
+- Migration rewrites every sidecar to the new format; `make db` ingests them to a
+  DB with the **same rows** as before (parser + migration proven faithful).
+- Viewer reader unchanged; in editor mode, verify/comment appear only on AI
+  annotations, remove on all.
+
+**Order:** spec → `contributors.yaml` → migration → ingest parser → app UI gate
+(spec first, so parser and migration target one agreed contract).
+
+---
+
 ## Phase 3 — Reverse mapping (DB → source), annotations
+
+**Format note:** targets the Phase 2C grouped format — locate
+`annotations['<paragraph>']` and add / remove / rewrite a **single item**; there
+is no CSV to splice and no shared-entry split. The CSV-mutation bullets below are
+superseded by 2C (verify ⇒ set `by:` on the item, comment ⇒ its `comment` field).
 
 Turn a DB-addressed edit into a source-file text diff.
 

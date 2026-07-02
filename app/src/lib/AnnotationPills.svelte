@@ -30,15 +30,33 @@
 		editing: boolean;
 	} = $props();
 
-	// At most one interaction open at a time (kept deliberately simple).
-	let pendingRemove = $state<Annotation | null>(null); // awaiting confirm
-	let popover = $state<Annotation | null>(null); // verify/comment editor
+	// At most one interaction open at a time (kept deliberately simple). The
+	// popover edits one topic; `allowVerify` is on only for AI annotations (a
+	// human verifies the AI's work — a pending-add is already human-authored).
+	let popover = $state<{ type: string; value: string; allowVerify: boolean } | null>(null);
 	let pickerOpen = $state(false);
 	let pickerFilter = $state('');
 
-	// Draft state for the verify/comment popover, seeded from buffer + annotation.
+	// Draft state for the verify/comment popover, seeded from buffer + source.
 	let draftVerified = $state(false);
 	let draftComment = $state('');
+	// Seeded values, so we know when the draft is dirty (edited but unsaved).
+	let seedVerified = $state(false);
+	let seedComment = $state('');
+	let popoverEl = $state<HTMLElement | null>(null);
+	const dirty = $derived(
+		!!popover && (draftVerified !== seedVerified || draftComment !== seedComment)
+	);
+
+	// Close the popover on a click outside it — unless the draft has unsaved edits.
+	$effect(() => {
+		if (!popover) return;
+		const onDown = (e: PointerEvent) => {
+			if (!dirty && popoverEl && !popoverEl.contains(e.target as Node)) popover = null;
+		};
+		document.addEventListener('pointerdown', onDown, true);
+		return () => document.removeEventListener('pointerdown', onDown, true);
+	});
 
 	function typeName(type: string): string {
 		return t(`topics.types.${type}`).toLowerCase();
@@ -48,27 +66,21 @@
 		return edits.pendingVerify(bookId, paragraphId, a.topic_type, a.topic_value) || a.provenance !== 'ai';
 	}
 
-	function openPopover(a: Annotation) {
-		popover = a;
-		draftVerified = isVerified(a);
-		draftComment =
-			edits.pendingComment(bookId, paragraphId, a.topic_type, a.topic_value) ?? a.comment ?? '';
+	/** Open the editor for one topic. `allowVerify` gates the verify toggle;
+	 * `sourceComment` seeds the field when nothing is staged yet. */
+	function openPopover(type: string, value: string, allowVerify: boolean, sourceComment = '') {
+		popover = { type, value, allowVerify };
+		seedVerified = allowVerify && edits.pendingVerify(bookId, paragraphId, type, value);
+		seedComment = edits.pendingComment(bookId, paragraphId, type, value) ?? sourceComment;
+		draftVerified = seedVerified;
+		draftComment = seedComment;
 	}
 	function savePopover() {
 		if (!popover) return;
-		const a = popover;
-		// Only stage `verify` when it's an actual promotion over the source value.
-		edits.setVerify(bookId, paragraphId, a.topic_type, a.topic_value, draftVerified && a.provenance === 'ai');
-		if ((a.comment ?? '') !== draftComment.trim()) {
-			edits.setComment(bookId, paragraphId, a.topic_type, a.topic_value, draftComment);
-		}
+		const { type, value, allowVerify } = popover;
+		if (allowVerify) edits.setVerify(bookId, paragraphId, type, value, draftVerified);
+		edits.setComment(bookId, paragraphId, type, value, draftComment);
 		popover = null;
-	}
-
-	function confirmRemove() {
-		if (!pendingRemove) return;
-		edits.stageRemove(bookId, paragraphId, pendingRemove.topic_type, pendingRemove.topic_value);
-		pendingRemove = null;
 	}
 
 	function addTopic(type: string, value: string) {
@@ -100,7 +112,6 @@
 	<div class="mt-1 ml-0 sm:ml-10 flex flex-wrap items-center gap-1">
 		{#each annotations as a}
 			{@const removed = edits.pendingRemoval(bookId, paragraphId, a.topic_type, a.topic_value)}
-			{@const confirming = pendingRemove === a}
 			{@const verified = isVerified(a)}
 			{@const commented =
 				edits.pendingComment(bookId, paragraphId, a.topic_type, a.topic_value) !== null}
@@ -121,21 +132,27 @@
 				<span
 					class="inline-flex items-center gap-0.5 max-w-full text-xs rounded-full {removed
 						? 'border border-dashed border-muted-foreground/60 text-muted-foreground line-through'
-						: topicColors(a.topic_type)} {confirming && !removed ? 'line-through opacity-60' : ''} {commented &&
-					!removed
-						? 'ring-1 ring-current'
-						: ''}"
+						: topicColors(a.topic_type)} {commented && !removed ? 'ring-1 ring-current' : ''}"
 				>
-					<button
-						type="button"
-						onclick={() => openPopover(a)}
-						class="pl-2 py-0.5 break-words rounded-l-full focus:outline-none focus:ring-2 focus:ring-ring"
-						title={edits.pendingComment(bookId, paragraphId, a.topic_type, a.topic_value) ??
-							a.comment ??
-							t('edit.editAnnotation')}
-					>
-						{topicLabel(a.topic_type, a.topic_value)} ({typeName(a.topic_type)}{verified ? ' ✓' : ''})
-					</button>
+					{#if a.provenance === 'ai'}
+						<button
+							type="button"
+							onclick={() => openPopover(a.topic_type, a.topic_value, true, a.comment ?? '')}
+							class="pl-2 py-0.5 break-words rounded-l-full focus:outline-none focus:ring-2 focus:ring-ring"
+							title={edits.pendingComment(bookId, paragraphId, a.topic_type, a.topic_value) ??
+								a.comment ??
+								t('edit.editAnnotation')}
+						>
+							{topicLabel(a.topic_type, a.topic_value)} ({typeName(a.topic_type)}{verified
+								? ' ✓'
+								: ''})
+						</button>
+					{:else}
+						<!-- Human-authored annotation — body is inert, remove only. -->
+						<span class="pl-2 py-0.5 break-words rounded-l-full" title={a.comment ?? ''}>
+							{topicLabel(a.topic_type, a.topic_value)} ({typeName(a.topic_type)} ✓)
+						</span>
+					{/if}
 					{#if removed}
 						<button
 							type="button"
@@ -152,27 +169,12 @@
 						>
 							<Undo2 class="w-3 h-3" />
 						</button>
-					{:else if confirming}
-						<button
-							type="button"
-							onclick={confirmRemove}
-							aria-label={t('edit.confirm')}
-							class="px-0.5 py-0.5 hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-ring"
-						>
-							<Check class="w-3 h-3" />
-						</button>
-						<button
-							type="button"
-							onclick={() => (pendingRemove = null)}
-							aria-label={t('edit.cancel')}
-							class="pr-1.5 pl-0.5 py-0.5 rounded-r-full hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-ring"
-						>
-							<X class="w-3 h-3" />
-						</button>
 					{:else}
+						<!-- Single click stages the removal (struck-through, undoable) — no
+						     confirm step; nothing reaches GitHub until the PR is opened. -->
 						<button
 							type="button"
-							onclick={() => (pendingRemove = a)}
+							onclick={() => edits.stageRemove(bookId, paragraphId, a.topic_type, a.topic_value)}
 							aria-label={t('edit.remove')}
 							class="pr-1.5 pl-0.5 py-0.5 rounded-r-full hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-ring"
 						>
@@ -185,15 +187,25 @@
 
 		{#if editing}
 			{#each adds as e}
+				{@const commented =
+					edits.pendingComment(bookId, paragraphId, e.topic_type, e.topic_value) !== null}
 				<span
-					class="inline-flex items-center gap-0.5 text-xs rounded-full border border-dashed border-current px-2 py-0.5 {topicColors(
+					class="inline-flex items-center gap-0.5 text-xs rounded-full border border-dashed border-current px-1 py-0.5 {topicColors(
 						e.topic_type
-					)}"
+					)} {commented ? 'ring-1 ring-current' : ''}"
 				>
-					{topicLabel(e.topic_type, e.topic_value)} ({typeName(e.topic_type)})
 					<button
 						type="button"
-						onclick={() => edits.unstage(e)}
+						onclick={() => openPopover(e.topic_type, e.topic_value, false)}
+						class="pl-1 break-words rounded-l-full focus:outline-none focus:ring-2 focus:ring-ring"
+						title={edits.pendingComment(bookId, paragraphId, e.topic_type, e.topic_value) ??
+							t('edit.editAnnotation')}
+					>
+						{topicLabel(e.topic_type, e.topic_value)} ({typeName(e.topic_type)})
+					</button>
+					<button
+						type="button"
+						onclick={() => edits.clearTarget(bookId, paragraphId, e.topic_type, e.topic_value)}
 						aria-label={t('edit.undo')}
 						class="pl-0.5 hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-ring"
 					>
@@ -253,12 +265,15 @@
 	</div>
 
 	{#if popover}
-		{@const a = popover}
-		<div class="mt-2 ml-0 sm:ml-10 rounded-md border border-border bg-popover p-3 shadow-sm">
+		{@const p = popover}
+		<div
+			bind:this={popoverEl}
+			class="mt-2 ml-0 sm:ml-10 rounded-md border border-border bg-popover p-3 shadow-sm"
+		>
 			<p class="mb-2 text-sm font-medium text-foreground">
-				{topicLabel(a.topic_type, a.topic_value)} ({typeName(a.topic_type)})
+				{topicLabel(p.type, p.value)} ({typeName(p.type)})
 			</p>
-			{#if a.provenance === 'ai'}
+			{#if p.allowVerify}
 				<label class="mb-2 flex items-center gap-2 text-sm text-foreground">
 					<input type="checkbox" bind:checked={draftVerified} class="h-4 w-4 rounded border-border" />
 					{t('edit.verifyLabel')}

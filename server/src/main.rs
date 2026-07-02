@@ -109,6 +109,16 @@ fn run_build(data_dir: &PathBuf, output: &PathBuf) {
     let mut annotation_count = 0u32;
     let mut topic_page_count = 0u32;
 
+    // Human contributor registry (optional); resolves annotation `by:` handles.
+    let contributors: models::Contributors = {
+        let path = data_dir.join("contributors.yaml");
+        match std::fs::read_to_string(&path) {
+            Ok(text) => serde_yaml::from_str(&text)
+                .unwrap_or_else(|e| panic!("Invalid contributors.yaml: {e}")),
+            Err(_) => models::Contributors::new(),
+        }
+    };
+
     let books_dir = data_dir.join("books");
     let mut translation_files: Vec<PathBuf> = Vec::new();
     let mut annotation_files: Vec<PathBuf> = Vec::new();
@@ -182,9 +192,9 @@ fn run_build(data_dir: &PathBuf, output: &PathBuf) {
                 );
 
                 let (topic_rows, rel_rows) =
-                    db::insert_annotations(&conn, &book_id, &sidecar.annotations);
+                    db::insert_annotations(&conn, &book_id, &sidecar.annotations, &contributors);
                 println!(
-                    "  sidecar: {book_id} ({} annotations, {} desc langs, {topic_rows} topic + {rel_rows} relation rows)",
+                    "  sidecar: {book_id} ({} paragraphs, {} desc langs, {topic_rows} topic + {rel_rows} relation rows)",
                     sidecar.annotations.len(),
                     long_html.len().max(sidecar.description_short.len())
                 );

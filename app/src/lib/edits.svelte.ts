@@ -169,3 +169,9 @@ export function setComment(book: string, para: string, type: string, value: stri
 export function unstage(edit: Edit) {
 	commit(without(edit.book_id, edit.paragraph_id, edit.topic_type, edit.topic_value, edit.op));
 }
+
+/** Drop every staged edit for a target — used when unstaging a pending `add`, so
+ * a comment attached to that not-yet-real annotation doesn't outlive it. */
+export function clearTarget(book: string, para: string, type: string, value: string) {
+	commit(edits.filter((e) => !sameTarget(e, book, para, type, value)));
+}

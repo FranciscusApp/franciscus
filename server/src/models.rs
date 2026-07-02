@@ -77,14 +77,15 @@ pub struct ParsedBook {
 // book-level "cover" properties (editorial descriptions, keyed by UI language)
 // at the top, and the paragraph annotations nested under `annotations`.
 
-fn default_provenance() -> String {
-    "ai".to_string()
-}
+/// DB `by_whom` for AI-authored items (no `by`). Must match the handle-less
+/// default the app/scripts assume; see spec/annotations.md.
+pub const CLAUDE_BY: &str = "Claude <noreply@anthropic.com>";
 
 /// The whole sidecar. Both sections are optional so a book may have only
 /// annotations, only cover descriptions, or both. `description_short` /
 /// `description` map a UI language code (`en`, `it`, …) to its text; the long
 /// `description` value is authored as Markdown and rendered to HTML at ingest.
+/// `annotations` is the paragraph-grouped map: paragraph id → items.
 #[derive(Debug, Clone, Deserialize, Default)]
 pub struct BookSidecar {
     #[serde(default)]
@@ -92,28 +93,56 @@ pub struct BookSidecar {
     #[serde(default)]
     pub description: BTreeMap<String, String>,
     #[serde(default)]
-    pub annotations: Vec<Annotation>,
+    pub annotations: BTreeMap<String, Vec<AnnotationItem>>,
 }
 
+/// One annotation item under a paragraph key. A bare scalar (`person:x` or
+/// `same_episode:LMj-1`) is AI-authored with no comment; the map form carries
+/// overrides. Exactly one of `topic`/`relation` is set in the map form.
 #[derive(Debug, Clone, Deserialize)]
-pub struct Annotation {
-    pub paragraph: String,
-    /// When the annotation spans a paragraph range, the last paragraph.
+#[serde(untagged)]
+pub enum AnnotationItem {
+    Bare(String),
+    Detailed {
+        #[serde(default)]
+        topic: Option<String>,
+        #[serde(default)]
+        relation: Option<String>,
+        /// Contributor handle; presence marks the item human-authored.
+        #[serde(default)]
+        by: Option<String>,
+        /// Last paragraph id when the annotation spans a range (topics only).
+        #[serde(default)]
+        to: Option<String>,
+        #[serde(default)]
+        comment: Option<String>,
+    },
+}
+
+/// Human contributor registry (`franciscus-data/contributors.yaml`), keyed by
+/// GitHub login (an email-only contributor uses a plain handle). Claude is never
+/// listed — it is the default author.
+pub type Contributors = BTreeMap<String, Contributor>;
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct Contributor {
+    pub name: String,
     #[serde(default)]
-    pub paragraph_to: Option<String>,
-    /// Comma-separated `type:value` pairs; expanded into one annotation row each.
+    pub email: Option<String>,
+    /// GitHub login; equals the map key when present (marks a GitHub contributor).
     #[serde(default)]
-    pub topics: Option<String>,
-    /// Comma-separated `reltype:target` pairs; expanded into one relation row each.
-    /// `target` is a cross-work paragraph key `<book_id>-<paragraph_id>`.
-    #[serde(default)]
-    pub relations: Option<String>,
-    pub by: String,
-    /// `ai` · `reviewed` · `human`; defaults to `ai`.
-    #[serde(default = "default_provenance")]
-    pub provenance: String,
-    #[serde(default)]
-    pub comment: Option<String>,
+    #[allow(dead_code)] // Phase 4: commit/PR attribution.
+    pub github: Option<String>,
+}
+
+impl Contributor {
+    /// DB `by_whom` form: `Name <email>` when an email is present, else `Name`.
+    pub fn by_whom(&self) -> String {
+        match &self.email {
+            Some(e) => format!("{} <{}>", self.name, e),
+            None => self.name.clone(),
+        }
+    }
 }
 
 /// Topic-page YAML frontmatter. Both `topic_type` and `topic_value` are NOT

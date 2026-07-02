@@ -603,61 +603,92 @@ pub fn create_fts_index(conn: &Connection) {
         .expect("Failed to optimize FTS index");
 }
 
-/// Insert a book's annotation sidecar (spec/annotations.md). Each `type:value` pair in
-/// an entry's `topics` becomes an annotation row; each `reltype:target` pair
-/// in `relations` becomes a relation row. Returns (topic rows, relation rows).
-pub fn insert_annotations(conn: &Connection, book_id: &str, annotations: &[Annotation]) -> (usize, usize) {
+/// Relation types (vs topic types); a bare scalar item with one of these as its
+/// `type:` prefix is read as a relation. Mirrors spec/annotations.md.
+const RELATION_TYPES: [&str; 2] = ["same_episode", "related_to"];
+
+/// Resolve an item's `by` handle to `(by_whom, provenance)`. No handle ⇒ the
+/// Claude default and `ai`; a handle ⇒ `human`, resolved via `contributors.yaml`
+/// (falling back to the raw handle with a warning if unknown).
+fn resolve_by(by: Option<&str>, contributors: &Contributors) -> (String, String) {
+    match by {
+        None => (CLAUDE_BY.to_string(), "ai".to_string()),
+        Some(handle) => {
+            let who = contributors.get(handle).map(Contributor::by_whom).unwrap_or_else(|| {
+                eprintln!("  warning: unknown contributor handle '{handle}' (not in contributors.yaml)");
+                handle.to_string()
+            });
+            (who, "human".to_string())
+        }
+    }
+}
+
+/// Insert a book's annotation sidecar (spec/annotations.md) — the paragraph-grouped
+/// map. Each item is one topic or relation row; `by_whom`/`provenance` are
+/// derived (implicit AI authorship). Returns (topic rows, relation rows).
+pub fn insert_annotations(
+    conn: &Connection,
+    book_id: &str,
+    annotations: &BTreeMap<String, Vec<AnnotationItem>>,
+    contributors: &Contributors,
+) -> (usize, usize) {
     let mut topic_rows = 0;
     let mut rel_rows = 0;
-    for a in annotations {
-        for pair in csv_pairs(a.topics.as_deref()) {
-            let Some((topic_type, topic_value)) = pair.split_once(':') else {
-                eprintln!("  warning: skipping malformed topic '{pair}' in {book_id}/{}", a.paragraph);
-                continue;
+    for (paragraph, items) in annotations {
+        for item in items {
+            // Normalize the item to (pair, by, to, comment); infer topic-vs-relation.
+            let (pair, by, to, comment): (&str, Option<&str>, Option<&str>, Option<&str>) = match item {
+                AnnotationItem::Bare(s) => (s.trim(), None, None, None),
+                AnnotationItem::Detailed { topic, relation, by, to, comment } => {
+                    match (topic.as_deref(), relation.as_deref()) {
+                        (Some(t), None) => (t.trim(), by.as_deref(), to.as_deref(), comment.as_deref()),
+                        (None, Some(r)) => (r.trim(), by.as_deref(), to.as_deref(), comment.as_deref()),
+                        _ => {
+                            eprintln!("  warning: item in {book_id}/{paragraph} needs exactly one of topic/relation");
+                            continue;
+                        }
+                    }
+                }
             };
-            conn.execute(
-                "INSERT INTO annotations (book_id, paragraph_id, paragraph_to_id, topic_type, topic_value, by_whom, provenance, comment)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
-                params![book_id, a.paragraph, a.paragraph_to, topic_type.trim(), topic_value.trim(), a.by, a.provenance, a.comment],
-            )
-            .expect("Failed to insert annotation");
-            topic_rows += 1;
-        }
 
-        for pair in csv_pairs(a.relations.as_deref()) {
-            let Some((rel_type, target)) = pair.split_once(':') else {
-                eprintln!("  warning: skipping malformed relation '{pair}' in {book_id}/{}", a.paragraph);
+            let Some((kind, value)) = pair.split_once(':') else {
+                eprintln!("  warning: skipping malformed item '{pair}' in {book_id}/{paragraph}");
                 continue;
             };
-            // ponytail: target key is `<book_id>-<paragraph_id>`; book ids contain no '-'
-            let Some((target_book, target_par)) = target.trim().split_once('-') else {
-                eprintln!("  warning: skipping relation target '{}' (expected <book>-<paragraph>) in {book_id}/{}", target.trim(), a.paragraph);
-                continue;
-            };
-            conn.execute(
-                "INSERT INTO relations (source_book_id, source_paragraph_id, target_book_id, target_paragraph_id, relation_type, by_whom, provenance, comment)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
-                params![book_id, a.paragraph, target_book, target_par, rel_type.trim(), a.by, a.provenance, a.comment],
-            )
-            .expect("Failed to insert relation");
-            rel_rows += 1;
+            let (kind, value) = (kind.trim(), value.trim());
+            let (by_whom, provenance) = resolve_by(by, contributors);
+
+            if RELATION_TYPES.contains(&kind) {
+                // ponytail: target key is `<book_id>-<paragraph_id>`; book ids contain no '-'
+                let Some((target_book, target_par)) = value.split_once('-') else {
+                    eprintln!("  warning: skipping relation target '{value}' (expected <book>-<paragraph>) in {book_id}/{paragraph}");
+                    continue;
+                };
+                conn.execute(
+                    "INSERT INTO relations (source_book_id, source_paragraph_id, target_book_id, target_paragraph_id, relation_type, by_whom, provenance, comment)
+                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+                    params![book_id, paragraph, target_book, target_par, kind, by_whom, provenance, comment],
+                )
+                .expect("Failed to insert relation");
+                rel_rows += 1;
+            } else {
+                conn.execute(
+                    "INSERT INTO annotations (book_id, paragraph_id, paragraph_to_id, topic_type, topic_value, by_whom, provenance, comment)
+                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+                    params![book_id, paragraph, to, kind, value, by_whom, provenance, comment],
+                )
+                .expect("Failed to insert annotation");
+                topic_rows += 1;
+            }
         }
     }
     (topic_rows, rel_rows)
 }
 
-/// Split a CSV-of-pairs string into trimmed, non-empty items.
-fn csv_pairs(s: Option<&str>) -> impl Iterator<Item = &str> {
-    s.unwrap_or("")
-        .split(',')
-        .map(str::trim)
-        .filter(|p| !p.is_empty())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::Annotation;
+    use crate::models::{AnnotationItem, Contributor};
 
     #[test]
     fn expands_topics_and_relations() {
@@ -665,17 +696,52 @@ mod tests {
         conn.execute_batch("PRAGMA foreign_keys=OFF;").unwrap();
         create_tables(&conn);
 
-        let a = Annotation {
-            paragraph: "p1".into(),
-            paragraph_to: None,
-            topics: Some("person:st_francis, place:assisi".into()),
-            relations: Some("same_episode:LMj-mir10-6, related_to:2Cel-121".into()),
-            by: "Tester".into(),
-            provenance: "human".into(),
-            comment: Some("note".into()),
-        };
-        let (topic_rows, rel_rows) = insert_annotations(&conn, "1Cel", &[a]);
-        assert_eq!((topic_rows, rel_rows), (2, 2));
+        let mut contributors = Contributors::new();
+        contributors.insert(
+            "alfredo".into(),
+            Contributor { name: "Alfredo".into(), email: Some("a@x.dev".into()), github: Some("alfredo".into()) },
+        );
+
+        let mut annotations = BTreeMap::new();
+        annotations.insert(
+            "p1".to_string(),
+            vec![
+                // Bare scalar: AI-authored topic.
+                AnnotationItem::Bare("person:st_francis".into()),
+                // Bare scalar: AI-authored relation (inferred from reltype).
+                AnnotationItem::Bare("same_episode:LMj-mir10-6".into()),
+                // Map form: human-authored topic with comment + range.
+                AnnotationItem::Detailed {
+                    topic: Some("place:assisi".into()),
+                    relation: None,
+                    by: Some("alfredo".into()),
+                    to: Some("p2".into()),
+                    comment: Some("note".into()),
+                },
+            ],
+        );
+        let (topic_rows, rel_rows) = insert_annotations(&conn, "1Cel", &annotations, &contributors);
+        assert_eq!((topic_rows, rel_rows), (2, 1));
+
+        // Bare topic derives Claude/ai.
+        let (by, prov): (String, String) = conn
+            .query_row(
+                "SELECT by_whom, provenance FROM annotations WHERE topic_value = 'st_francis'",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .unwrap();
+        assert_eq!((by.as_str(), prov.as_str()), (CLAUDE_BY, "ai"));
+
+        // Handle resolves to `Name <email>`; presence of `by` ⇒ human. Range kept.
+        let (by, prov, to): (String, String, String) = conn
+            .query_row(
+                "SELECT by_whom, provenance, paragraph_to_id FROM annotations WHERE topic_value = 'assisi'",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+            )
+            .unwrap();
+        assert_eq!((by.as_str(), prov.as_str(), to.as_str()), ("Alfredo <a@x.dev>", "human", "p2"));
 
         // first hyphen separates book id from (hyphenated) paragraph id
         let (tb, tp): (String, String) = conn
