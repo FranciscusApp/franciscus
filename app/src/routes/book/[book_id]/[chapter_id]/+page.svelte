@@ -21,7 +21,9 @@
 	import { isBookmarked, toggleBookmark } from '$lib/bookmarks.svelte.js';
 	import BookmarkIcon from '@lucide/svelte/icons/bookmark';
 	import AnnotationPills from '$lib/AnnotationPills.svelte';
-	import { isEditorMode } from '$lib/edits.svelte.js';
+	import ProseEditor from '$lib/ProseEditor.svelte';
+	import { isEditorMode, pendingProse } from '$lib/edits.svelte.js';
+	import { dbContentToSource, sourceToDisplay } from '$lib/proseDiff';
 	import * as github from '$lib/github.svelte.js';
 
 	const bookId = $derived($page.params.book_id ?? '');
@@ -310,6 +312,18 @@
 		return asideTranslations.get(a.id) ?? a.content;
 	}
 
+	// Reflect a staged prose edit in place (only in editor mode, matching how the
+	// annotation affordances gate). A staged paragraph body is source form, so
+	// re-run the verse rewrite to render it identically to un-edited content.
+	function paragraphDisplay(p: Paragraph): string {
+		const pe = editing ? pendingProse(bookId, corpusLang, p.id) : null;
+		return pe ? sourceToDisplay(pe.text, p.id) : paragraphContent(p);
+	}
+	function asideDisplay(a: Aside): string {
+		const pe = editing ? pendingProse(bookId, corpusLang, a.id) : null;
+		return pe ? pe.text : asideContent(a);
+	}
+
 	function paraHref(p: Paragraph): string {
 		return `/book/${bookId}/${chapterId}#${p.id}`;
 	}
@@ -329,21 +343,37 @@
 				{#if block.kind === 'paragraph'}
 					{@const p = block.data}
 					{@const ann = block.annotations}
+					{@const proseStaged = editing && !!pendingProse(bookId, corpusLang, p.id)}
 					<div class="paragraph group" id={p.id}>
-						<button
-							type="button"
-							onclick={() => toggleBookmark(paraHref(p), paraLabel(p))}
-							aria-pressed={isBookmarked(paraHref(p))}
-							aria-label={isBookmarked(paraHref(p)) ? t('a11y.removeBookmark') : t('a11y.addBookmark')}
-							class="float-right ml-2 p-1 pointer-coarse:p-2 rounded text-muted-foreground hover:text-primary focus:outline-none focus:ring-2 focus:ring-ring opacity-40 group-hover:opacity-100 focus:opacity-100 aria-pressed:opacity-100 aria-pressed:text-primary transition"
-						>
-							<BookmarkIcon class="w-4 h-4" fill={isBookmarked(paraHref(p)) ? 'currentColor' : 'none'} />
-						</button>
+						<div class="float-right ml-2 flex items-center gap-0.5">
+							<button
+								type="button"
+								onclick={() => toggleBookmark(paraHref(p), paraLabel(p))}
+								aria-pressed={isBookmarked(paraHref(p))}
+								aria-label={isBookmarked(paraHref(p)) ? t('a11y.removeBookmark') : t('a11y.addBookmark')}
+								class="p-1 pointer-coarse:p-2 rounded text-muted-foreground hover:text-primary focus:outline-none focus:ring-2 focus:ring-ring opacity-40 group-hover:opacity-100 focus:opacity-100 aria-pressed:opacity-100 aria-pressed:text-primary transition"
+							>
+								<BookmarkIcon class="w-4 h-4" fill={isBookmarked(paraHref(p)) ? 'currentColor' : 'none'} />
+							</button>
+							<ProseEditor
+								{bookId}
+								lang={corpusLang}
+								{chapterId}
+								kind="paragraph"
+								targetId={p.id}
+								originalText={dbContentToSource(paragraphContent(p))}
+								{editing}
+							/>
+						</div>
 						<span class="inline-block min-w-8 text-xs text-muted-foreground font-mono mr-2 align-top pt-1">
 							{p.label ?? p.id}
 						</span>
-						<span class="para-text font-serif text-foreground leading-relaxed">
-							{@html paragraphContent(p)}
+						<span
+							class="para-text font-serif text-foreground leading-relaxed {proseStaged
+								? 'rounded bg-primary/5 px-1 ring-1 ring-primary/30'
+								: ''}"
+						>
+							{@html paragraphDisplay(p)}
 						</span>
 						<AnnotationPills
 							{bookId}
@@ -355,9 +385,30 @@
 						/>
 					</div>
 				{:else}
-					<aside class="text-sm italic text-muted-foreground font-serif py-2">
-						{asideContent(block.data)}
-					</aside>
+					{@const a = block.data}
+					{@const asideStaged = editing && !!pendingProse(bookId, corpusLang, a.id)}
+					<div class="group flex items-start gap-1">
+						<aside
+							class="flex-1 text-sm italic text-muted-foreground font-serif py-2 {asideStaged
+								? 'rounded bg-primary/5 px-1 ring-1 ring-primary/30'
+								: ''}"
+						>
+							{asideDisplay(a)}
+						</aside>
+						{#if editing}
+							<div class="pt-2">
+								<ProseEditor
+									{bookId}
+									lang={corpusLang}
+									{chapterId}
+									kind="aside"
+									targetId={a.id}
+									originalText={asideContent(a)}
+									{editing}
+								/>
+							</div>
+						{/if}
+					</div>
 				{/if}
 			{/each}
 		</div>

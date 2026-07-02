@@ -104,7 +104,12 @@
 		"searchTopics": "Search topics…",
 		"noTopics": "No matching topics",
 		"verifyLabel": "Mark as correct / human-verified",
-		"commentLabel": "Editorial comment (English)"
+		"commentLabel": "Editorial comment (English)",
+		"editProse": "Edit text",
+		"editAside": "Edit heading text",
+		"proseHelp": "Edit the source text. Keep verse markers like [1] and reference tags like <ref to=\"Acts 1:1\">…</ref> exactly as they are.",
+		"edited": "Edited — click to change or discard",
+		"undoEdit": "Discard text edit"
 	},
 	"contributions": {
 		"heading": "My Contributions",
@@ -122,6 +127,11 @@
 		"errNotAFork": "You already have a repository named “franciscus-data” on your account that is not a fork of the project, so a pull request can’t be opened from it. Rename or remove that repository, then try again — the app will create a proper fork.",
 		"errForkFailed": "Couldn’t create a fork on your account. If you previously transferred a “franciscus-data” repository to another owner, GitHub keeps a redirect at that name that blocks a fresh fork — create the fork manually from the project’s GitHub page, then try again.",
 		"unstage": "Unstage",
+		"textHeading": "Text edits",
+		"kind": {
+			"paragraph": "Paragraph",
+			"aside": "Heading"
+		},
 		"op": {
 			"add": "Add",
 			"remove": "Remove",

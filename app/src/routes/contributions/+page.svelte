@@ -2,7 +2,15 @@
 	import { onMount } from 'svelte';
 	import { t, getUiLang } from '$lib/i18n';
 	import * as github from '$lib/github.svelte.js';
-	import { getEdits, unstage, clearAll, type Edit } from '$lib/edits.svelte.js';
+	import {
+		getEdits,
+		getProseEdits,
+		unstage,
+		unstageProse,
+		clearAll,
+		type Edit,
+		type ProseEdit
+	} from '$lib/edits.svelte.js';
 	import { getDbState } from '$lib/dbState';
 	import { getTopicDescriptions } from '$lib';
 	import NoScriptNotice from '$lib/NoScriptNotice.svelte';
@@ -42,7 +50,7 @@
 		submitError = null;
 		submittedUrl = null;
 		try {
-			const url = await submitContribution(tok, u.login, getEdits());
+			const url = await submitContribution(tok, u.login, getEdits(), getProseEdits());
 			submittedUrl = url;
 			clearAll();
 			await loadPrs();
@@ -72,6 +80,8 @@
 	});
 
 	const edits = $derived(getEdits());
+	const proseEdits = $derived(getProseEdits());
+	const hasEdits = $derived(edits.length > 0 || proseEdits.length > 0);
 	// Group by book, then paragraph, preserving insertion order.
 	const grouped = $derived.by(() => {
 		const byBook = new Map<string, Map<string, Edit[]>>();
@@ -81,6 +91,16 @@
 			list.push(e);
 			byPara.set(e.paragraph_id, list);
 			byBook.set(e.book_id, byPara);
+		}
+		return byBook;
+	});
+	// Prose edits grouped by book (each row is one paragraph/aside rendition).
+	const proseByBook = $derived.by(() => {
+		const byBook = new Map<string, ProseEdit[]>();
+		for (const e of proseEdits) {
+			const list = byBook.get(e.book_id) ?? [];
+			list.push(e);
+			byBook.set(e.book_id, list);
 		}
 		return byBook;
 	});
@@ -123,13 +143,48 @@
 			</section>
 		{/if}
 
-		{#if edits.length === 0}
+		{#if !hasEdits}
 			<p class="text-muted-foreground">{t('contributions.empty')}</p>
 		{:else}
 		<section>
 			<h2 class="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground/80 mb-3">
 				{t('contributions.localHeading')}
 			</h2>
+
+			{#if proseEdits.length > 0}
+				<div class="mb-6">
+					<h3 class="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground/70">
+						{t('contributions.textHeading')}
+					</h3>
+					{#each proseByBook as [bookId, list] (bookId)}
+						<div class="mb-3">
+							<h4 class="mb-1 font-serif font-medium text-foreground">{bookId}</h4>
+							<ul class="space-y-1.5">
+								{#each list as e (`${e.lang}:${e.target_id}`)}
+									<li class="flex items-center gap-2 text-sm">
+										<span
+											class="shrink-0 rounded bg-primary/10 px-1.5 py-0.5 text-xs font-medium text-primary"
+										>
+											{t(`contributions.kind.${e.kind}`)}
+										</span>
+										<span class="min-w-0 flex-1 truncate font-mono text-xs text-foreground">
+											{e.target_id}
+											<span class="text-muted-foreground">({e.lang})</span>
+										</span>
+										<button
+											type="button"
+											onclick={() => unstageProse(e.book_id, e.lang, e.target_id)}
+											class="shrink-0 rounded-md border border-border px-2 py-1 text-xs text-foreground transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring"
+										>
+											{t('contributions.unstage')}
+										</button>
+									</li>
+								{/each}
+							</ul>
+						</div>
+					{/each}
+				</div>
+			{/if}
 
 			{#each grouped as [bookId, byPara] (bookId)}
 				<div class="mb-6">

@@ -104,7 +104,12 @@
 		"searchTopics": "Cerca argomenti…",
 		"noTopics": "Nessun argomento corrispondente",
 		"verifyLabel": "Segna come corretto / verificato da persona",
-		"commentLabel": "Commento editoriale (in inglese)"
+		"commentLabel": "Commento editoriale (in inglese)",
+		"editProse": "Modifica il testo",
+		"editAside": "Modifica il testo della rubrica",
+		"proseHelp": "Modifica il testo di partenza. Mantieni invariati i marcatori di versetto come [1] e i riferimenti come <ref to=\"Acts 1:1\">…</ref>.",
+		"edited": "Modificato — clicca per cambiare o annullare",
+		"undoEdit": "Annulla la modifica al testo"
 	},
 	"contributions": {
 		"heading": "I miei contributi",
@@ -122,6 +127,11 @@
 		"errNotAFork": "Hai già un repository chiamato «franciscus-data» sul tuo account che non è un fork del progetto, quindi non è possibile aprire una pull request da esso. Rinomina o elimina quel repository, poi riprova: l'app creerà un fork corretto.",
 		"errForkFailed": "Impossibile creare un fork sul tuo account. Se in passato hai trasferito un repository «franciscus-data» a un altro proprietario, GitHub mantiene un reindirizzamento su quel nome che impedisce un nuovo fork: crea il fork manualmente dalla pagina GitHub del progetto, poi riprova.",
 		"unstage": "Rimuovi dalla lista",
+		"textHeading": "Modifiche al testo",
+		"kind": {
+			"paragraph": "Paragrafo",
+			"aside": "Rubrica"
+		},
 		"op": {
 			"add": "Aggiungi",
 			"remove": "Rimuovi",

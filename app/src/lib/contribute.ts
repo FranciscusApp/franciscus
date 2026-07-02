@@ -1,7 +1,8 @@
 import { dev } from '$app/environment';
 import { PUBLIC_DATA_REPO } from '$env/static/public';
-import type { Edit } from './edits.svelte';
+import type { Edit, ProseEdit } from './edits.svelte';
 import { applyAnnotationEdits, parseTopicsVocab, validateAdds } from './annotationDiff';
+import { applyProseEdits, validateProse } from './proseDiff';
 
 /**
  * Phase 4 — the GitHub write path. Browser → GitHub REST API with the user's own
@@ -63,6 +64,10 @@ function fromBase64(s: string): string {
 }
 
 const sidecarPath = (bookId: string) => `books/${bookId}.yaml`;
+/** Source file for a prose rendition: `la` is the canonical `<id>.md`; any other
+ * lang is the translation `<id>.<lang>.md` (spec: franciscus-data/spec/books.md). */
+const renditionPath = (bookId: string, lang: string) =>
+	lang === 'la' ? `books/${bookId}.md` : `books/${bookId}.${lang}.md`;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 // --- reads for the "My Contributions" remote sections ----------------------
@@ -239,11 +244,13 @@ async function getSidecar(
 export async function submitContribution(
 	token: string,
 	login: string,
-	edits: Edit[]
+	edits: Edit[],
+	proseEdits: ProseEdit[] = []
 ): Promise<string> {
-	if (edits.length === 0) throw new Error('No staged edits to submit.');
+	if (edits.length === 0 && proseEdits.length === 0) throw new Error('No staged edits to submit.');
 
-	const books = [...new Set(edits.map((e) => e.book_id))];
+	// Books touched by either kind of edit — for the base ref choice and PR title.
+	const books = [...new Set([...edits, ...proseEdits].map((e) => e.book_id))];
 
 	// PR base (also the vocabulary/source-of-truth ref). In dev, target `develop`
 	// so local testing never PRs into the production branch — fall back to the
@@ -254,14 +261,33 @@ export async function submitContribution(
 	);
 	const base = dev && (await getRefSha(token, 'develop')) ? 'develop' : repo.default_branch;
 
-	// Validate every `add` against the closed vocabulary (Phase 3 check).
-	const topicsFile = await ghJson<Contents>(
-		token,
-		`/repos/${UPSTREAM_OWNER}/${REPO}/contents/topics/topics.yaml?ref=${base}`
-	);
-	const vocab = parseTopicsVocab(fromBase64(topicsFile.content));
-	const errors = validateAdds(edits, vocab);
-	if (errors.length) throw new Error(errors.join('\n'));
+	// Validate prose bodies against a subset of the format spec (Phase 5 check).
+	const proseErrors = validateProse(proseEdits);
+	if (proseErrors.length) throw new Error(proseErrors.join('\n'));
+
+	// Validate every annotation `add` against the closed vocabulary (Phase 3
+	// check). Skip the topics.yaml fetch entirely when there are no adds.
+	if (edits.some((e) => e.op === 'add')) {
+		const topicsFile = await ghJson<Contents>(
+			token,
+			`/repos/${UPSTREAM_OWNER}/${REPO}/contents/topics/topics.yaml?ref=${base}`
+		);
+		const vocab = parseTopicsVocab(fromBase64(topicsFile.content));
+		const errors = validateAdds(edits, vocab);
+		if (errors.length) throw new Error(errors.join('\n'));
+	}
+
+	// One plan per touched file: the path plus how to rewrite its current text.
+	// Annotation sidecars use the Phase 3 transform; prose renditions the Phase 5
+	// one. Renditions are keyed by `book|lang` so each `.md`/`.<lang>.md` is one file.
+	const plans = new Map<string, (current: string) => string>();
+	for (const bookId of new Set(edits.map((e) => e.book_id))) {
+		plans.set(sidecarPath(bookId), (c) => applyAnnotationEdits(c, bookId, edits, login));
+	}
+	for (const key of new Set(proseEdits.map((e) => `${e.book_id}|${e.lang}`))) {
+		const [bookId, lang] = key.split('|');
+		plans.set(renditionPath(bookId, lang), (c) => applyProseEdits(c, bookId, lang, proseEdits));
+	}
 
 	// Ensure a real fork (handles the transfer-redirect case) and use its actual
 	// coordinates for every write — never the possibly-redirecting {login}/{REPO}.
@@ -283,14 +309,13 @@ export async function submitContribution(
 		});
 	}
 
-	// Compute each edited sidecar's new content (Phase 3 transform), reading the
-	// current file *from the working branch* so reused PRs build on prior commits.
+	// Compute each edited file's new content, reading the current file *from the
+	// working branch* so reused PRs build on prior commits.
 	const commits: { path: string; text: string; sha?: string }[] = [];
-	for (const bookId of books) {
-		const path = sidecarPath(bookId);
+	for (const [path, apply] of plans) {
 		const file = await getSidecar(token, fork.owner, fork.name, path, branch);
 		const current = file?.content ?? '';
-		const next = applyAnnotationEdits(current, bookId, edits, login);
+		const next = apply(current);
 		if (next !== current) commits.push({ path, text: next, sha: file?.sha });
 	}
 	if (commits.length === 0) throw new Error('These edits produce no change to the source files.');
@@ -300,7 +325,7 @@ export async function submitContribution(
 		await ghJson(token, `/repos/${fork.owner}/${fork.name}/contents/${c.path}`, {
 			method: 'PUT',
 			body: JSON.stringify({
-				message: `Update annotations in ${c.path}`,
+				message: `Update ${c.path}`,
 				content: toBase64(c.text),
 				branch,
 				...(c.sha ? { sha: c.sha } : {})
@@ -323,11 +348,11 @@ async function openPr(
 	books: string[]
 ): Promise<string> {
 	const body = JSON.stringify({
-		title: `Annotation edits: ${books.join(', ')}`,
+		title: `Corpus edits: ${books.join(', ')}`,
 		head: `${forkOwner}:${branch}`,
 		base,
 		body:
-			'Annotation edits proposed via the in-app contribution flow.\n\n' +
+			'Edits proposed via the in-app contribution flow.\n\n' +
 			'All contributions are released under CC0 (public domain), per the ' +
 			'consent given in-app.'
 	});

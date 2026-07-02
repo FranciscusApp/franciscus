@@ -419,22 +419,58 @@ before merge.
 
 ---
 
-## Phase 5 — Prose edits — **closes the feature gap**
+## Phase 5 — Prose edits — ✅ DONE (needs a live GitHub sign-in to exercise end-to-end)
 
-Extend the edit interface + reverse mapping to source `.md` prose. This is the
-hard part (build-artifact IDs), deliberately deferred until the loop is proven.
+Extends the edit interface + reverse mapping to source `.md` prose — paragraphs
+**and** asides, in the source Latin (`<id>.md`) or any translation
+(`<id>.<lang>.md`).
 
-- Reverse-translate DB elements back to source:
-  - `<v id="<p-id>-N">N</v>` → source `[N]` verse markers.
-  - `<aside>` positional ids (`<chapter>-aside-K`) → the bare source `<aside>`.
-  - Body edits target `<p id="…">` in the `.md`.
-- Locate the `<p id>` region in the fetched source `.md`, apply the text change,
-  preserve surrounding structure.
-- Client-side subset of the [`books.md`](../franciscus-data/spec/books.md)
-  invariants before pushing (heading depth, id presence, `<ref>` well-formedness).
+Reverse mapping is pure, testable text surgery in
+[`app/src/lib/proseDiff.ts`](app/src/lib/proseDiff.ts) (self-check:
+[`proseDiff.test.ts`](app/src/lib/proseDiff.test.ts), run with
+`node --experimental-strip-types`):
+- `dbContentToSource` / `sourceToDisplay` — invert the parser's verse rewrite
+  (`<v id="<p-id>-N">N</v>` ⇄ `[N]`); `<ref>` and all other markup pass through.
+  `sourceToDisplay` is an exact mirror of the Rust `replace_verse_markers`, so a
+  staged edit that didn't touch verse numbers reflects **byte-identically** in the
+  reader.
+- `applyProseEdits(mdText, bookId, lang, edits)` — locates the `<p id="…">` block
+  (exact id match) or the **Kth `<aside>` within its chapter** region and splices
+  the new body in, preserving the opening tag and every untouched line (minimal
+  diff). A target that can't be located is a safe no-op.
+- `validateProse` — client-side subset of the [`books.md`](../franciscus-data/spec/books.md)
+  invariants before pushing: non-empty body, no stray headings, no leaked
+  `<p>`/`<aside>` block tags, balanced `<ref>` each carrying a `to` target.
 
-**Exit criteria:** a prose correction on a paragraph produces a valid `.md` diff
-and rides the same fork/commit/PR path from Phase 4.
+UI + buffer:
+- `edits.svelte.ts` gains a **separate `ProseEdit` buffer** (own localStorage key)
+  keyed `{book_id, lang, target_id}`, storing the new **source-form** body;
+  `clearAll()` now clears both buffers.
+- New [`ProseEditor.svelte`](app/src/lib/ProseEditor.svelte) — a pencil affordance
+  (editor mode only) opening a **modal textarea** seeded with source-form text
+  (literal `[N]` / `<ref>`), confirm/cancel/discard. The reader
+  ([`book/[book_id]/[chapter_id]/+page.svelte`](app/src/routes/book/%5Bbook_id%5D/%5Bchapter_id%5D/+page.svelte))
+  reflects a staged edit in place with an accent ring; asides got a `group`
+  wrapper + control. Prose edits render + unstage on "My Contributions".
+- `contribute.ts` `submitContribution(token, login, edits, proseEdits)` folds prose
+  files into the same fork/branch/commit/PR loop via a generic per-file plan map
+  (annotation sidecars use the Phase 3 transform, renditions the Phase 5 one); PR
+  title generalized to "Corpus edits".
+
+`npm run check` clean; both reverse-mapping self-checks pass. **Not yet exercised
+live** — landing a real prose PR needs a browser GitHub sign-in against the
+deployed Worker (same gap Phases 1/4 noted).
+
+**Decisions taken (were open):**
+- **Edit surface:** textarea of raw source-form text (literal `[N]`/`<ref>`), not a
+  rich contenteditable — honest about what commits, low risk for a first prose pass.
+- **Scope:** paragraphs **and** asides (aside reverse-located by per-chapter
+  position). Per-paragraph provenance bumping on a corrected translation (`<p>`
+  `provenance`/`by`) is **deferred to Phase 6** — the `<p>` tag is preserved verbatim.
+
+**Exit criteria (met, pending live run):** a prose correction on a paragraph (or
+aside) produces a valid, minimal `.md` diff and rides the Phase 4 fork/commit/PR
+path.
 
 ---
 

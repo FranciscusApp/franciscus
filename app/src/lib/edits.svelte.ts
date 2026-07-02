@@ -27,8 +27,27 @@ export interface Edit {
 	comment?: string;
 }
 
+/**
+ * A staged prose edit (Phase 5): a full-body replacement of one `<p>` paragraph
+ * or one `<aside>` block, in a specific rendition. `lang` selects the target
+ * file (`la` → source `<id>.md`, else `<id>.<lang>.md`); `target_id` is the DB
+ * element id (`<p>` id, or the positional `<chapter>-aside-K`), unique within a
+ * file, so `{book_id, lang, target_id}` is the buffer key. `chapter_id` is kept
+ * because an aside is reverse-located by its position *within its chapter*.
+ * `text` is the new body in **source form** ([N] verse markers, literal `<ref>`).
+ */
+export interface ProseEdit {
+	book_id: string;
+	lang: string;
+	chapter_id: string;
+	kind: 'paragraph' | 'aside';
+	target_id: string;
+	text: string;
+}
+
 const MODE_KEY = 'franciscus-editor-mode';
 const EDITS_KEY = 'franciscus-edits';
+const PROSE_KEY = 'franciscus-prose-edits';
 
 function loadString(key: string): string | null {
 	if (!browser) return null;
@@ -49,8 +68,19 @@ function loadEdits(): Edit[] {
 	}
 }
 
+function loadProseEdits(): ProseEdit[] {
+	const raw = loadString(PROSE_KEY);
+	if (!raw) return [];
+	try {
+		return JSON.parse(raw) as ProseEdit[];
+	} catch {
+		return [];
+	}
+}
+
 let editorMode = $state<boolean>(loadString(MODE_KEY) === 'true');
 let edits = $state<Edit[]>(loadEdits());
+let proseEdits = $state<ProseEdit[]>(loadProseEdits());
 
 function persist(key: string, value: string | null) {
 	if (!browser) return;
@@ -65,6 +95,11 @@ function persist(key: string, value: string | null) {
 function commit(next: Edit[]) {
 	edits = next;
 	persist(EDITS_KEY, JSON.stringify(next));
+}
+
+function commitProse(next: ProseEdit[]) {
+	proseEdits = next;
+	persist(PROSE_KEY, JSON.stringify(next));
 }
 
 export function isEditorMode(): boolean {
@@ -165,9 +200,44 @@ export function setComment(book: string, para: string, type: string, value: stri
 	);
 }
 
+// --- prose edits (Phase 5) ---
+
+export function getProseEdits(): ProseEdit[] {
+	return proseEdits;
+}
+
+/** The staged prose edit for a rendition's element, or null. `target_id` is
+ * unique within a file, so `lang` + `target_id` pins it down. */
+export function pendingProse(book: string, lang: string, targetId: string): ProseEdit | null {
+	return (
+		proseEdits.find(
+			(e) => e.book_id === book && e.lang === lang && e.target_id === targetId
+		) ?? null
+	);
+}
+
+/** Stage (or replace) a prose body edit. Passing text equal to the original is
+ * the caller's cue to unstage — see {@link unstageProse}; this only writes. */
+export function setProse(edit: ProseEdit) {
+	const base = proseEdits.filter(
+		(e) => !(e.book_id === edit.book_id && e.lang === edit.lang && e.target_id === edit.target_id)
+	);
+	commitProse([...base, edit]);
+}
+
+/** Drop a staged prose edit (My Contributions "unstage", editor "discard"). */
+export function unstageProse(book: string, lang: string, targetId: string) {
+	commitProse(
+		proseEdits.filter(
+			(e) => !(e.book_id === book && e.lang === lang && e.target_id === targetId)
+		)
+	);
+}
+
 /** Drop the whole buffer — used after a successful PR submission (Phase 4). */
 export function clearAll() {
 	commit([]);
+	commitProse([]);
 }
 
 /** Remove one exact staged edit (My Contributions "unstage", reader cancels). */
