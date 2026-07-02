@@ -3,7 +3,7 @@ import { PUBLIC_GH_CLIENT_ID, PUBLIC_AUTH_WORKER_ORIGIN } from '$env/static/publ
 
 /**
  * GitHub identity for the contribution flow. Client-side only: the user signs in
- * with their own GitHub account via a Decap-style OAuth popup, and we keep a
+ * with their own GitHub account via a Decap-style OAuth App popup, and we keep a
  * long-lived user token in localStorage (per the locked plan decision — the
  * token is device-local and every PR is human-reviewed before merge). This
  * module owns only the *identity* layer (Phase 1); no repo writes happen here.
@@ -132,6 +132,10 @@ function runOAuthPopup(): Promise<string> {
 		authUrl.searchParams.set('client_id', PUBLIC_GH_CLIENT_ID);
 		authUrl.searchParams.set('state', state);
 		authUrl.searchParams.set('redirect_uri', `${WORKER_ORIGIN}/auth/callback`);
+		// OAuth App scope: enough to fork the public data repo, push to the user's
+		// own fork, and open a PR upstream. (`repo` would be needed only if the
+		// corpus repo were private.)
+		authUrl.searchParams.set('scope', 'public_repo');
 
 		const popup = window.open(
 			authUrl.toString(),

@@ -23,8 +23,15 @@ in a static bundle is public; safe guests would require a secret-holding proxy).
 - **v1 scope includes prose**, but we sequence it last. First close the
   **auth → fork → commit → PR** loop end-to-end using annotation edits (the
   simplest edit type), *then* close the feature gap by adding prose edits.
-- **GitHub App user-to-server** flow (not OAuth App), for fine-grained
-  per-repo permissions: Contents R/W + Pull requests R/W on `franciscus-data`.
+- **OAuth App** flow with the `public_repo` scope. *(Revised — originally a
+  GitHub App user-to-server flow, chosen for fine-grained per-repo permissions.
+  That fights the fork model: a GitHub App must be **installed** on every
+  contributor's account before it can write to their fork — "authorize" alone
+  grants no repo access, and a "selected repositories" install can't cover a fork
+  that doesn't exist yet, so writes 403. An OAuth App has no install step: one
+  authorize screen, and `public_repo` is enough to fork the public repo, push to
+  the user's own fork, and open the PR upstream. The broader scope is the
+  accepted cost.)*
 
 ## Architecture
 
@@ -54,12 +61,16 @@ Infra lives in its **own private repo**, `FranciscusApp/franciscus-infra`
 (AGPL-3.0), kept apart from the app/corpus. The Worker is in
 `franciscus-infra/worker/` (zero-build JS module; `wrangler deploy`).
 
-**GitHub App** on `FranciscusApp` (App ID `4191800`, Client ID
-`Iv23liUYOiH6aSzkICg2`):
-- Permissions: **Contents** R/W, **Pull requests** R/W. Nothing else.
-- User-to-server flow; installable on any account.
-- Expiring user tokens: **OFF** (per decision).
-- Callback URL → `https://franciscus-auth.as-be3.workers.dev/auth/callback`.
+**GitHub OAuth App** on `FranciscusApp` (Client ID `Ov23livh8M8e5za9LdKS`):
+- **Scope:** `public_repo`, requested at authorize time. No repository
+  permissions to configure and **no install step** — fork/commit/PR all work
+  from the user token directly.
+- Tokens are long-lived (per decision).
+- Authorization callback URL →
+  `https://franciscus-auth.as-be3.workers.dev/auth/callback`.
+
+*(Superseded the original GitHub App `4191800` / `Iv23liUYOiH6aSzkICg2` — see the
+revised Decision above for why the App model doesn't fit a fork-based flow.)*
 
 **Cloudflare Worker** — deployed at `https://franciscus-auth.as-be3.workers.dev`:
 - `GET /auth/callback` — the *only* route (GitHub's OAuth redirect is a browser
@@ -77,7 +88,7 @@ Infra lives in its **own private repo**, `FranciscusApp/franciscus-infra`
   in `franciscus-infra/worker/README.md`.
 
 **App config** (Vite `PUBLIC_` env) — to set in Phase 1:
-- `PUBLIC_GH_CLIENT_ID = Iv23liUYOiH6aSzkICg2`
+- `PUBLIC_GH_CLIENT_ID = Ov23livh8M8e5za9LdKS`
 - `PUBLIC_AUTH_WORKER_ORIGIN = https://franciscus-auth.as-be3.workers.dev`
 - `PUBLIC_DATA_REPO = FranciscusApp/franciscus-data`
 
@@ -313,7 +324,24 @@ are untouched.
 
 ---
 
-## Phase 3 — Reverse mapping (DB → source), annotations
+## Phase 3 — Reverse mapping (DB → source), annotations — ✅ DONE
+
+Implemented as pure, testable functions in
+[`app/src/lib/annotationDiff.ts`](app/src/lib/annotationDiff.ts) (self-check:
+[`annotationDiff.test.ts`](app/src/lib/annotationDiff.test.ts), run with
+`node --experimental-strip-types`):
+- `applyAnnotationEdits(yamlText, bookId, edits, author)` — targeted **text
+  surgery** on the 2C grouped format (no YAML round-trip, so untouched lines stay
+  byte-identical → minimal diff). Handles all four ops: `add` appends a scalar
+  item, `remove` deletes it (dropping an emptied paragraph key), `verify` sets
+  `by: <author>` (scalar→map), `comment` sets a JSON-encoded `comment` field.
+  Creates a missing paragraph key / `annotations:` section as needed.
+- `parseTopicsVocab` + `validateAdds` — closed-vocabulary check (Phase 3 bullet).
+  Relations skip the check (free target key); only their reltype is closed.
+
+**Deferred to Phase 4 (network):** fetching the current `<id>.yaml` (fork else
+`raw.githubusercontent.com`) and `topics.yaml` to feed these pure functions —
+that's the read/write wiring Phase 4 already owns.
 
 **Format note:** targets the Phase 2C grouped format — locate
 `annotations['<paragraph>']` and add / remove / rewrite a **single item**; there
@@ -341,7 +369,37 @@ Turn a DB-addressed edit into a source-file text diff.
 
 ---
 
-## Phase 4 — GitHub write path (fork → commit → PR) — **closes the loop**
+## Phase 4 — GitHub write path (fork → commit → PR) — ✅ DONE (needs a live GitHub sign-in to exercise end-to-end)
+
+Implemented in [`app/src/lib/contribute.ts`](app/src/lib/contribute.ts) +
+wired into [`contributions/+page.svelte`](app/src/routes/contributions/+page.svelte):
+- `submitContribution(token, login, edits)` runs the whole loop in one action:
+  validate every `add` against the fetched `topics.yaml` (Phase 3 check) → ensure
+  the user's fork (`POST /forks`, poll) → create a **branch in the fork at the
+  *upstream* head sha** (reachable because forks share the object store) → commit
+  each edited sidecar via the Contents API (Phase 3 transform) → open the PR
+  upstream with a CC0 note. Session edits across books batch into one branch/PR.
+- **Add-to-open-PR:** if the user already has an open PR from this flow
+  (`findReusablePr`, branch prefix `franciscus/contrib-`), a later submit
+  **commits onto that branch** — reading each sidecar from the branch so it builds
+  on prior commits — and opens **no** second PR. First submit forks+commits+PRs in
+  one action; subsequently staged notes extend the same open PR.
+- `forkExists` / `listOpenPrs` back the "My Contributions" remote sections; the
+  page shows the user's open PRs, an **Open pull request** button (submitting /
+  error / success-with-link states), and clears the local buffer on success.
+- i18n: replaced the `remoteSoon` placeholder with `submit`/`submitting`/
+  `submitHint`/`submitted`/`openPrsHeading` (en + it); `clearAll()` added to the
+  edits buffer.
+
+`npm run check` clean. **Not yet exercised live** — landing a real PR needs a
+browser GitHub sign-in against the deployed Worker (same gap Phase 1 noted).
+
+**ponytail simplifications:** no manual commit-now / PR-later split — the first
+submit opens the PR and later submits extend it automatically; `userPulls` reads a
+single `per_page=100` page (no pagination — fine at this repo's PR volume); one
+Contents commit per file rather than a batched git-tree commit.
+
+**Original work items (for reference):**
 
 1. Ensure fork exists (`POST /repos/{owner}/{repo}/forks`; poll until ready;
    reuse if present).

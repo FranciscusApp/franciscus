@@ -165,6 +165,11 @@ export function setComment(book: string, para: string, type: string, value: stri
 	);
 }
 
+/** Drop the whole buffer — used after a successful PR submission (Phase 4). */
+export function clearAll() {
+	commit([]);
+}
+
 /** Remove one exact staged edit (My Contributions "unstage", reader cancels). */
 export function unstage(edit: Edit) {
 	commit(without(edit.book_id, edit.paragraph_id, edit.topic_type, edit.topic_value, edit.op));
