@@ -9,7 +9,9 @@
     import Info from '@lucide/svelte/icons/info';
     import HeartHandshake from '@lucide/svelte/icons/heart-handshake';
     import BookOpenText from '@lucide/svelte/icons/book-open-text';
+    import GitPullRequest from '@lucide/svelte/icons/git-pull-request';
     import X from '@lucide/svelte/icons/x';
+    import * as github from '$lib/github.svelte.js';
 
     // GitHub-style nav cluster: the menu button is always present (mobile and
     // desktop), the logo returns home, and the current page is named beside it.
@@ -21,7 +23,8 @@
         '/topics': 'nav.topics',
         '/about': 'nav.about',
         '/contribute': 'nav.contribute',
-        '/bookmarks': 'nav.bookmarks'
+        '/bookmarks': 'nav.bookmarks',
+        '/contributions': 'nav.myContributions'
     };
 
     // On hubs use the static name; on content pages (book / chapter / topic) the
@@ -120,6 +123,21 @@
                         </a>
                     {/snippet}
                 </Sheet.Close>
+                {#if github.isConnected()}
+                    <Sheet.Close>
+                        {#snippet child({ props })}
+                            <a
+                                href="/contributions"
+                                {...props}
+                                aria-current={routeId === '/contributions' ? 'page' : undefined}
+                                class="group flex items-center gap-3 rounded-md px-3 py-2.5 transition-colors hover:bg-accent aria-[current=page]:bg-accent aria-[current=page]:font-medium"
+                            >
+                                <GitPullRequest class="size-5 shrink-0 text-muted-foreground group-aria-[current=page]:text-primary" />
+                                <span class="text-foreground">{t('nav.myContributions')}</span>
+                            </a>
+                        {/snippet}
+                    </Sheet.Close>
+                {/if}
             </div>
 
             <!-- Sources: every book in the corpus, avatar-style chip + title -->

@@ -15,7 +15,8 @@
 		"home": "Home",
 		"bookmarks": "Segnalibri",
 		"about": "Il progetto",
-		"contribute": "Contribuisci"
+		"contribute": "Contribuisci",
+		"myContributions": "I miei contributi"
 	},
 	"footer": {
 		"projectBy": "Un progetto di"
@@ -88,8 +89,36 @@
 		"menu": "Menu",
 		"toggleMenu": "Apri o chiudi il menu",
 		"languageSettings": "Impostazioni lingua",
+		"settings": "Impostazioni",
 		"addBookmark": "Aggiungi questo passo ai segnalibri",
 		"removeBookmark": "Rimuovi il segnalibro"
+	},
+	"edit": {
+		"editorMode": "Modalità redazione",
+		"add": "Aggiungi argomento",
+		"remove": "Rimuovi argomento",
+		"undo": "Annulla",
+		"confirm": "Conferma",
+		"cancel": "Annulla",
+		"editAnnotation": "Modifica annotazione",
+		"searchTopics": "Cerca argomenti…",
+		"noTopics": "Nessun argomento corrispondente",
+		"verifyLabel": "Segna come corretto / verificato da persona",
+		"commentLabel": "Commento editoriale (in inglese)"
+	},
+	"contributions": {
+		"heading": "I miei contributi",
+		"empty": "Nessuna modifica in sospeso. Attiva la modalità redazione nelle Impostazioni, poi modifica le annotazioni durante la lettura per raccoglierle qui.",
+		"notConnected": "Collega il tuo account GitHub nella pagina Contribuisci per iniziare a preparare le modifiche.",
+		"localHeading": "Modifiche in sospeso",
+		"remoteSoon": "La pubblicazione su GitHub arriverà in un aggiornamento successivo; per ora le modifiche restano su questo dispositivo.",
+		"unstage": "Rimuovi dalla lista",
+		"op": {
+			"add": "Aggiungi",
+			"remove": "Rimuovi",
+			"verify": "Verifica",
+			"comment": "Commento"
+		}
 	},
 	"pages": {
 		"about": {

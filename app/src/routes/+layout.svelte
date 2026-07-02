@@ -22,7 +22,7 @@
 	// Hubs are entry points, not waypoints: landing on one clears the breadcrumb
 	// trail so the menu acts as a fresh start. Content pages (book / chapter /
 	// topic) record themselves and are left untouched here.
-	const TRAIL_HUBS = new Set(['/', '/topics', '/about', '/contribute', '/bookmarks']);
+	const TRAIL_HUBS = new Set(['/', '/topics', '/about', '/contribute', '/bookmarks', '/contributions']);
 	afterNavigate((nav) => {
 		const routeId = nav.to?.route.id;
 		if (routeId && TRAIL_HUBS.has(routeId)) resetTrail();

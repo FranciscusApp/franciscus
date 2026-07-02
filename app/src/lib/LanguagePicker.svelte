@@ -8,6 +8,9 @@
 		setCorpusLang,
 		UI_LANGUAGES
 	} from '$lib/i18n';
+	import * as github from '$lib/github.svelte.js';
+	import { isEditorMode, setEditorMode } from '$lib/edits.svelte.js';
+	import Settings from '@lucide/svelte/icons/settings';
 
 	// Corpus translation languages come from the manifest (passed down by the
 	// root layout) so the picker works before the sql.js DB has loaded.
@@ -25,12 +28,9 @@
 <DropdownMenu.Root>
 	<DropdownMenu.Trigger
 		class="p-2 pointer-coarse:p-3 rounded-full text-muted-foreground hover:bg-accent transition-colors"
-		aria-label={t('a11y.languageSettings')}
+		aria-label={t('a11y.settings')}
 	>
-		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-6 h-6">
-			<path fill-rule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-1.5 0a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0Z" clip-rule="evenodd"/>
-			<path d="M10 3.5c-1.38 0-2.87 2.24-3.25 5.5h6.5c-.38-3.26-1.87-5.5-3.25-5.5ZM6.75 11c.38 3.26 1.87 5.5 3.25 5.5s2.87-2.24 3.25-5.5h-6.5ZM3.5 10c0-.52.06-1.02.17-1.5h2.6a14 14 0 0 0 0 3h-2.6A6.5 6.5 0 0 1 3.5 10Zm10.23 1.5a14 14 0 0 0 0-3h2.6c.11.48.17.98.17 1.5s-.06 1.02-.17 1.5h-2.6Z"/>
-		</svg>
+		<Settings class="w-6 h-6" />
 	</DropdownMenu.Trigger>
 
 	<DropdownMenu.Content
@@ -68,5 +68,18 @@
 				{/each}
 			</select>
 		</div>
+		{#if github.isConnected()}
+			<div class="border-t border-border pt-3">
+				<label class="flex items-center justify-between gap-2 text-sm text-foreground">
+					<span>{t('edit.editorMode')}</span>
+					<input
+						type="checkbox"
+						checked={isEditorMode()}
+						onchange={(e) => setEditorMode((e.target as HTMLInputElement).checked)}
+						class="h-4 w-4 rounded border-border"
+					/>
+				</label>
+			</div>
+		{/if}
 	</DropdownMenu.Content>
 </DropdownMenu.Root>

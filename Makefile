@@ -11,12 +11,12 @@ BUILD_TIME := $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
 
 all: db app
 
-install: app/node_modules
+install: app/node_modules app/static/sql-wasm.wasm
 
 app/node_modules: app/package.json
 	cd app && npm install
-	# The app loads the FTS5-enabled glue from fts5-sql-bundle, so the wasm
-	# must come from there too — the stock sql.js wasm is a mismatched build.
+
+app/static/sql-wasm.wasm: app/node_modules
 	cp app/node_modules/fts5-sql-bundle/dist/sql-wasm.wasm app/static/
 
 check:

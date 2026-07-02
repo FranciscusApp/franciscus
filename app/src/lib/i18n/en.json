@@ -15,7 +15,8 @@
 		"home": "Home",
 		"bookmarks": "Bookmarks",
 		"about": "About",
-		"contribute": "Contribute"
+		"contribute": "Contribute",
+		"myContributions": "My Contributions"
 	},
 	"footer": {
 		"projectBy": "A project by"
@@ -88,8 +89,36 @@
 		"menu": "Menu",
 		"toggleMenu": "Toggle menu",
 		"languageSettings": "Language settings",
+		"settings": "Settings",
 		"addBookmark": "Bookmark this passage",
 		"removeBookmark": "Remove bookmark"
+	},
+	"edit": {
+		"editorMode": "Editor mode",
+		"add": "Add topic",
+		"remove": "Remove topic",
+		"undo": "Undo",
+		"confirm": "Confirm",
+		"cancel": "Cancel",
+		"editAnnotation": "Edit annotation",
+		"searchTopics": "Search topics…",
+		"noTopics": "No matching topics",
+		"verifyLabel": "Mark as correct / human-verified",
+		"commentLabel": "Editorial comment (English)"
+	},
+	"contributions": {
+		"heading": "My Contributions",
+		"empty": "No staged edits yet. Turn on editor mode in Settings, then edit annotations while reading to stage changes here.",
+		"notConnected": "Connect your GitHub account on the Contribute page to start staging edits.",
+		"localHeading": "Staged edits",
+		"remoteSoon": "Publishing these to GitHub arrives in a later update; for now staged edits stay on this device.",
+		"unstage": "Unstage",
+		"op": {
+			"add": "Add",
+			"remove": "Remove",
+			"verify": "Verify",
+			"comment": "Comment"
+		}
 	},
 	"pages": {
 		"about": {

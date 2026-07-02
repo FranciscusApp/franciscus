@@ -20,7 +20,9 @@
 	import { recordProgress } from '$lib/progress.svelte.js';
 	import { isBookmarked, toggleBookmark } from '$lib/bookmarks.svelte.js';
 	import BookmarkIcon from '@lucide/svelte/icons/bookmark';
-	import { topicColors } from '$lib/topicColors';
+	import AnnotationPills from '$lib/AnnotationPills.svelte';
+	import { isEditorMode } from '$lib/edits.svelte.js';
+	import * as github from '$lib/github.svelte.js';
 
 	const bookId = $derived($page.params.book_id ?? '');
 	const chapterId = $derived($page.params.chapter_id ?? '');
@@ -65,6 +67,19 @@
 			topicDescriptions.get(`${topicType}:${topicValue}`) ?? topicValue.replaceAll('_', ' ')
 		);
 	}
+
+	// Editor mode only bites when a GitHub session is present (Phase 2 chrome).
+	const editing = $derived(isEditorMode() && github.isConnected());
+
+	// Add-picker candidate set: every topic in the corpus (same source as the
+	// /topics hub — the manifest), labeled in the UI language.
+	const topicCandidates = $derived(
+		($page.data.manifest?.topics ?? []).map((tp: { type: string; value: string; description: string; descriptions: Record<string, string> }) => ({
+			type: tp.type,
+			value: tp.value,
+			label: tp.descriptions?.[uiLang] ?? tp.description
+		}))
+	);
 
 	const paragraphs = $derived(book && chapter ? getParagraphs(bookId, chapterId) : []);
 	const asides = $derived(book && chapter ? getAsides(bookId, chapterId) : []);
@@ -330,19 +345,14 @@
 						<span class="para-text font-serif text-foreground leading-relaxed">
 							{@html paragraphContent(p)}
 						</span>
-						{#if ann.length > 0}
-							<div class="mt-1 ml-0 sm:ml-10 flex flex-wrap gap-1">
-								{#each ann as a}
-									<a
-										href="/topics/{a.topic_type}/{a.topic_value}"
-										class="inline-block max-w-full break-words text-xs px-2 py-0.5 rounded-full no-underline transition-colors {topicColors(a.topic_type, true)}"
-										title={a.comment ?? ''}
-									>
-										{topicLabel(a.topic_type, a.topic_value)} ({t(`topics.types.${a.topic_type}`).toLowerCase()}{a.provenance !== 'ai' ? ' ✓' : ''})
-									</a>
-								{/each}
-							</div>
-						{/if}
+						<AnnotationPills
+							{bookId}
+							paragraphId={p.id}
+							annotations={ann}
+							{topicLabel}
+							candidates={topicCandidates}
+							{editing}
+						/>
 					</div>
 				{:else}
 					<aside class="text-sm italic text-muted-foreground font-serif py-2">
