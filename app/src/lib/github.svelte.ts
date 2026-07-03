@@ -17,6 +17,10 @@ import { PUBLIC_GH_CLIENT_ID, PUBLIC_AUTH_WORKER_ORIGIN } from '$env/static/publ
 export interface GithubUser {
 	login: string;
 	name: string | null;
+	/** Public email if the user exposes one on their profile, else null. Used to
+	 * enrich the first-contribution `contributors.yaml` entry; email is optional
+	 * there, so null is fine. `public_repo` scope can't read private emails. */
+	email: string | null;
 	avatarUrl: string;
 	htmlUrl: string;
 }
@@ -115,6 +119,7 @@ async function fetchUser(tok: string): Promise<GithubUser> {
 	return {
 		login: j.login,
 		name: j.name ?? null,
+		email: j.email ?? null,
 		avatarUrl: j.avatar_url,
 		htmlUrl: j.html_url
 	};

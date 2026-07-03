@@ -72,11 +72,25 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 // --- reads for the "My Contributions" remote sections ----------------------
 
-export interface OpenPr {
+export type PrState = 'open' | 'closed' | 'merged';
+
+export interface UserPr {
 	number: number;
 	title: string;
 	url: string;
+	state: PrState;
+	/** Head branch name on the fork. */
+	branch: string;
+	/** True when this PR was opened by the in-app flow (branch prefix match), so
+	 * further staged edits would append to it. */
+	fromFlow: boolean;
 }
+
+/** Public-domain dedication appended to every PR body opened by this flow. It is
+ * always present and never user-editable (the in-app consent is CC0). */
+export const CC0_NOTICE =
+	'All contributions are released under CC0 1.0 (public domain dedication), ' +
+	'per the consent given in-app.';
 
 interface RepoInfo {
 	full_name: string;
@@ -126,6 +140,8 @@ interface RawPr {
 	number: number;
 	title: string;
 	html_url: string;
+	state: string;
+	merged_at: string | null;
 	user: { login: string };
 	head: { ref: string };
 }
@@ -133,21 +149,38 @@ interface RawPr {
 /** Branch-name prefix for the branches this flow creates on the user's fork. */
 const BRANCH_PREFIX = 'franciscus/contrib-';
 
-/** The user's open PRs against the upstream data repo (single page — enough at
- * this repo's volume). ponytail: no pagination; add it if a fork ever has 100+
- * open PRs. */
-async function userPulls(token: string, login: string): Promise<RawPr[]> {
+/** The user's PRs against the upstream data repo (single page — enough at this
+ * repo's volume). ponytail: no pagination; add it if a fork ever has 100+ PRs.
+ * `state` is `open` for the reuse check, `all` for the history listing. */
+async function userPulls(
+	token: string,
+	login: string,
+	state: 'open' | 'all' = 'open'
+): Promise<RawPr[]> {
 	const prs = await ghJson<RawPr[]>(
 		token,
-		`/repos/${UPSTREAM_OWNER}/${REPO}/pulls?state=open&per_page=100`
+		`/repos/${UPSTREAM_OWNER}/${REPO}/pulls?state=${state}&per_page=100`
 	);
 	return prs.filter((p) => p.user?.login === login);
 }
 
-/** The user's open PRs, for the "My Contributions" remote section. */
-export async function listOpenPrs(token: string, login: string): Promise<OpenPr[]> {
-	const prs = await userPulls(token, login);
-	return prs.map((p) => ({ number: p.number, title: p.title, url: p.html_url }));
+function toUserPr(p: RawPr): UserPr {
+	const branch = p.head?.ref ?? '';
+	return {
+		number: p.number,
+		title: p.title,
+		url: p.html_url,
+		state: p.merged_at ? 'merged' : p.state === 'closed' ? 'closed' : 'open',
+		branch,
+		fromFlow: branch.startsWith(BRANCH_PREFIX)
+	};
+}
+
+/** The user's PRs (open + closed + merged), for the "My Contributions" open and
+ * history sections. GitHub sorts newest-first by default. */
+export async function listUserPrs(token: string, login: string): Promise<UserPr[]> {
+	const prs = await userPulls(token, login, 'all');
+	return prs.map(toUserPr);
 }
 
 /** An open PR from *this* flow whose branch we can add more commits to, or null.
@@ -156,10 +189,63 @@ export async function listOpenPrs(token: string, login: string): Promise<OpenPr[
 async function findReusablePr(
 	token: string,
 	login: string
-): Promise<{ branch: string; url: string } | null> {
+): Promise<{ branch: string; url: string; number: number } | null> {
 	const prs = await userPulls(token, login);
 	const mine = prs.find((p) => p.head?.ref?.startsWith(BRANCH_PREFIX));
-	return mine ? { branch: mine.head.ref, url: mine.html_url } : null;
+	return mine ? { branch: mine.head.ref, url: mine.html_url, number: mine.number } : null;
+}
+
+/** What a submit will do, so the UI can show a review step before any write.
+ * `create` → a new PR with the given default title/body (editable); `append` →
+ * the edits extend an already-open PR (no new title/body). No writes happen. */
+export interface PrDraft {
+	mode: 'create' | 'append';
+	prNumber?: number;
+	prUrl?: string;
+	title: string;
+	body: string;
+}
+
+export async function getPrDraft(
+	token: string,
+	login: string,
+	edits: Edit[],
+	proseEdits: ProseEdit[] = []
+): Promise<PrDraft> {
+	const books = [...new Set([...edits, ...proseEdits].map((e) => e.book_id))];
+	const title = `Corpus edits: ${books.join(', ')}`;
+	const body = 'Edits proposed via the in-app contribution flow.';
+	const existing = await findReusablePr(token, login);
+	if (existing) {
+		return { mode: 'append', prNumber: existing.number, prUrl: existing.url, title, body };
+	}
+	return { mode: 'create', title, body };
+}
+
+// --- contributors.yaml (first-contribution registration) -------------------
+
+const CONTRIBUTORS_PATH = 'contributors.yaml';
+
+function escapeRegExp(s: string): string {
+	return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/** Add the contributor to `contributors.yaml` if their login isn't already a
+ * top-level key. Returns the text unchanged when they're already listed (so the
+ * commit loop skips it) — idempotent, safe to run on every submit. Keys by the
+ * GitHub login, mirroring `by:`; `email` is included only when known. */
+export function appendContributor(
+	yamlText: string,
+	login: string,
+	name?: string | null,
+	email?: string | null
+): string {
+	if (new RegExp(`^${escapeRegExp(login)}:`, 'm').test(yamlText)) return yamlText;
+	const lines = [`${login}:`, `  name: ${name || login}`];
+	if (email) lines.push(`  email: ${email}`);
+	lines.push(`  github: ${login}`);
+	const base = yamlText.replace(/\s*$/, '');
+	return `${base ? base + '\n' : ''}${lines.join('\n')}\n`;
 }
 
 // --- the write path --------------------------------------------------------
@@ -241,11 +327,23 @@ async function getSidecar(
  * open PR from this flow already exists, later submits **commit onto its branch**
  * (extending that PR) and no new PR is opened.
  */
+export interface SubmitOptions {
+	/** User-reviewed PR title (new PRs only). Falls back to a generated title. */
+	title?: string;
+	/** User-reviewed PR body (new PRs only). The CC0 notice is always appended
+	 * regardless, and is not part of this editable text. */
+	body?: string;
+	/** Display name + public email, for first-contribution `contributors.yaml`. */
+	name?: string | null;
+	email?: string | null;
+}
+
 export async function submitContribution(
 	token: string,
 	login: string,
 	edits: Edit[],
-	proseEdits: ProseEdit[] = []
+	proseEdits: ProseEdit[] = [],
+	opts: SubmitOptions = {}
 ): Promise<string> {
 	if (edits.length === 0 && proseEdits.length === 0) throw new Error('No staged edits to submit.');
 
@@ -288,6 +386,9 @@ export async function submitContribution(
 		const [bookId, lang] = key.split('|');
 		plans.set(renditionPath(bookId, lang), (c) => applyProseEdits(c, bookId, lang, proseEdits));
 	}
+	// First contribution: register the author in contributors.yaml. No-op (skipped
+	// by the commit loop) once they're already listed, so it rides every submit.
+	plans.set(CONTRIBUTORS_PATH, (c) => appendContributor(c, login, opts.name, opts.email));
 
 	// Ensure a real fork (handles the transfer-redirect case) and use its actual
 	// coordinates for every write — never the possibly-redirecting {login}/{REPO}.
@@ -333,9 +434,12 @@ export async function submitContribution(
 		});
 	}
 
-	// Reused an open PR → the commits already extend it; otherwise open a new PR.
+	// Reused an open PR → the commits already extend it; otherwise open a new PR
+	// with the user-reviewed title/body (CC0 notice always appended by openPr).
 	if (existing) return existing.url;
-	return openPr(token, fork.owner, branch, base, books);
+	const title = opts.title?.trim() || `Corpus edits: ${books.join(', ')}`;
+	const body = opts.body ?? 'Edits proposed via the in-app contribution flow.';
+	return openPr(token, fork.owner, branch, base, title, body);
 }
 
 /** POST the PR, retrying the transient `head invalid` 422 GitHub returns when it
@@ -345,16 +449,15 @@ async function openPr(
 	forkOwner: string,
 	branch: string,
 	base: string,
-	books: string[]
+	title: string,
+	reviewedBody: string
 ): Promise<string> {
+	// The CC0 dedication is always appended and never part of the editable body.
 	const body = JSON.stringify({
-		title: `Corpus edits: ${books.join(', ')}`,
+		title,
 		head: `${forkOwner}:${branch}`,
 		base,
-		body:
-			'Edits proposed via the in-app contribution flow.\n\n' +
-			'All contributions are released under CC0 (public domain), per the ' +
-			'consent given in-app.'
+		body: `${reviewedBody.trim()}\n\n---\n${CC0_NOTICE}`
 	});
 	for (let attempt = 0; ; attempt++) {
 		const res = await gh(token, `/repos/${UPSTREAM_OWNER}/${REPO}/pulls`, {
