@@ -8,6 +8,20 @@ although it not being a library and not exposing any APIs means the definitions 
 might be somewhat loose or subjective.
 
 
+## [1.2.0] - 2026-07-03
+
+### Added
+- **In-app GitHub contributions.** Connect your GitHub account and stage
+  annotation and prose edits while reading, then open a pull request against the
+  corpus — fork, commit, and PR run client-side against your own token, with the
+  OAuth Worker as the only backend.
+- **"My Contributions" page** — signed-in profile, staged edits, your open pull
+  request, and a history of closed and merged pull requests.
+- **Pull-request review step** before submitting, with an editable title and
+  description and an always-included, non-editable CC0 dedication.
+- **First-contribution registration** in the corpus `contributors.yaml`.
+
+
 ## [1.1.0] - 2026-06-30
 
 ### Added
