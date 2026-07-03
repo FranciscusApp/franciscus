@@ -9,7 +9,7 @@ with translations, full-text search, and thematic cross-references — as a fast
 offline-capable web app.
 
 [**▶ Open the app — franciscus.app**](https://franciscus.app)
-
+ 
 [![Live](https://img.shields.io/badge/live-franciscus.app-green)](https://franciscus.app)
 [![App license: AGPL-3.0](https://img.shields.io/badge/app-AGPL--3.0-blue)](LICENSE)
 [![Corpus license: CC0](https://img.shields.io/badge/corpus-CC0--1.0-lightgrey)](https://github.com/FranciscusApp/franciscus-data)
