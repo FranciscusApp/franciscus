@@ -5,19 +5,15 @@ import { applyAnnotationEdits, parseTopicsVocab, validateAdds } from './annotati
 import { applyProseEdits, validateProse } from './proseDiff';
 
 /**
- * Phase 4 — the GitHub write path. Browser → GitHub REST API with the user's own
- * token; the only backend anywhere in the flow is the OAuth Worker (Phase 1).
+ * The GitHub write path. Browser → GitHub REST API with the user's own token;
+ * the only backend anywhere in the flow is the OAuth Worker.
  *
  * One "Open pull request" action does the whole loop: validate → ensure the
  * user's fork → branch off the *upstream* head (not the possibly-stale fork
  * default — the branch ref is created in the fork at the upstream sha, which is
  * reachable because forks share the object store) → commit each edited sidecar
  * via the Contents API → open a PR upstream. Session edits batch into one branch,
- * one PR.
- *
- * ponytail: collapses commit-now / PR-later into a single action, and uses a
- * fresh uniquely-named branch per submission (no branch reuse / conflict dance).
- * Add the two-step "commit, PR later" flow only if a real workflow needs it.
+ * one PR; a second submit while that PR is open appends to it.
  */
 const API = 'https://api.github.com';
 const [UPSTREAM_OWNER, REPO] = PUBLIC_DATA_REPO.split('/');
@@ -150,7 +146,7 @@ interface RawPr {
 const BRANCH_PREFIX = 'franciscus/contrib-';
 
 /** The user's PRs against the upstream data repo (single page — enough at this
- * repo's volume). ponytail: no pagination; add it if a fork ever has 100+ PRs.
+ * repo's volume). No pagination; add it if a fork ever has 100+ PRs.
  * `state` is `open` for the reuse check, `all` for the history listing. */
 async function userPulls(
 	token: string,
@@ -359,12 +355,12 @@ export async function submitContribution(
 	);
 	const base = dev && (await getRefSha(token, 'develop')) ? 'develop' : repo.default_branch;
 
-	// Validate prose bodies against a subset of the format spec (Phase 5 check).
+	// Validate prose bodies against a subset of the format spec.
 	const proseErrors = validateProse(proseEdits);
 	if (proseErrors.length) throw new Error(proseErrors.join('\n'));
 
-	// Validate every annotation `add` against the closed vocabulary (Phase 3
-	// check). Skip the topics.yaml fetch entirely when there are no adds.
+	// Validate every annotation `add` against the closed vocabulary. Skip the
+	// topics.yaml fetch entirely when there are no adds.
 	if (edits.some((e) => e.op === 'add')) {
 		const topicsFile = await ghJson<Contents>(
 			token,
@@ -376,7 +372,7 @@ export async function submitContribution(
 	}
 
 	// One plan per touched file: the path plus how to rewrite its current text.
-	// Annotation sidecars use the Phase 3 transform; prose renditions the Phase 5
+	// Annotation sidecars use the annotation transform; prose renditions the prose
 	// one. Renditions are keyed by `book|lang` so each `.md`/`.<lang>.md` is one file.
 	const plans = new Map<string, (current: string) => string>();
 	for (const bookId of new Set(edits.map((e) => e.book_id))) {

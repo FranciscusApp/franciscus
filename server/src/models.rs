@@ -131,7 +131,7 @@ pub struct Contributor {
     pub email: Option<String>,
     /// GitHub login; equals the map key when present (marks a GitHub contributor).
     #[serde(default)]
-    #[allow(dead_code)] // Phase 4: commit/PR attribution.
+    #[allow(dead_code)] // commit/PR attribution.
     pub github: Option<String>,
 }
 

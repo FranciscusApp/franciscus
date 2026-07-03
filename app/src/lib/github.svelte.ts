@@ -6,7 +6,7 @@ import { PUBLIC_GH_CLIENT_ID, PUBLIC_AUTH_WORKER_ORIGIN } from '$env/static/publ
  * with their own GitHub account via a Decap-style OAuth App popup, and we keep a
  * long-lived user token in localStorage (per the locked plan decision — the
  * token is device-local and every PR is human-reviewed before merge). This
- * module owns only the *identity* layer (Phase 1); no repo writes happen here.
+ * module owns only the *identity* layer; no repo writes happen here.
  *
  * The token exchange runs through the `franciscus-auth` Cloudflare Worker, the
  * only backend in the path — it holds the client secret and posts the token back

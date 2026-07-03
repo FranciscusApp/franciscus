@@ -1,4 +1,4 @@
-// Self-check for the Phase 5 prose reverse mapping. No framework:
+// Self-check for the prose reverse mapping. No framework:
 //   node --experimental-strip-types src/lib/proseDiff.test.ts
 import assert from 'node:assert/strict';
 import {

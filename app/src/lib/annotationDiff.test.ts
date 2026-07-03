@@ -1,4 +1,4 @@
-// Self-check for the Phase 3 reverse mapping. No framework:
+// Self-check for the annotation reverse mapping. No framework:
 //   node --experimental-strip-types src/lib/annotationDiff.test.ts
 import assert from 'node:assert/strict';
 import { applyAnnotationEdits, parseTopicsVocab, validateAdds } from './annotationDiff.ts';

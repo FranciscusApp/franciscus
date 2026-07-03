@@ -1,14 +1,14 @@
 import { browser } from '$app/environment';
 
 /**
- * Contributor edit buffer (Phase 2): annotation edits staged locally, before any
- * GitHub write. Client-side only (localStorage), like bookmarks — no network here.
- * A later phase turns this buffer into a source-file diff and a PR.
+ * Contributor edit buffer: annotation edits staged locally, before any GitHub
+ * write. Client-side only (localStorage), like bookmarks — no network here. The
+ * buffer is later turned into a source-file diff and a PR.
  *
  * Each edit is keyed by its target annotation `{book, paragraph, type, value}`
  * plus its `op`, so a `verify` and a `comment` on the same annotation are two
- * entries (Phase 3 writes them to different YAML fields). `add` and `remove` on
- * the same key cancel out — staging one drops a pending opposite.
+ * entries (they write to different YAML fields). `add` and `remove` on the same
+ * key cancel out — staging one drops a pending opposite.
  *
  * `editorMode` is a global reader flag (persisted like `theme`), default off even
  * when connected; it only means anything once a GitHub token is present.
@@ -28,7 +28,7 @@ export interface Edit {
 }
 
 /**
- * A staged prose edit (Phase 5): a full-body replacement of one `<p>` paragraph
+ * A staged prose edit: a full-body replacement of one `<p>` paragraph
  * or one `<aside>` block, in a specific rendition. `lang` selects the target
  * file (`la` → source `<id>.md`, else `<id>.<lang>.md`); `target_id` is the DB
  * element id (`<p>` id, or the positional `<chapter>-aside-K`), unique within a
@@ -200,7 +200,7 @@ export function setComment(book: string, para: string, type: string, value: stri
 	);
 }
 
-// --- prose edits (Phase 5) ---
+// --- prose edits ---
 
 export function getProseEdits(): ProseEdit[] {
 	return proseEdits;
@@ -234,7 +234,7 @@ export function unstageProse(book: string, lang: string, targetId: string) {
 	);
 }
 
-/** Drop the whole buffer — used after a successful PR submission (Phase 4). */
+/** Drop the whole buffer — used after a successful PR submission. */
 export function clearAll() {
 	commit([]);
 	commitProse([]);

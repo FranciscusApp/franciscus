@@ -70,7 +70,7 @@
 		);
 	}
 
-	// Editor mode only bites when a GitHub session is present (Phase 2 chrome).
+	// Editor mode only bites when a GitHub session is present.
 	const editing = $derived(isEditorMode() && github.isConnected());
 
 	// Add-picker candidate set: every topic in the corpus (same source as the

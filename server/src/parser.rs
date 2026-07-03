@@ -75,8 +75,8 @@ fn replace_verse_markers(content: &str, paragraph_id: &str) -> String {
 
 fn parse_body(body: &str) -> Result<Vec<ParsedChapter>, String> {
     let re_chapter = Regex::new(r#"^##\s+(.+?)\s*<a\s+id="([^"]+)"\s*>\s*</a>\s*$"#).unwrap();
-    // ponytail: attribute values may not contain '>' (the per-<p> `by` is a plain
-    // name; emails live only in frontmatter `translator`). Order-independent attrs.
+    // Attribute values may not contain '>' (the per-<p> `by` is a plain name;
+    // emails live only in frontmatter `translator`). Order-independent attrs.
     let re_p_open = Regex::new(r#"^<p\s+([^>]*?)\s*>"#).unwrap();
     let re_attr = Regex::new(r#"(\w+)="([^"]*)""#).unwrap();
     let re_p_close = Regex::new(r"^</p>\s*$").unwrap();

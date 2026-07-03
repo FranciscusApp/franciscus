@@ -100,7 +100,7 @@ pub fn create_tables(conn: &Connection) {
             by_whom             TEXT NOT NULL DEFAULT 'ai',
             provenance          TEXT NOT NULL DEFAULT 'ai',
             comment             TEXT,
-            -- ponytail: no FK on target; cross-work parallels may point at any book
+            -- no FK on target; cross-work parallels may point at any book
             FOREIGN KEY (source_book_id, source_paragraph_id) REFERENCES paragraphs(book_id, id)
         );
 
@@ -659,7 +659,7 @@ pub fn insert_annotations(
             let (by_whom, provenance) = resolve_by(by, contributors);
 
             if RELATION_TYPES.contains(&kind) {
-                // ponytail: target key is `<book_id>-<paragraph_id>`; book ids contain no '-'
+                // target key is `<book_id>-<paragraph_id>`; book ids contain no '-'
                 let Some((target_book, target_par)) = value.split_once('-') else {
                     eprintln!("  warning: skipping relation target '{value}' (expected <book>-<paragraph>) in {book_id}/{paragraph}");
                     continue;

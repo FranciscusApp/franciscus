@@ -8,7 +8,7 @@
 	import * as edits from '$lib/edits.svelte.js';
 	import type { ProseEdit } from '$lib/edits.svelte';
 
-	// Phase 5 prose affordance: a pencil that opens a modal textarea holding the
+	// Prose affordance: a pencil that opens a modal textarea holding the
 	// paragraph/aside body in **source form** ([N] verse markers, literal <ref>).
 	// Confirm stages a full-body ProseEdit; the reader reflects it in place. The
 	// modal is self-contained — it owns its open state and writes the shared

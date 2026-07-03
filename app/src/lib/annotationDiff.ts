@@ -1,8 +1,8 @@
 import type { Edit } from './edits.svelte';
 
 /**
- * Phase 3 reverse mapping: turn staged annotation edits (DB-addressed) back into
- * a source `<id>.yaml` text diff, targeting the Phase 2C grouped format
+ * Turn staged annotation edits (DB-addressed) back into a source `<id>.yaml`
+ * text diff, targeting the grouped annotation format
  * (see ../../franciscus-data/spec/annotations.md).
  *
  * Pure text surgery, deliberately NOT a YAML round-trip: parsing and re-dumping
@@ -10,13 +10,12 @@ import type { Edit } from './edits.svelte';
  * blow up the diff. Here we touch only the edited paragraph's block, so every
  * untouched line stays byte-identical and the PR diff is minimal.
  *
- * The 2C format is regular enough to make this safe: 2-space indent, block
- * sequences at the paragraph key's indent, map-item continuations at +2.
- *
- * ponytail: assumes the machine-generated 2C shape (2-space indent, `annotations`
- * as the last top-level section). Hand-mangled sidecars with odd indent/comments
- * inside a paragraph block are out of scope — the parser stops the block at the
- * first line that isn't an item or its continuation.
+ * The grouped format is regular enough to make this safe: 2-space indent, block
+ * sequences at the paragraph key's indent, map-item continuations at +2. This
+ * assumes the machine-generated shape (`annotations` as the last top-level
+ * section). Hand-mangled sidecars with odd indent/comments inside a paragraph
+ * block are out of scope — the parser stops the block at the first line that
+ * isn't an item or its continuation.
  */
 
 const RELATION_TYPES = new Set(['same_episode', 'related_to']);
@@ -191,8 +190,8 @@ export function applyAnnotationEdits(
 		let keyIdx = paragraphIdx(lines, annIdx, para);
 		if (keyIdx === -1) {
 			// new paragraph key: append at the end of the annotations section.
-			// ponytail: annotations is the last top-level section in the 2C format,
-			// so EOF append is correct; revisit if a later section is added after it.
+			// `annotations` is the last top-level section, so EOF append is correct;
+			// revisit if a later section is ever added after it.
 			lines.push(`  ${emitKey(para)}:`);
 			keyIdx = lines.length - 1;
 		}
@@ -214,7 +213,7 @@ export function applyAnnotationEdits(
 	return lines.join(eol) + (trailingEol ? eol : '');
 }
 
-// --- validation (Phase 3 closed-vocabulary check) --------------------------
+// --- validation (closed-vocabulary check) ----------------------------------
 
 /** Parse `topics/topics.yaml` (a flat `type:` → `- value` map) into the closed
  * set of valid `type:value` topic pairs. Tiny hand parser — no YAML dep, and the

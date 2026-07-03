@@ -109,7 +109,7 @@ async function downloadDb(onProgress?: (p: DbProgress) => void): Promise<ArrayBu
 	if (cached) {
 		const etag = cached.headers.get('etag');
 		const lastMod = cached.headers.get('last-modified');
-		// ponytail: revalidate via HTTP validators; no validators => trust cache.
+		// Revalidate via HTTP validators; no validators => trust cache.
 		// Covers Vite dev (Last-Modified changes on rebuild) and static hosts.
 		if (!etag && !lastMod) return readWithProgress(cached, true, onProgress);
 		try {

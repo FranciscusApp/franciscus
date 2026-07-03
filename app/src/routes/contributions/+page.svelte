@@ -26,7 +26,7 @@
 
 	// Client-only (edits live in localStorage), so mount-gate it.
 	let mounted = $state(false);
-	// Phase 4 remote state — the user's PRs (open + history).
+	// Remote state — the user's PRs (open + history).
 	let prs = $state<UserPr[]>([]);
 	let submitting = $state(false);
 	let submitError = $state<string | null>(null);

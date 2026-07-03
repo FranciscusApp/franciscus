@@ -1,8 +1,8 @@
 import type { ProseEdit } from './edits.svelte';
 
 /**
- * Phase 5 reverse mapping: turn a staged prose edit (addressed by the DB's
- * build-artifact ids) back into a source `.md` text diff.
+ * Turn a staged prose edit (addressed by the DB's build-artifact ids) back into
+ * a source `.md` text diff.
  *
  * The Rust ingest (server/src/parser.rs) rewrites two things the source `.md`
  * does NOT contain literally:
@@ -124,7 +124,7 @@ export function applyProseEdits(
 	return out;
 }
 
-// --- validation (Phase 5: a client-side subset of the books.md invariants) ---
+// --- validation (a client-side subset of the books.md invariants) ----------
 
 /**
  * Reject staged prose bodies that would break the corpus format before they
