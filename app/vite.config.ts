@@ -19,7 +19,21 @@ function gitShort(): string {
 	}
 }
 
+// Dev-only: allow reverse-proxied hosts (e.g. dev.salata.ovh) through Vite's
+// host check. Comma-separated list via VITE_ALLOWED_HOSTS; empty by default.
+const allowedHosts = (process.env.VITE_ALLOWED_HOSTS ?? '')
+	.split(',')
+	.map((h) => h.trim())
+	.filter(Boolean);
+
 export default defineConfig({
+	server: {
+		// Bind loopback only; Caddy reverse-proxies the public host to here.
+		host: '127.0.0.1',
+		port: 1337,
+		strictPort: true,
+		allowedHosts
+	},
 	define: {
 		__APP_VERSION__: JSON.stringify(pkg.version),
 		__APP_COMMIT__: JSON.stringify(gitShort())
