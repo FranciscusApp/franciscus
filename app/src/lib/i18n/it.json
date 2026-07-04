@@ -46,6 +46,14 @@
 	"chapter": {
 		"notFound": "Capitolo non trovato."
 	},
+	"scripture": {
+		"title": "Riferimento biblico",
+		"loading": "Caricamento del passo…",
+		"error": "Impossibile caricare questo passo.",
+		"linkIntro": "Leggi il passo su {source}:",
+		"unavailableLang": "La consultazione dei passi non è ancora disponibile per questa lingua.",
+		"unsupported": "Non è stato possibile trovare questo passo."
+	},
 	"bookmarks": {
 		"heading": "Segnalibri",
 		"empty": "Nessun segnalibro. Tocca l'icona del segnalibro accanto a un passo per salvarlo qui."

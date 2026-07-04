@@ -46,6 +46,14 @@
 	"chapter": {
 		"notFound": "Chapter not found."
 	},
+	"scripture": {
+		"title": "Scripture reference",
+		"loading": "Loading passage…",
+		"error": "Couldn't load this passage.",
+		"linkIntro": "Read the passage on {source}:",
+		"unavailableLang": "Passage lookup isn't available for this language yet.",
+		"unsupported": "This reference couldn't be matched to a passage."
+	},
 	"bookmarks": {
 		"heading": "Bookmarks",
 		"empty": "No bookmarks yet. Tap the bookmark icon next to any passage to save it here."

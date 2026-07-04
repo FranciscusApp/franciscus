@@ -24,6 +24,8 @@
 	import CheckIcon from '@lucide/svelte/icons/check';
 	import AnnotationPills from '$lib/AnnotationPills.svelte';
 	import ProseEditor from '$lib/ProseEditor.svelte';
+	import ScriptureModal from '$lib/ScriptureModal.svelte';
+	import { parseCitation } from '$lib/scripture';
 	import { isEditorMode, pendingProse } from '$lib/edits.svelte.js';
 	import { dbContentToSource, sourceToDisplay } from '$lib/proseDiff';
 	import * as github from '$lib/github.svelte.js';
@@ -151,6 +153,9 @@
 		history.replaceState(null, '', `#${v.id}`);
 	}
 
+	// Scripture reference being previewed in the modal (the ref's `to`), or null.
+	let scriptureRef = $state<string | null>(null);
+
 	$effect(() => {
 		if (blocks.length === 0) return;
 		const hash = location.hash.slice(1);
@@ -181,7 +186,10 @@
 			for (const ref of container.querySelectorAll('ref')) {
 				ref.setAttribute('tabindex', '0');
 				const to = ref.getAttribute('to');
-				if (to && !ref.getAttribute('aria-label')) ref.setAttribute('aria-label', to);
+				// Only scripture refs open the modal; topic refs (e.g. place:…) stay
+					// plain tooltip targets.
+					if (to && parseCitation(to)) ref.setAttribute('role', 'button');
+					if (to && !ref.getAttribute('aria-label')) ref.setAttribute('aria-label', to);
 			}
 		});
 
@@ -232,8 +240,21 @@
 		window.addEventListener('scroll', dismiss, { passive: true });
 		window.addEventListener('resize', dismiss);
 
+		// A scripture ref opens the passage modal; anything else falls through to
+		// verse selection. Returns true when the ref was handled.
+		function openScriptureRef(el: HTMLElement): boolean {
+			const ref = el.closest('ref') as HTMLElement | null;
+			const to = ref?.getAttribute('to');
+			if (!to || !parseCitation(to)) return false;
+			hideTooltip();
+			scriptureRef = to;
+			return true;
+		}
+
 		function onClick(e: MouseEvent) {
-			const v = (e.target as HTMLElement).closest('v[id]');
+			const target = e.target as HTMLElement;
+			if (openScriptureRef(target)) return;
+			const v = target.closest('v[id]');
 			if (v) selectVerse(v);
 		}
 		function onKeydown(e: KeyboardEvent) {
@@ -243,6 +264,10 @@
 				return;
 			}
 			if (e.key !== 'Enter' && e.key !== ' ') return;
+			if (target.tagName === 'REF' && openScriptureRef(target)) {
+				e.preventDefault();
+				return;
+			}
 			const v = target.closest('v[id]');
 			if (v) {
 				e.preventDefault();
@@ -475,6 +500,8 @@
 				</a>
 			{/if}
 		</nav>
+
+		<ScriptureModal bind:to={scriptureRef} />
 	</main>
 {:else}
 	<main id="main-content" tabindex="-1" class="max-w-3xl mx-auto px-4 py-8">
