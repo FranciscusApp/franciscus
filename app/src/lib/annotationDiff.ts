@@ -137,7 +137,9 @@ function applyToItems(items: Item[], edits: Edit[], author: string) {
 	for (const e of edits) {
 		const pair = pairOf(e.topic_type, e.topic_value);
 		if (e.op === 'add') {
-			if (!findItem(pair)) items.push({ relation: isRelation(e.topic_type), pair });
+			// A user-staged addition is human-authored: attribute it to the
+			// contributor by default (`by:`), so it isn't ingested as AI-authored.
+			if (!findItem(pair)) items.push({ relation: isRelation(e.topic_type), pair, by: author });
 		} else if (e.op === 'remove') {
 			const i = items.findIndex((it) => it.pair === pair);
 			if (i >= 0) items.splice(i, 1);
@@ -155,7 +157,7 @@ function applyToItems(items: Item[], edits: Edit[], author: string) {
  * Rewrite one book's sidecar YAML text with its staged edits, producing new text
  * (the caller diffs it). `edits` may include other books' entries — they're
  * filtered by `bookId`. `author` is the connected contributor's handle, written
- * as `by:` on verified items.
+ * as `by:` on added and verified items (marking them human-authored).
  */
 export function applyAnnotationEdits(
 	yamlText: string,

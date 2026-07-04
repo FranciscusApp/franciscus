@@ -24,10 +24,10 @@ annotations:
   - virtue:fortitude
 `;
 
-// add a scalar topic to an existing paragraph
+// add a topic to an existing paragraph: attributed to the contributor by default
 {
 	const out = applyAnnotationEdits(base, '1Cel', [e('add', '40', 'place', 'assisi')], 'me');
-	assert.match(out, /  '40':\n  - theme:prayer\n  - virtue:fortitude\n  - place:assisi\n/);
+	assert.match(out, /  '40':\n  - theme:prayer\n  - virtue:fortitude\n  - topic: place:assisi\n    by: me\n/);
 }
 
 // remove a scalar
@@ -72,16 +72,16 @@ annotations:
 	assert.match(out, /  '40':/); // other paragraph untouched
 }
 
-// add to a brand-new paragraph appends a new key block
+// add to a brand-new paragraph appends a new key block, attributed to the author
 {
 	const out = applyAnnotationEdits(base, '1Cel', [e('add', '99', 'theme', 'miracle')], 'me');
-	assert.match(out, /  '99':\n  - theme:miracle\n/);
+	assert.match(out, /  '99':\n  - topic: theme:miracle\n    by: me\n/);
 }
 
-// relation add stays a scalar and is not vocab-checked
+// relation add is attributed to the author and is not vocab-checked
 {
 	const out = applyAnnotationEdits(base, '1Cel', [e('add', '40', 'same_episode', 'LMj-9-1')], 'me');
-	assert.match(out, /  - same_episode:LMj-9-1\n/);
+	assert.match(out, /  - relation: same_episode:LMj-9-1\n    by: me\n/);
 }
 
 // edits for a different book are ignored
@@ -93,7 +93,7 @@ annotations:
 // no annotations section: create one
 {
 	const out = applyAnnotationEdits('description_short:\n  en: X\n', '1Cel', [e('add', '1', 'theme', 'prayer')], 'me');
-	assert.match(out, /\nannotations:\n  '1':\n  - theme:prayer\n$/);
+	assert.match(out, /\nannotations:\n  '1':\n  - topic: theme:prayer\n    by: me\n$/);
 }
 
 // editing a paragraph that already holds a human map item with a BARE comment
@@ -108,7 +108,7 @@ annotations:
 `;
 	const out = applyAnnotationEdits(human, '1Cel', [e('add', '7', 'place', 'assisi')], 'me');
 	assert.match(out, /  - topic: virtue:fortitude\n    by: alfredo\n    comment: "courage: fits better"\n/);
-	assert.match(out, /  - place:assisi\n/);
+	assert.match(out, /  - topic: place:assisi\n    by: me\n/);
 }
 
 // validation against the closed vocabulary
