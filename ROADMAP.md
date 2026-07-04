@@ -92,7 +92,7 @@ Also the gold should match the Verbum Caro logo gold.
 - [x] Search results and topic references grouped by book and chapter (one "box entry" per chapter, with paragraphs joined by [...])
 - [x] **Bookmarks & reading progress.** Let readers mark passages and resume where they left off — client-side only, no account required.
 - [ ] **Side-by-side reader.** Parallel-column view for comparing two works, or two translations of the same passage.
-- [ ] **Copy citation.** One-click copy of a formatted, shareable reference for any passage.
+- [x] **Copy citation.** One-click copy of a formatted, shareable reference for any passage.
 
 ### Scripture cross-referencing
 - [ ] **Scripture links.** Render `<ref>` tags as links to the [Nova Vulgata on bibbiaedu.it](https://www.bibbiaedu.it/NOVAVULGATA/nt/) (`/nt/<book>/<ch>/`).
