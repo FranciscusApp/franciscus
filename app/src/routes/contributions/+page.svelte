@@ -162,7 +162,7 @@
 	});
 </script>
 
-<main id="main-content" tabindex="-1" class="max-w-3xl mx-auto px-4 py-8">
+<main id="main-content" tabindex="-1" class="w-full max-w-3xl mx-auto px-4 py-8">
 	<h1 class="text-2xl font-display font-bold text-foreground mb-6">{t('contributions.heading')}</h1>
 
 	<NoScriptNotice />
@@ -187,7 +187,7 @@
 						href={user.htmlUrl}
 						target="_blank"
 						rel="noopener noreferrer"
-						class="font-medium text-foreground underline decoration-transparent hover:decoration-inherit"
+						class="block truncate font-medium text-foreground underline decoration-transparent hover:decoration-inherit"
 					>
 						{user.name ?? user.login}
 					</a>
@@ -196,9 +196,29 @@
 				<button
 					type="button"
 					onclick={() => github.disconnect()}
-					class="shrink-0 rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring"
+					aria-label={t('pages.contribute.disconnect')}
+					title={t('pages.contribute.disconnect')}
+					class="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-border px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring sm:px-3"
 				>
-					{t('pages.contribute.disconnect')}
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						class="size-4 sm:hidden"
+						aria-hidden="true"
+					>
+						<path d="m18.84 12.25 1.72-1.71h-.02a5.004 5.004 0 0 0-.12-7.07 5.006 5.006 0 0 0-6.95 0l-1.72 1.71" />
+						<path d="m5.17 11.75-1.71 1.71a5.004 5.004 0 0 0 .12 7.07 5.006 5.006 0 0 0 6.95 0l1.71-1.71" />
+						<line x1="8" x2="8" y1="2" y2="4" />
+						<line x1="2" x2="4" y1="8" y2="8" />
+						<line x1="16" x2="16" y1="20" y2="22" />
+						<line x1="20" x2="22" y1="16" y2="16" />
+					</svg>
+					<span class="hidden sm:inline">{t('pages.contribute.disconnect')}</span>
 				</button>
 			</div>
 		{/if}
@@ -206,7 +226,7 @@
 		{#if submittedUrl}
 			<p class="mb-6 rounded-lg border border-border bg-muted/40 p-3 text-sm text-foreground">
 				{t('contributions.submitted')}
-				<a href={submittedUrl} target="_blank" rel="noopener noreferrer" class="underline"
+				<a href={submittedUrl} target="_blank" rel="noopener noreferrer" class="break-all underline"
 					>{submittedUrl}</a
 				>
 			</p>
@@ -220,11 +240,14 @@
 				</h2>
 				<ul class="space-y-1.5">
 					{#each openPrs as pr (pr.number)}
-						<li class="text-sm">
-							<a href={pr.url} target="_blank" rel="noopener noreferrer" class="underline"
-								>#{pr.number}</a
+						<li class="flex items-center gap-2 text-sm">
+							<a
+								href={pr.url}
+								target="_blank"
+								rel="noopener noreferrer"
+								class="shrink-0 underline">#{pr.number}</a
 							>
-							<span class="text-foreground">{pr.title}</span>
+							<span class="min-w-0 flex-1 truncate text-foreground">{pr.title}</span>
 						</li>
 					{/each}
 				</ul>
