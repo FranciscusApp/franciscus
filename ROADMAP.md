@@ -74,7 +74,7 @@ Status legend: `[ ]` planned | `[~]` in progress | `[x]` done
 ## Post v1.0.0
 
 ### Polish & fixes — next
-- [~] **UI flourish.** The gold primary colour barely appears anywhere. Bring it (and secondary crimson / royal-blue accents) into title underlines and `<hr>` dividers so pages read richer and more manuscript-like. Dividers might be good secondary, while `<strong>` or `<h1>` could be gold, to consider.
+- [x] **UI flourish.** The gold primary colour barely appears anywhere. Bring it (and secondary crimson / royal-blue accents) into title underlines and `<hr>` dividers so pages read richer and more manuscript-like. Dividers might be good secondary, while `<strong>` or `<h1>` could be gold, to consider.
 Also the gold should match the Verbum Caro logo gold.
 - [x] **Reader layout fixes.**
       - The navbar overlays body text once the page is scrolled. Give it a body-matched background plus a fade-on-scroll shadow so text passes cleanly underneath.
@@ -91,21 +91,20 @@ Also the gold should match the Verbum Caro logo gold.
 ### Reader features
 - [x] Search results and topic references grouped by book and chapter (one "box entry" per chapter, with paragraphs joined by [...])
 - [x] **Bookmarks & reading progress.** Let readers mark passages and resume where they left off — client-side only, no account required.
-- [ ] **Side-by-side reader.** Parallel-column view for comparing two works, or two translations of the same passage.
+- [ ] **Side-by-side reader.** _(on hold)_ Parallel-column view for comparing two works, or two translations of the same passage.
 - [x] **Copy citation.** One-click copy of a formatted, shareable reference for any passage.
 
 ### Scripture cross-referencing
-- [ ] **Scripture links.** Render `<ref>` tags as links to the [Nova Vulgata on bibbiaedu.it](https://www.bibbiaedu.it/NOVAVULGATA/nt/) (`/nt/<book>/<ch>/`).
-- [ ] **Vulgata in the corpus.** Add a Vulgate edition as a first-class text so scripture can be cross-referenced *internally* — not just linked out.
-- [ ] **Language-aware Bible links.** Choose the Bible edition by the active corpus language (Nova Vulgata is hardcoded for v1).
+- [ ] **Bible reference modal.** Clicking a `<ref>` opens a modal showing the referenced passage, fetched from a source chosen by the active UI language.
+  - [ ] Design the modal UI.
+  - [ ] Bibbiaedu driver (Italian → CEI 2008): no API, so fetch + parse the page.
+  - [ ] Define the English source (TBD) and implement its driver.
 
 ### In-app contributions
-- [ ] **GitHub login + contribution flow.** Sign in to propose corrections, translations, and annotation edits from within the app.
-- [ ] **Axum backend API.** A server to handle auth, submission, and moderation for those contributions — the project's first backend on the write path.
+- [x] **GitHub login + contribution flow.** Sign in to propose corrections, translations, and annotation edits from within the app.
 
 ### Long-term & ongoing / Content quality
 - [ ] **Manual review of the Latin sources.** Human verification of the machine transcriptions.
 - [ ] **Manual review of translations.** Human verification of machine translations. Today a translation file is all-or-nothing with no per-passage provenance; this likely needs a format change to mark reviewed passages.
 - [ ] **AI annotation pass 2.** Cross-work parallels seeded from *Fontes Franciscani* concordances (requires human review).
-- [ ] **Shared query library.** Extract the SQL layer into a data-focused Rust crate (compilable to WASM), reusable by both the client and any future Rust API.
 - [ ] **Fuller entity pages.** Grow the persons / places / events topic pages into wiki-like entries with cross-referenced passages and richer curated context.
