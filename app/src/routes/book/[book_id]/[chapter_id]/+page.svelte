@@ -20,6 +20,8 @@
 	import { recordProgress } from '$lib/progress.svelte.js';
 	import { isBookmarked, toggleBookmark } from '$lib/bookmarks.svelte.js';
 	import BookmarkIcon from '@lucide/svelte/icons/bookmark';
+	import QuoteIcon from '@lucide/svelte/icons/quote';
+	import CheckIcon from '@lucide/svelte/icons/check';
 	import AnnotationPills from '$lib/AnnotationPills.svelte';
 	import ProseEditor from '$lib/ProseEditor.svelte';
 	import { isEditorMode, pendingProse } from '$lib/edits.svelte.js';
@@ -330,6 +332,30 @@
 	function paraLabel(p: Paragraph): string {
 		return `${chapter?.title ?? ''} — ${p.label ?? p.id}`;
 	}
+
+	// One-click, shareable citation for a passage: a human-readable reference plus
+	// its stable deep link. `id` of the last-copied paragraph drives the transient
+	// "copied" checkmark; it resets on a short timer.
+	let copiedId = $state<string | null>(null);
+	let copiedTimer: ReturnType<typeof setTimeout> | undefined;
+
+	function citationText(p: Paragraph): string {
+		const ref = `${book?.title ?? bookId}, ${chapter?.title ?? chapterId}, ${p.label ?? p.id}`;
+		const url = `${location.origin}${paraHref(p)}`;
+		return `${ref}. ${url}`;
+	}
+
+	async function copyCitation(p: Paragraph) {
+		try {
+			await navigator.clipboard.writeText(citationText(p));
+			copiedId = p.id;
+			clearTimeout(copiedTimer);
+			copiedTimer = setTimeout(() => (copiedId = null), 1800);
+		} catch {
+			// Clipboard blocked (insecure context or denied permission): no-op, the
+			// deep-link anchor on the label still lets the reader copy the URL by hand.
+		}
+	}
 </script>
 
 {#if book && chapter}
@@ -354,6 +380,22 @@
 								class="p-1 pointer-coarse:p-2 rounded text-muted-foreground hover:text-primary focus:outline-none focus:ring-2 focus:ring-ring opacity-40 group-hover:opacity-100 focus:opacity-100 aria-pressed:opacity-100 aria-pressed:text-primary transition"
 							>
 								<BookmarkIcon class="w-4 h-4" fill={isBookmarked(paraHref(p)) ? 'currentColor' : 'none'} />
+							</button>
+							<button
+								type="button"
+								onclick={() => copyCitation(p)}
+								aria-label={copiedId === p.id ? t('a11y.citationCopied') : t('a11y.copyCitation')}
+								title={copiedId === p.id ? t('a11y.citationCopied') : t('a11y.copyCitation')}
+								class="p-1 pointer-coarse:p-2 rounded text-muted-foreground hover:text-primary focus:outline-none focus:ring-2 focus:ring-ring opacity-40 group-hover:opacity-100 focus:opacity-100 transition {copiedId ===
+								p.id
+									? 'opacity-100 text-primary'
+									: ''}"
+							>
+								{#if copiedId === p.id}
+									<CheckIcon class="w-4 h-4" />
+								{:else}
+									<QuoteIcon class="w-4 h-4" />
+								{/if}
 							</button>
 							<ProseEditor
 								{bookId}

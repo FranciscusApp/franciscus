@@ -91,7 +91,9 @@
 		"languageSettings": "Language settings",
 		"settings": "Settings",
 		"addBookmark": "Bookmark this passage",
-		"removeBookmark": "Remove bookmark"
+		"removeBookmark": "Remove bookmark",
+		"copyCitation": "Copy citation",
+		"citationCopied": "Citation copied"
 	},
 	"edit": {
 		"editorMode": "Editor mode",

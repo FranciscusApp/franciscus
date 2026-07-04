@@ -91,7 +91,9 @@
 		"languageSettings": "Impostazioni lingua",
 		"settings": "Impostazioni",
 		"addBookmark": "Aggiungi questo passo ai segnalibri",
-		"removeBookmark": "Rimuovi il segnalibro"
+		"removeBookmark": "Rimuovi il segnalibro",
+		"copyCitation": "Copia la citazione",
+		"citationCopied": "Citazione copiata"
 	},
 	"edit": {
 		"editorMode": "Modalità redazione",
