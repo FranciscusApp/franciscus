@@ -1,5 +1,6 @@
 import type { Citation } from './citation';
 import type { BibleSource, ScripturePassage } from './index';
+import { toMasoreticPsalm } from './psalms';
 
 // Corpus book abbreviation → Bibbia Edu CEI 2008 location (testament path + book
 // code, as used in bibbiaedu.it URLs). The corpus follows Vulgate numbering, so
@@ -80,9 +81,10 @@ const BASE = 'https://www.bibbiaedu.it/CEI2008';
 function deepLink(c: Citation): string | null {
 	const loc = BOOK_CODES[c.book];
 	if (!loc) return null;
-	let url = `${BASE}/${loc.testament}/${loc.code}/${c.chapter}/`;
+	const chapter = c.book === 'Ps' ? toMasoreticPsalm(c.chapter) : c.chapter;
+	let url = `${BASE}/${loc.testament}/${loc.code}/${chapter}/`;
 	if (c.verse !== null) {
-		const sel = c.verseEnd !== null ? `${c.chapter},${c.verse}-${c.verseEnd}` : `${c.chapter},${c.verse}`;
+		const sel = c.verseEnd !== null ? `${chapter},${c.verse}-${c.verseEnd}` : `${chapter},${c.verse}`;
 		url += `?sel=${sel}`;
 	}
 	return url;

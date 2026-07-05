@@ -91,7 +91,8 @@ Also the gold should match the Verbum Caro logo gold.
 ### Reader features
 - [x] Search results and topic references grouped by book and chapter (one "box entry" per chapter, with paragraphs joined by [...])
 - [x] **Bookmarks & reading progress.** Let readers mark passages and resume where they left off — client-side only, no account required.
-- [ ] **Side-by-side reader.** _(on hold)_ Parallel-column view for comparing two works, or two translations of the same passage.
+- [ ] **Parallel reader (source + translation).** A settings flag that splits the reader into two columns: the original source text beside a translation. Only offered on large screens (lg / xl / 2xl); hidden on smaller. Navigation stays shared and behaves like the normal reader. While on, the corpus/original language can't be the source column — the reader must pick a translation to pair against the original.
+- [ ] **Study view (compare any two chapters).** _(on hold)_ Open any two chapters side by side to compare accounts — e.g. Bonaventure's telling of the fiery-chariot vision against 3 Soc or Celano. More complex than the parallel reader (arbitrary chapter pairing, independent navigation).
 - [x] **Copy citation.** One-click copy of a formatted, shareable reference for any passage.
 
 ### Scripture cross-referencing
@@ -99,7 +100,7 @@ Also the gold should match the Verbum Caro logo gold.
   - [x] Design the modal UI.
   - [x] Bibbiaedu driver (Italian → CEI 2008): deep-link (inline text infeasible — CORS + AJAX-rendered).
   - [x] English source → RSV-CE on Bible Gateway: deep-link driver.
-  - [ ] _Caveat:_ Psalm numbering — corpus uses Vulgate numbers, both editions are Masoretic (~±1 offset). Deep links may land one psalm off; needs a numbering table.
+  - [x] Psalm numbering — map the corpus's Vulgate psalm numbers onto the editions' Masoretic numbering so links land on the right psalm. Residual verse-level offset remains only in the merge/split psalms (9, 113–115, 146–147).
 
 ### In-app contributions
 - [x] **GitHub login + contribution flow.** Sign in to propose corrections, translations, and annotation edits from within the app.

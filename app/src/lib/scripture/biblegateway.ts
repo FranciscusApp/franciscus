@@ -1,5 +1,6 @@
 import type { Citation } from './citation';
 import type { BibleSource, ScripturePassage } from './index';
+import { toMasoreticPsalm } from './psalms';
 
 // Corpus book abbreviation → Bible Gateway (English) book name. The corpus keeps
 // Vulgate numbering, so 1–4 Kgs are Samuel/Kings and 2 Esd is Nehemiah. "Luc"/"Is"
@@ -80,7 +81,8 @@ const VERSION = 'RSVCE';
 function deepLink(c: Citation): string | null {
 	const name = BOOK_NAMES[c.book];
 	if (!name) return null;
-	let ref = `${name} ${c.chapter}`;
+	const chapter = c.book === 'Ps' ? toMasoreticPsalm(c.chapter) : c.chapter;
+	let ref = `${name} ${chapter}`;
 	if (c.verse !== null) {
 		ref += `:${c.verse}`;
 		if (c.verseEnd !== null) ref += `-${c.verseEnd}`;
