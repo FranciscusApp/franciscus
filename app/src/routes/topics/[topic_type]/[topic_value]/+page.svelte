@@ -1,17 +1,18 @@
 <script lang="ts">
 	import { page } from '$app/stores';
-	import {
-		getTopicPage,
-		getTopicOccurrences,
-		type TopicPage,
-		type TopicOccurrence
-	} from '$lib';
+	import { getTopicPage, getTopicOccurrences } from '$lib';
 	import Breadcrumbs from '$lib/Breadcrumbs.svelte';
+	import Reader from '$lib/Reader.svelte';
+	import ScriptureModal from '$lib/ScriptureModal.svelte';
 	import { recordPage } from '$lib/trail.svelte.js';
 	import { Badge } from '$lib/components/ui/badge/index.js';
-	import { groupByChapter } from '$lib/utils';
+	import { groupByBook } from '$lib/utils';
+	import { occurrencesToBlocks } from '$lib/reader';
+	import { isLargeViewport } from '$lib/viewport.svelte.js';
 	import { topicColors } from '$lib/topicColors';
-	import { t, getCorpusLang, getUiLang } from '$lib/i18n';
+	import { t, getCorpusLang, getUiLang, getParallelReader } from '$lib/i18n';
+	import PlusIcon from '@lucide/svelte/icons/plus';
+	import MinusIcon from '@lucide/svelte/icons/minus';
 
 	const topicType = $derived($page.params.topic_type ?? '');
 	// Canonical URL is /topics/<type>/<topic_value> (the source-file value).
@@ -20,14 +21,42 @@
 	const corpusLang = $derived(getCorpusLang());
 	const uiLang = $derived(getUiLang());
 
+	// Parallel needs both Latin and translation per passage (the reader feeds the
+	// original column from content_la), so it only engages once a translation is
+	// selected and the viewport is wide enough — same gate as the chapter reader.
+	const large = isLargeViewport();
+	const parallel = $derived(getParallelReader() && corpusLang !== 'la' && large.current);
+
 	// Topic page chrome (description, body) follows the UI language;
 	// the occurrence list shows source-corpus material (book/chapter titles,
 	// paragraph bodies), so it follows the corpus language instead.
 	const topicPage = $derived(getTopicPage(topicType, topicValue, uiLang));
 	const occurrences = $derived(getTopicOccurrences(topicType, topicValue, corpusLang));
-	const groups = $derived(groupByChapter(occurrences));
+	const bookGroups = $derived(groupByBook(occurrences));
 
 	const displayTitle = $derived(topicPage?.description ?? topicValue.replaceAll('_', ' '));
+
+	// Collapse state: expanded book ids, default all collapsed. The count in each
+	// header lets a reader gauge weight without expanding.
+	let expanded = $state(new Set<string>());
+	function toggleBook(bookId: string) {
+		const next = new Set(expanded);
+		if (!next.delete(bookId)) next.add(bookId);
+		expanded = next;
+	}
+
+	// Arriving via a deep link to a specific passage: reveal its book so the
+	// target isn't hidden inside a collapsed container.
+	$effect(() => {
+		const hash = location.hash.slice(1);
+		if (!hash) return;
+		const owner = occurrences.find((o) => o.paragraph_id === hash);
+		if (owner && !expanded.has(owner.book_id)) expanded = new Set([...expanded, owner.book_id]);
+	});
+
+	// Selected scripture ref for the single page-level modal; the readers below
+	// emit it upward (they never own a modal of their own).
+	let scriptureRef = $state<string | null>(null);
 
 	$effect(() => {
 		// Only real topics become waypoints; the unknown-slug fallback does not.
@@ -37,7 +66,7 @@
 	});
 </script>
 
-<main id="main-content" tabindex="-1" class="max-w-3xl mx-auto px-4 py-8">
+<main id="main-content" tabindex="-1" class="{parallel ? 'max-w-6xl' : 'max-w-3xl'} mx-auto px-4 py-8">
 	<Breadcrumbs />
 
 	<div class="mb-6">
@@ -58,39 +87,52 @@
 			<h2 class="text-lg font-display text-foreground mb-4">
 				{t('topics.passagesHeading')} ({occurrences.length})
 			</h2>
-			<div class="space-y-4">
-				{#each groups as g}
-					<div class="border border-border rounded-lg p-4">
-						<div class="text-sm text-muted-foreground mb-2">
-							<a
-								href="/book/{g.book_id}"
-								class="hover:text-primary"
-							>{g.book_title}</a>
-							<span> / </span>
-							<a
-								href="/book/{g.book_id}/{g.chapter_id}"
-								class="hover:text-primary"
-							>{g.chapter_title}</a>
-						</div>
-						{#each g.items as occ, i}
-							{#if i > 0 && occ.position !== g.items[i - 1].position + 1}
-								<div class="text-center text-muted-foreground font-serif my-1" aria-hidden="true">[…]</div>
+			<div class="space-y-6">
+				{#each bookGroups as bg}
+					{@const isOpen = expanded.has(bg.book_id)}
+					<div>
+						<button
+							type="button"
+							onclick={() => toggleBook(bg.book_id)}
+							aria-expanded={isOpen}
+							aria-controls="book-{bg.book_id}"
+							class="flex w-full items-center gap-2 text-left text-foreground hover:text-primary focus:outline-none focus:ring-2 focus:ring-ring rounded transition-colors"
+						>
+							{#if isOpen}
+								<MinusIcon class="w-4 h-4 shrink-0 text-primary" />
+							{:else}
+								<PlusIcon class="w-4 h-4 shrink-0 text-primary" />
 							{/if}
-							<div>
-								<a
-									href="/book/{g.book_id}/{g.chapter_id}#{occ.paragraph_id}"
-									class="text-xs text-muted-foreground hover:text-primary"
-								>&sect;{occ.paragraph_label ?? occ.paragraph_id}</a>
-								<div lang={corpusLang} class="font-serif text-foreground leading-relaxed">
-									{@html occ.content}
-								</div>
-								{#if occ.comment}
-									<p class="mt-2 text-sm text-muted-foreground italic">
-										{occ.comment}
-									</p>
-								{/if}
+							<span class="font-display font-bold">{bg.book_title}</span>
+							<span class="text-sm text-muted-foreground">({bg.count})</span>
+						</button>
+						<hr class="divider-book" />
+						{#if isOpen}
+							<div id="book-{bg.book_id}" class="space-y-6">
+								{#each bg.chapters as cg}
+									<div>
+										<a
+											href="/book/{cg.book_id}/{cg.chapter_id}"
+											class="text-sm font-display text-muted-foreground hover:text-primary"
+										>
+											{cg.chapter_title}
+										</a>
+										<hr class="divider-chapter" />
+										<Reader
+											blocks={occurrencesToBlocks(cg.items)}
+											bookId={cg.book_id}
+											chapterId={cg.chapter_id}
+											bookTitle={cg.book_title}
+											chapterTitle={cg.chapter_title}
+											{corpusLang}
+											{parallel}
+											editing={false}
+											onScriptureRef={(to) => (scriptureRef = to)}
+										/>
+									</div>
+								{/each}
 							</div>
-						{/each}
+						{/if}
 					</div>
 				{/each}
 			</div>
@@ -100,4 +142,6 @@
 			{t('topics.noOccurrences')}
 		</p>
 	{/if}
+
+	<ScriptureModal bind:to={scriptureRef} />
 </main>

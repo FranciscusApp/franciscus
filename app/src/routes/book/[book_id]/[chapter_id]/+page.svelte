@@ -22,6 +22,7 @@
 	import { recordProgress } from '$lib/progress.svelte.js';
 	import ScriptureModal from '$lib/ScriptureModal.svelte';
 	import { isEditorMode } from '$lib/edits.svelte.js';
+	import { isLargeViewport } from '$lib/viewport.svelte.js';
 	import * as github from '$lib/github.svelte.js';
 
 	const bookId = $derived($page.params.book_id ?? '');
@@ -30,20 +31,11 @@
 	const corpusLang = $derived(getCorpusLang());
 	const uiLang = $derived(getUiLang());
 
-	// Parallel reader needs the width for two columns; below Tailwind's lg the
-	// pref falls back to a single column (matches the picker's own lg gating).
-	let isLarge = $state(false);
-	$effect(() => {
-		const mq = matchMedia('(min-width: 1024px)');
-		isLarge = mq.matches;
-		const onChange = () => (isLarge = mq.matches);
-		mq.addEventListener('change', onChange);
-		return () => mq.removeEventListener('change', onChange);
-	});
-
 	// Source + translation side by side. Requires a translation in the corpus
-	// slot (the left column is always the original), so a stray 'la' can't split.
-	const parallel = $derived(getParallelReader() && corpusLang !== 'la' && isLarge);
+	// slot (the left column is always the original), so a stray 'la' can't split;
+	// below lg the pref falls back to a single column.
+	const large = isLargeViewport();
+	const parallel = $derived(getParallelReader() && corpusLang !== 'la' && large.current);
 	const book = $derived(getBook(bookId, corpusLang, uiLang));
 	const chapters = $derived(book ? getChapters(bookId, corpusLang) : []);
 	const chapter = $derived(chapters.find((c) => c.id === chapterId));
