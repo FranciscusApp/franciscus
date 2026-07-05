@@ -27,6 +27,16 @@ const allowedHosts = (process.env.VITE_ALLOWED_HOSTS ?? '')
 	.filter(Boolean);
 
 export default defineConfig({
+	// @lucide/svelte exposes every icon as its own deep entry point
+	// (`@lucide/svelte/icons/x`). In dev, Vite discovers these lazily as routes
+	// are visited; each newly-seen icon triggers a dep re-optimization that
+	// changes the browser hash and forces a full reload — and any module request
+	// racing that re-bundle returns a 504/500 ("Outdated Optimize Dep"). Excluding
+	// the package from pre-bundling makes Vite serve the icons as native ESM, so
+	// no re-optimization ever fires and the intermittent dev 500 stops recurring.
+	optimizeDeps: {
+		exclude: ['@lucide/svelte']
+	},
 	server: {
 		// Bind loopback only; Caddy reverse-proxies the public host to here.
 		host: '127.0.0.1',
