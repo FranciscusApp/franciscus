@@ -6,6 +6,8 @@
 		"downloading": "Scaricamento del corpus…",
 		"dbError": "Errore nel caricamento del database:",
 		"updating": "Aggiornamento all'ultima versione…",
+		"updateAvailable": "È disponibile una nuova versione.",
+		"updateReload": "Ricarica",
 		"noScript": "Questa applicazione richiede gli script per funzionare — non raccogliamo <em>nessun</em> dato su di te, ma gli script sono necessari per consultare localmente il database delle fonti."
 	},
 	"nav": {

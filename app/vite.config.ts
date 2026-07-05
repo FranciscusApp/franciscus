@@ -45,6 +45,9 @@ export default defineConfig({
 				runes: ({ filename }) =>
 					filename.split(/[/\\]/).includes('node_modules') ? undefined : true
 			},
+			// Poll the build version file so a returning client detects a new
+			// deploy and can prompt to reload (see UpdatePrompt).
+			version: { pollInterval: 30_000 },
 			// SPA fallback for the non-prerendered (client-only) routes. It must
 			// NOT be `index.html`, or it would overwrite the prerendered home page;
 			// GitHub Pages serves `404.html` for unknown paths, which boots the SPA.

@@ -12,6 +12,7 @@
 	import DecorativeImage from '$lib/DecorativeImage.svelte';
 	import TopNav from '$lib/TopNav.svelte';
 	import Footer from '$lib/Footer.svelte';
+	import UpdatePrompt from '$lib/UpdatePrompt.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { t, getUiLang } from '$lib/i18n';
 	import type { Snippet } from 'svelte';
@@ -205,3 +206,5 @@
 	<DecorativeImage />
 	<Footer {dark} />
 </div>
+
+<UpdatePrompt />
