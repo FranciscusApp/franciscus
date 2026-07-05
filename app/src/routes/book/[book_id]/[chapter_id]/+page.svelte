@@ -512,14 +512,32 @@
 							<aside class="text-sm italic text-muted-foreground font-serif py-2" lang="la">
 								{originalAsideDisplay(a)}
 							</aside>
-							<aside
-								class="text-sm italic text-muted-foreground font-serif py-2 {asideStaged
-									? 'rounded bg-primary/5 px-1 ring-1 ring-primary/30'
-									: ''}"
-								lang={corpusLang}
-							>
-								{asideDisplay(a)}
-							</aside>
+							<!-- Only the translation column is editable (the Latin column is
+							     read-only in parallel, as with paragraphs); the pencil reveals on
+							     hover via the group, matching the single-column aside editor. -->
+							<div class="group flex items-start gap-1">
+								<aside
+									class="flex-1 text-sm italic text-muted-foreground font-serif py-2 {asideStaged
+										? 'rounded bg-primary/5 px-1 ring-1 ring-primary/30'
+										: ''}"
+									lang={corpusLang}
+								>
+									{asideDisplay(a)}
+								</aside>
+								{#if editing}
+									<div class="pt-2">
+										<ProseEditor
+											{bookId}
+											lang={corpusLang}
+											{chapterId}
+											kind="aside"
+											targetId={a.id}
+											originalText={asideContent(a)}
+											{editing}
+										/>
+									</div>
+								{/if}
+							</div>
 						</div>
 					{:else}
 					<div class="group flex items-start gap-1">
