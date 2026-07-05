@@ -35,7 +35,16 @@ export default defineConfig({
 	// the package from pre-bundling makes Vite serve the icons as native ESM, so
 	// no re-optimization ever fires and the intermittent dev 500 stops recurring.
 	optimizeDeps: {
-		exclude: ['@lucide/svelte']
+		exclude: ['@lucide/svelte'],
+		// `bits-ui` (shadcn primitives) and the sql.js wasm bundle are heavy,
+		// deep-import deps that only some client-only routes pull in (e.g. the
+		// DB-backed /topics detail and book/search pages). If Vite's boot scanner
+		// misses one — or a second dev server / config restart re-optimizes the
+		// shared cache — it gets discovered mid-session, which re-bundles, changes
+		// the hash and forces a reload; any in-flight request loses to a 504/500
+		// ("Outdated Optimize Dep"). Pinning them here makes pre-bundling happen
+		// deterministically at startup so that churn can't fire on these deps.
+		include: ['bits-ui', 'fts5-sql-bundle/dist/sql-wasm.js']
 	},
 	server: {
 		// Bind loopback only; Caddy reverse-proxies the public host to here.
