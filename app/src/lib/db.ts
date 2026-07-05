@@ -350,6 +350,8 @@ export interface TopicOccurrence {
 	paragraph_label: string | null;
 	position: number;
 	content: string;
+	/** Raw Latin source body, for the parallel reader's original column. */
+	content_la: string;
 	comment: string | null;
 }
 
@@ -367,6 +369,7 @@ export function getTopicOccurrences(
 		        p.label                        AS paragraph_label,
 		        p.position                     AS position,
 		        COALESCE(pt.content, p.content) AS content,
+		        p.content                       AS content_la,
 		        a.comment
 		 FROM annotations a
 		 JOIN paragraphs p ON a.book_id = p.book_id AND a.paragraph_id = p.id
