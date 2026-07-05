@@ -45,20 +45,29 @@ export async function evictDbCache(): Promise<void> {
 export interface DbProgress {
 	/** bytes received so far */
 	loaded: number;
-	/** total bytes, or 0 when the server doesn't send Content-Length */
+	/** total bytes (manifest db size, else Content-Length), or 0 when neither is known */
 	total: number;
 	/** true once the bytes are served from the local cache rather than the network */
 	cached: boolean;
 }
 
-export async function initDb(onProgress?: (p: DbProgress) => void): Promise<Database> {
+/**
+ * @param onProgress reports download progress as bytes arrive.
+ * @param totalBytes uncompressed db size (from the manifest), used as the
+ *   progress total. Preferred over `Content-Length`, which is unreliable under
+ *   compression; omit it to fall back to the header, then to indeterminate.
+ */
+export async function initDb(
+	onProgress?: (p: DbProgress) => void,
+	totalBytes?: number
+): Promise<Database> {
 	if (db) return db;
 
 	const SQL = await (initSqlJs as any)({
 		locateFile: () => '/sql-wasm.wasm'
 	});
 
-	const buffer = await downloadDb(onProgress);
+	const buffer = await downloadDb(onProgress, totalBytes);
 	const loaded = new SQL.Database(new Uint8Array(buffer)) as Database;
 
 	// Reject a db built for a different app version before it can be queried
@@ -87,7 +96,10 @@ function readSchemaVersion(database: Database): number {
  * (this also makes the corpus available offline). Falls back to a plain fetch
  * where Cache Storage isn't available (e.g. insecure contexts).
  */
-async function downloadDb(onProgress?: (p: DbProgress) => void): Promise<ArrayBuffer> {
+async function downloadDb(
+	onProgress?: (p: DbProgress) => void,
+	totalBytes?: number
+): Promise<ArrayBuffer> {
 	let cache: Cache | null = null;
 	if (typeof caches !== 'undefined') {
 		try {
@@ -111,14 +123,14 @@ async function downloadDb(onProgress?: (p: DbProgress) => void): Promise<ArrayBu
 		const lastMod = cached.headers.get('last-modified');
 		// Revalidate via HTTP validators; no validators => trust cache.
 		// Covers Vite dev (Last-Modified changes on rebuild) and static hosts.
-		if (!etag && !lastMod) return readWithProgress(cached, true, onProgress);
+		if (!etag && !lastMod) return readWithProgress(cached, true, onProgress, totalBytes);
 		try {
 			const headers: Record<string, string> = {};
 			if (etag) headers['If-None-Match'] = etag;
 			else if (lastMod) headers['If-Modified-Since'] = lastMod;
 			const res = await fetch(DB_URL, { headers });
 			if (res.status === 304 || !res.ok) {
-				return readWithProgress(cached, true, onProgress);
+				return readWithProgress(cached, true, onProgress, totalBytes);
 			}
 			if (cache) {
 				try {
@@ -127,10 +139,10 @@ async function downloadDb(onProgress?: (p: DbProgress) => void): Promise<ArrayBu
 					console.warn('[db] Failed to cache database', e);
 				}
 			}
-			return readWithProgress(res, false, onProgress);
+			return readWithProgress(res, false, onProgress, totalBytes);
 		} catch (e) {
 			// Offline or network error: serve the cached copy.
-			return readWithProgress(cached, true, onProgress);
+			return readWithProgress(cached, true, onProgress, totalBytes);
 		}
 	}
 
@@ -144,16 +156,20 @@ async function downloadDb(onProgress?: (p: DbProgress) => void): Promise<ArrayBu
 			console.warn('[db] Failed to cache database', e);
 		}
 	}
-	return readWithProgress(response, false, onProgress);
+	return readWithProgress(response, false, onProgress, totalBytes);
 }
 
-/** Read a response body, reporting progress as chunks arrive. */
+/** Read a response body, reporting progress as chunks arrive. `knownTotal` (the
+ *  manifest's uncompressed db size) is preferred over `Content-Length`, which is
+ *  the compressed size — or absent — when the transfer is gzip/chunked, whereas
+ *  the byte stream is always decompressed. */
 async function readWithProgress(
 	response: Response,
 	cached: boolean,
-	onProgress?: (p: DbProgress) => void
+	onProgress?: (p: DbProgress) => void,
+	knownTotal?: number
 ): Promise<ArrayBuffer> {
-	const total = Number(response.headers.get('Content-Length')) || 0;
+	const total = knownTotal || Number(response.headers.get('Content-Length')) || 0;
 	if (!onProgress || !response.body) {
 		const buffer = await response.arrayBuffer();
 		onProgress?.({ loaded: buffer.byteLength, total: total || buffer.byteLength, cached });

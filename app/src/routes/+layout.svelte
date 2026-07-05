@@ -91,7 +91,9 @@
 	}
 
 	$effect(() => {
-		initDb((p) => { progress = p; })
+		// The manifest (already loaded above) carries the uncompressed db size, so
+		// the progress bar is determinate even when the transfer has no Content-Length.
+		initDb((p) => { progress = p; }, data.manifest.corpus.db_bytes)
 			.then(() => { resetSchemaRecovery(); ready = true; })
 			.catch((e) => {
 				// A schema mismatch means this client is running against a db built

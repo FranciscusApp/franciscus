@@ -106,6 +106,10 @@ export interface ManifestCorpus {
 	data_commit_date: string;
 	built_at: string;
 	book_count: number;
+	/** Uncompressed size of `franciscus.db` in bytes; the download total for a
+	 *  determinate progress bar. Matches the decompressed byte stream even when
+	 *  the transfer is gzip/chunked and sends no usable Content-Length. */
+	db_bytes: number;
 	/** Corpus translation languages (Latin source is implicit, not listed). */
 	languages: string[];
 }

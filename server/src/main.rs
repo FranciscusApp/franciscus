@@ -280,7 +280,17 @@ fn run_build(data_dir: &PathBuf, output: &PathBuf) {
     // hub routes can render/prerender without sql.js. Same build => no drift.
     let asset_dir = output.parent().unwrap_or_else(|| std::path::Path::new("."));
 
-    let manifest = db::build_manifest(&conn);
+    // Fold the WAL back into the main db file so its on-disk size is final before
+    // we stat it. That byte count is what the client downloads (the stream is
+    // always decompressed), so the app can show a determinate progress bar even
+    // when the transfer is gzip/chunked and sends no usable Content-Length.
+    conn.execute_batch("PRAGMA wal_checkpoint(TRUNCATE);")
+        .expect("Failed to checkpoint WAL before sizing db");
+    let db_bytes = std::fs::metadata(&output)
+        .expect("Failed to stat database file")
+        .len();
+
+    let manifest = db::build_manifest(&conn, db_bytes);
     // `db-manifest.json` (not `manifest.json`) to avoid confusion with the PWA
     // `manifest.webmanifest` that already ships in static/.
     let manifest_path = asset_dir.join("db-manifest.json");

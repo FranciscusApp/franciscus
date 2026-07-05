@@ -3,14 +3,17 @@
 	import type { DbProgress } from '$lib/db';
 
 	// Shared indicator for the background corpus-DB download. The progress is
-	// real (db.ts streams the body and reports byte counts); we show a determinate
-	// bar whenever the server sent a Content-Length, and a sweeping indeterminate
-	// bar otherwise. The label starts as "Loading…" (app shell / pre-download) and
-	// becomes "Downloading…" once bytes are actually arriving over the network.
+	// real (db.ts streams the body and reports byte counts against the manifest's
+	// known db size); we show a determinate bar when that total is available, and
+	// a sweeping indeterminate bar otherwise. The label starts as "Loading…" (app
+	// shell / pre-download) and becomes "Downloading…" once bytes arrive.
 	let { progress }: { progress: DbProgress | null } = $props();
 
+	// Clamp to 0–100 so a marginal total/stream drift can never overshoot the bar.
 	const pct = $derived(
-		progress && progress.total ? Math.round((progress.loaded / progress.total) * 100) : null
+		progress && progress.total
+			? Math.min(100, Math.round((progress.loaded / progress.total) * 100))
+			: null
 	);
 	const label = $derived(progress && !progress.cached ? t('app.downloading') : t('app.loading'));
 </script>

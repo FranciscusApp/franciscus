@@ -183,6 +183,11 @@ pub struct ManifestCorpus {
     pub data_commit_date: String,
     pub built_at: String,
     pub book_count: u32,
+    /// Uncompressed size of `franciscus.db` in bytes. The client uses it as the
+    /// download total for a determinate progress bar: the byte stream is always
+    /// decompressed, so this matches even when the transfer is gzip/chunked and
+    /// carries no usable `Content-Length`.
+    pub db_bytes: u64,
     /// Corpus translation languages (e.g. `["it"]`); the canonical Latin source
     /// is always present and not listed here.
     pub languages: Vec<String>,

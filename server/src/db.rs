@@ -216,7 +216,7 @@ pub fn write_meta(conn: &Connection) {
 /// Build the hub-page manifest from the just-populated DB. Mirrors the stats in
 /// `write_meta` but shaped for the app's `load()` (see `models::Manifest`).
 /// Provenance comes from the same environment the Makefile sets.
-pub fn build_manifest(conn: &Connection) -> Manifest {
+pub fn build_manifest(conn: &Connection, db_bytes: u64) -> Manifest {
     let data_commit = std::env::var("FRANCISCUS_DATA_COMMIT").unwrap_or_default();
     let data_commit_date = std::env::var("FRANCISCUS_DATA_COMMIT_DATE").unwrap_or_default();
     let built_at = std::env::var("FRANCISCUS_BUILD_TIME").unwrap_or_default();
@@ -391,6 +391,7 @@ pub fn build_manifest(conn: &Connection) -> Manifest {
             data_commit_date,
             built_at,
             book_count: book_count as u32,
+            db_bytes,
             languages,
         },
         books,
