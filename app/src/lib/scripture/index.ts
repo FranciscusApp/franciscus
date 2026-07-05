@@ -1,5 +1,6 @@
 import type { Citation } from './citation';
 import { bibbiaedu } from './bibbiaedu';
+import { biblegateway } from './biblegateway';
 
 export { parseCitation } from './citation';
 export type { Citation } from './citation';
@@ -28,7 +29,9 @@ const notImplemented: BibleSource = {
 };
 
 /** The Bible source for the active UI language. Italian → Bibbia Edu CEI 2008;
- *  English has no source defined yet (roadmap: TBD). */
+ *  English → RSV-CE on Bible Gateway. Other languages have no source yet. */
 export function getBibleSource(uiLang: string): BibleSource {
-	return uiLang === 'it' ? bibbiaedu : notImplemented;
+	if (uiLang === 'it') return bibbiaedu;
+	if (uiLang === 'en') return biblegateway;
+	return notImplemented;
 }

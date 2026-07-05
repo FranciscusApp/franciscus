@@ -95,10 +95,11 @@ Also the gold should match the Verbum Caro logo gold.
 - [x] **Copy citation.** One-click copy of a formatted, shareable reference for any passage.
 
 ### Scripture cross-referencing
-- [ ] **Bible reference modal.** Clicking a `<ref>` opens a modal showing the referenced passage, fetched from a source chosen by the active UI language.
-  - [ ] Design the modal UI.
-  - [ ] Bibbiaedu driver (Italian → CEI 2008): no API, so fetch + parse the page.
-  - [ ] Define the English source (TBD) and implement its driver.
+- [x] **Bible reference modal.** Clicking a `<ref>` opens a modal resolving the passage via a per-UI-language source driver. Sources block cross-origin reads, so drivers deep-link to the exact passage rather than embedding text.
+  - [x] Design the modal UI.
+  - [x] Bibbiaedu driver (Italian → CEI 2008): deep-link (inline text infeasible — CORS + AJAX-rendered).
+  - [x] English source → RSV-CE on Bible Gateway: deep-link driver.
+  - [ ] _Caveat:_ Psalm numbering — corpus uses Vulgate numbers, both editions are Masoretic (~±1 offset). Deep links may land one psalm off; needs a numbering table.
 
 ### In-app contributions
 - [x] **GitHub login + contribution flow.** Sign in to propose corrections, translations, and annotation edits from within the app.
