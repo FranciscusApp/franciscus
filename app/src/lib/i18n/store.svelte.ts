@@ -10,6 +10,7 @@ export const UI_LANGUAGES = [
 
 let uiLang = $state(loadPref('franciscus-ui-lang', 'en'));
 let corpusLang = $state(loadPref('franciscus-corpus-lang', 'la'));
+let parallelReader = $state(loadPref('franciscus-parallel-reader', 'false') === 'true');
 
 function loadPref(key: string, fallback: string): string {
 	if (typeof localStorage === 'undefined') return fallback;
@@ -36,6 +37,17 @@ export function getCorpusLang(): string {
 export function setCorpusLang(lang: string) {
 	corpusLang = lang;
 	savePref('franciscus-corpus-lang', lang);
+}
+
+/** Reader preference: show the original source beside a translation. Only takes
+ *  effect on the chapter reader, on wide viewports (see the reader page). */
+export function getParallelReader(): boolean {
+	return parallelReader;
+}
+
+export function setParallelReader(on: boolean) {
+	parallelReader = on;
+	savePref('franciscus-parallel-reader', String(on));
 }
 
 /** The book page's editorial note, generated from the read rendition's

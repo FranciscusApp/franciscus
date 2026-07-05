@@ -6,6 +6,8 @@
 		setUiLang,
 		getCorpusLang,
 		setCorpusLang,
+		getParallelReader,
+		setParallelReader,
 		UI_LANGUAGES
 	} from '$lib/i18n';
 	import * as github from '$lib/github.svelte.js';
@@ -23,6 +25,18 @@
 		de: 'Deutsch',
 		es: 'Español'
 	};
+
+	// The left column already shows the original, so parallel mode needs a
+	// translation in the corpus slot: prefer the UI language, else the first.
+	function defaultTranslation(): string {
+		const ui = getUiLang();
+		return languages.includes(ui) ? ui : (languages[0] ?? 'la');
+	}
+
+	function toggleParallel(on: boolean) {
+		if (on && getCorpusLang() === 'la') setCorpusLang(defaultTranslation());
+		setParallelReader(on);
+	}
 </script>
 
 <DropdownMenu.Root>
@@ -47,12 +61,31 @@
 				onchange={(e) => setCorpusLang((e.target as HTMLSelectElement).value)}
 				class="w-full text-sm rounded border border-input bg-background text-foreground px-2 py-1"
 			>
-				<option value="la">{t('language.original')}</option>
+				<!-- Parallel mode dedicates the left column to the original, so the
+				     corpus slot must be a translation — hide the original option. -->
+				{#if !getParallelReader()}
+					<option value="la">{t('language.original')}</option>
+				{/if}
 				{#each languages as lang}
 					<option value={lang}>{LANG_LABELS[lang] ?? lang}</option>
 				{/each}
 			</select>
 		</div>
+		{#if languages.length > 0}
+			<!-- Parallel reader is a wide-screen affordance only; hidden below lg. -->
+			<div class="hidden lg:block">
+				<label class="flex items-center justify-between gap-2 text-sm text-foreground">
+					<span>{t('reader.parallel')}</span>
+					<input
+						type="checkbox"
+						checked={getParallelReader()}
+						onchange={(e) => toggleParallel((e.target as HTMLInputElement).checked)}
+						class="h-4 w-4 rounded border-border"
+					/>
+				</label>
+				<p class="mt-1 text-xs text-muted-foreground">{t('reader.parallelHelp')}</p>
+			</div>
+		{/if}
 		<div>
 			<label for="ui-lang" class="block text-xs font-medium text-muted-foreground mb-1">
 				{t('language.ui')}

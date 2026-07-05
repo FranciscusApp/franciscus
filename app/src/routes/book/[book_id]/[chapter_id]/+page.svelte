@@ -14,7 +14,7 @@
 		type Aside,
 		type Annotation
 	} from '$lib';
-	import { t, getCorpusLang, getUiLang } from '$lib/i18n';
+	import { t, getCorpusLang, getUiLang, getParallelReader } from '$lib/i18n';
 	import Breadcrumbs from '$lib/Breadcrumbs.svelte';
 	import { recordPage } from '$lib/trail.svelte.js';
 	import { recordProgress } from '$lib/progress.svelte.js';
@@ -35,6 +35,21 @@
 
 	const corpusLang = $derived(getCorpusLang());
 	const uiLang = $derived(getUiLang());
+
+	// Parallel reader needs the width for two columns; below Tailwind's lg the
+	// pref falls back to a single column (matches the picker's own lg gating).
+	let isLarge = $state(false);
+	$effect(() => {
+		const mq = matchMedia('(min-width: 1024px)');
+		isLarge = mq.matches;
+		const onChange = () => (isLarge = mq.matches);
+		mq.addEventListener('change', onChange);
+		return () => mq.removeEventListener('change', onChange);
+	});
+
+	// Source + translation side by side. Requires a translation in the corpus
+	// slot (the left column is always the original), so a stray 'la' can't split.
+	const parallel = $derived(getParallelReader() && corpusLang !== 'la' && isLarge);
 	const book = $derived(getBook(bookId, corpusLang, uiLang));
 	const chapters = $derived(book ? getChapters(bookId, corpusLang) : []);
 	const chapter = $derived(chapters.find((c) => c.id === chapterId));
@@ -175,6 +190,7 @@
 		// re-run when the rendered content changes
 		void blocks;
 		void corpusLang;
+		void parallel;
 		const container = document.querySelector('.chapter-content') as HTMLElement | null;
 		if (!container) return;
 
@@ -351,6 +367,22 @@
 		return pe ? pe.text : asideContent(a);
 	}
 
+	// Parallel mode: the fixed original (Latin) column, edited under 'la'.
+	function originalDisplay(p: Paragraph): string {
+		const pe = editing ? pendingProse(bookId, 'la', p.id) : null;
+		return pe ? sourceToDisplay(pe.text, p.id) : p.content;
+	}
+	function originalAsideDisplay(a: Aside): string {
+		const pe = editing ? pendingProse(bookId, 'la', a.id) : null;
+		return pe ? pe.text : a.content;
+	}
+
+	// The Latin column owns the verse anchors; strip ids from the translation
+	// column so deep links (#verse) and verse selection stay unambiguous.
+	function stripVerseIds(html: string): string {
+		return html.replace(/<v id="[^"]*">/g, '<v>');
+	}
+
 	function paraHref(p: Paragraph): string {
 		return `/book/${bookId}/${chapterId}#${p.id}`;
 	}
@@ -384,12 +416,17 @@
 </script>
 
 {#if book && chapter}
-	<main id="main-content" tabindex="-1" class="max-w-3xl mx-auto px-4 py-8">
+	<main
+		id="main-content"
+		tabindex="-1"
+		class="{parallel ? 'max-w-6xl' : 'max-w-3xl'} mx-auto px-4 py-8"
+	>
 		<Breadcrumbs />
 
 		<h1 class="text-2xl font-display font-bold text-foreground mb-6">{chapter.title}</h1>
 
-		<div class="chapter-content space-y-4" lang={corpusLang}>
+		<!-- Parallel mode tags each column's lang instead of the whole surface. -->
+		<div class="chapter-content space-y-4" lang={parallel ? undefined : corpusLang}>
 			{#each blocks as block}
 				{#if block.kind === 'paragraph'}
 					{@const p = block.data}
@@ -435,13 +472,29 @@
 						<span class="inline-block min-w-8 text-xs text-muted-foreground font-mono mr-2 align-top pt-1">
 							{p.label ?? p.id}
 						</span>
-						<span
-							class="para-text font-serif text-foreground leading-relaxed {proseStaged
-								? 'rounded bg-primary/5 px-1 ring-1 ring-primary/30'
-								: ''}"
-						>
-							{@html paragraphDisplay(p)}
-						</span>
+						{#if parallel}
+							<div class="grid grid-cols-2 gap-6">
+								<div class="para-text font-serif text-foreground leading-relaxed" lang="la">
+									{@html originalDisplay(p)}
+								</div>
+								<div
+									class="para-text font-serif text-foreground leading-relaxed {proseStaged
+										? 'rounded bg-primary/5 px-1 ring-1 ring-primary/30'
+										: ''}"
+									lang={corpusLang}
+								>
+									{@html stripVerseIds(paragraphDisplay(p))}
+								</div>
+							</div>
+						{:else}
+							<span
+								class="para-text font-serif text-foreground leading-relaxed {proseStaged
+									? 'rounded bg-primary/5 px-1 ring-1 ring-primary/30'
+									: ''}"
+							>
+								{@html paragraphDisplay(p)}
+							</span>
+						{/if}
 						<AnnotationPills
 							{bookId}
 							paragraphId={p.id}
@@ -454,6 +507,21 @@
 				{:else}
 					{@const a = block.data}
 					{@const asideStaged = editing && !!pendingProse(bookId, corpusLang, a.id)}
+					{#if parallel}
+						<div class="grid grid-cols-2 gap-6 items-start">
+							<aside class="text-sm italic text-muted-foreground font-serif py-2" lang="la">
+								{originalAsideDisplay(a)}
+							</aside>
+							<aside
+								class="text-sm italic text-muted-foreground font-serif py-2 {asideStaged
+									? 'rounded bg-primary/5 px-1 ring-1 ring-primary/30'
+									: ''}"
+								lang={corpusLang}
+							>
+								{asideDisplay(a)}
+							</aside>
+						</div>
+					{:else}
 					<div class="group flex items-start gap-1">
 						<aside
 							class="flex-1 text-sm italic text-muted-foreground font-serif py-2 {asideStaged
@@ -476,6 +544,7 @@
 							</div>
 						{/if}
 					</div>
+					{/if}
 				{/if}
 			{/each}
 		</div>

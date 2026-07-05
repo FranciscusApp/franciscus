@@ -26,7 +26,9 @@
 	"reader": {
 		"textSize": "Dimensione del testo",
 		"textSmaller": "Riduci la dimensione del testo",
-		"textLarger": "Aumenta la dimensione del testo"
+		"textLarger": "Aumenta la dimensione del testo",
+		"parallel": "Traduzione a fronte",
+		"parallelHelp": "Mostra il testo originale accanto a una traduzione (schermi larghi)."
 	},
 	"home": {
 		"sourcesHeading": "Fonti"

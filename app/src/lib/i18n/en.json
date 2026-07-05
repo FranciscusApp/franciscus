@@ -26,7 +26,9 @@
 	"reader": {
 		"textSize": "Text size",
 		"textSmaller": "Decrease text size",
-		"textLarger": "Increase text size"
+		"textLarger": "Increase text size",
+		"parallel": "Parallel translation",
+		"parallelHelp": "Show the original source beside a translation (wide screens)."
 	},
 	"home": {
 		"sourcesHeading": "Sources"
