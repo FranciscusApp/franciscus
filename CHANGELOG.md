@@ -8,6 +8,28 @@ although it not being a library and not exposing any APIs means the definitions 
 might be somewhat loose or subjective.
 
 
+## [1.3.0] - 2026-07-05
+
+### Added
+- **Parallel reader.** Read a source text beside a chosen translation in two
+  columns on wide screens, with editable translation asides. Toggle it from the
+  language settings; the Latin column keeps the verse anchors so deep links and
+  verse selection stay unambiguous.
+- **Redesigned topic pages.** Occurrences now render through the same reader as
+  the chapter view (read-only), grouped into collapsible book → chapter →
+  passage sections and parallel-reader aware.
+- **Auto-reload on new version.** The app detects a new deployment and offers to
+  reload so returning visitors are not left on stale code.
+
+### Fixed
+- **Corpus download progress** is now a reliable, determinate 0–100% bar during
+  the database download, instead of an indeterminate spinner.
+- **Psalm scripture links** map Vulgate numbering to Masoretic so references
+  resolve to the correct passage.
+- The database manifest is served network-first, so a data-only redeploy reaches
+  returning clients without a full app rebuild.
+
+
 ## [1.2.0] - 2026-07-03
 
 ### Added
