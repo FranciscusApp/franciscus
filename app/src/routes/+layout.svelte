@@ -93,7 +93,11 @@
 	$effect(() => {
 		// The manifest (already loaded above) carries the uncompressed db size, so
 		// the progress bar is determinate even when the transfer has no Content-Length.
-		initDb((p) => { progress = p; }, data.manifest.corpus.db_bytes)
+		// Read it defensively: if the manifest is ever missing on this route, the
+		// download must still run (falling back to Content-Length) rather than
+		// throwing here and leaving the gate stuck on an indeterminate spinner.
+		const total = data.manifest?.corpus?.db_bytes;
+		initDb((p) => { progress = p; }, total)
 			.then(() => { resetSchemaRecovery(); ready = true; })
 			.catch((e) => {
 				// A schema mismatch means this client is running against a db built

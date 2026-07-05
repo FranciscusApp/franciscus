@@ -132,14 +132,7 @@ async function downloadDb(
 			if (res.status === 304 || !res.ok) {
 				return readWithProgress(cached, true, onProgress, totalBytes);
 			}
-			if (cache) {
-				try {
-					await cache.put(DB_URL, res.clone());
-				} catch (e) {
-					console.warn('[db] Failed to cache database', e);
-				}
-			}
-			return readWithProgress(res, false, onProgress, totalBytes);
+			return streamAndCache(res, cache, onProgress, totalBytes);
 		} catch (e) {
 			// Offline or network error: serve the cached copy.
 			return readWithProgress(cached, true, onProgress, totalBytes);
@@ -148,15 +141,32 @@ async function downloadDb(
 
 	const response = await fetch(DB_URL);
 	if (!response.ok) throw new Error(`Failed to fetch database: ${response.status}`);
-	// Cache a clone before the body stream is consumed by the progress reader.
+	return streamAndCache(response, cache, onProgress, totalBytes);
+}
+
+/** Stream a fresh network response — reporting download progress as bytes
+ *  arrive — then persist the buffered bytes to the cache. Caching a `clone()`
+ *  up front instead (and awaiting it) would let `cache.put` consume the entire
+ *  transfer silently before `readWithProgress` ever runs, so `onProgress` never
+ *  fires during the download and the bar stays stuck at indeterminate. */
+async function streamAndCache(
+	response: Response,
+	cache: Cache | null,
+	onProgress?: (p: DbProgress) => void,
+	totalBytes?: number
+): Promise<ArrayBuffer> {
+	// Capture headers before the body is consumed; the cached copy needs the
+	// validators (etag / last-modified) so later loads can revalidate.
+	const headers = response.headers;
+	const buffer = await readWithProgress(response, false, onProgress, totalBytes);
 	if (cache) {
 		try {
-			await cache.put(DB_URL, response.clone());
+			await cache.put(DB_URL, new Response(buffer, { headers }));
 		} catch (e) {
 			console.warn('[db] Failed to cache database', e);
 		}
 	}
-	return readWithProgress(response, false, onProgress, totalBytes);
+	return buffer;
 }
 
 /** Read a response body, reporting progress as chunks arrive. `knownTotal` (the
