@@ -73,8 +73,33 @@ sw.addEventListener('fetch', (event) => {
 	// The database is cached by db.ts in its own bucket; don't duplicate it here.
 	if (url.pathname.endsWith('franciscus.db')) return;
 
+	// The manifest is dynamic data: `make db` rebuilds it without changing the
+	// service-worker `version`, so a cache-first lookup would pin returning clients
+	// to a stale copy — the copy that predates `db_bytes`, leaving the corpus
+	// download progress bar permanently indeterminate. Always revalidate from the
+	// network, falling back to cache only when offline.
+	if (url.pathname === '/db-manifest.json') {
+		event.respondWith(networkFirst(request));
+		return;
+	}
+
 	event.respondWith(respond(request));
 });
+
+async function networkFirst(request: Request): Promise<Response> {
+	const cache = await caches.open(CACHE);
+	try {
+		const response = await fetch(request);
+		if (response.ok && response.type === 'basic') {
+			cache.put(request, response.clone());
+		}
+		return response;
+	} catch (err) {
+		const cached = await cache.match(request);
+		if (cached) return cached;
+		throw err;
+	}
+}
 
 async function respond(request: Request): Promise<Response> {
 	const cache = await caches.open(CACHE);
