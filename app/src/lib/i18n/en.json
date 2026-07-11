@@ -92,7 +92,12 @@
 		"placeholder": "Search in the sources…",
 		"noResults": "No results found.",
 		"resultCount": "results",
-		"resultCountOne": "result"
+		"resultCountOne": "result",
+		"advanced": "Advanced search",
+		"filterBooks": "Sources",
+		"filterTopic": "Topic",
+		"anyTopic": "Any topic",
+		"clearFilters": "Clear filters"
 	},
 	"language": {
 		"corpus": "Source text",

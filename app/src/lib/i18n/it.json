@@ -92,7 +92,12 @@
 		"placeholder": "Cerca nelle fonti…",
 		"noResults": "Nessun risultato trovato.",
 		"resultCount": "risultati",
-		"resultCountOne": "risultato"
+		"resultCountOne": "risultato",
+		"advanced": "Ricerca avanzata",
+		"filterBooks": "Fonti",
+		"filterTopic": "Argomento",
+		"anyTopic": "Qualsiasi argomento",
+		"clearFilters": "Rimuovi i filtri"
 	},
 	"language": {
 		"corpus": "Testo fonte",

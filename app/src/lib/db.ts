@@ -451,7 +451,18 @@ export function getChapterAnnotations(bookId: string, chapterId: string): Annota
 	);
 }
 
-export function searchParagraphs(query: string, lang: string): SearchResult[] {
+export interface SearchFilters {
+	/** Restrict matches to these books (empty or absent = all books). */
+	bookIds?: string[];
+	/** Restrict matches to paragraphs annotated with this topic. */
+	topic?: { type: string; value: string };
+}
+
+export function searchParagraphs(
+	query: string,
+	lang: string,
+	filters: SearchFilters = {}
+): SearchResult[] {
 	const sanitized = query
 		.split(/\s+/)
 		.filter(Boolean)
@@ -460,7 +471,27 @@ export function searchParagraphs(query: string, lang: string): SearchResult[] {
 		.map(term => term + '*')
 		.join(' ');
 	if (!sanitized) return [];
-	console.log('[db] FTS5 query', { raw: query, sanitized, lang });
+	console.log('[db] FTS5 query', { raw: query, sanitized, lang, filters });
+
+	const params: BindParams = { $query: sanitized, $lang: lang };
+	const conds: string[] = [];
+	if (filters.bookIds?.length) {
+		const names = filters.bookIds.map((id, i) => {
+			(params as Record<string, string>)[`$book${i}`] = id;
+			return `$book${i}`;
+		});
+		conds.push(`s.book_id IN (${names.join(', ')})`);
+	}
+	if (filters.topic) {
+		(params as Record<string, string>).$topicType = filters.topic.type;
+		(params as Record<string, string>).$topicValue = filters.topic.value;
+		conds.push(
+			`EXISTS (SELECT 1 FROM annotations fa
+			         WHERE fa.book_id = s.book_id AND fa.paragraph_id = s.paragraph_id
+			           AND fa.topic_type = $topicType AND fa.topic_value = $topicValue)`
+		);
+	}
+	const filterSql = conds.length ? ` AND ${conds.join(' AND ')}` : '';
 
 	// Pick the top matches by relevance (rank), then re-sort that set by
 	// book → chapter → paragraph so groupByChapter sees contiguous chapters.
@@ -482,11 +513,11 @@ export function searchParagraphs(query: string, lang: string): SearchResult[] {
 		          ON bt.book_id = b.id AND bt.lang = $lang
 		   LEFT JOIN chapter_translations ct
 		          ON ct.book_id = c.book_id AND ct.chapter_id = c.id AND ct.lang = $lang
-		   WHERE search_index MATCH $query AND s.lang = $lang
+		   WHERE search_index MATCH $query AND s.lang = $lang${filterSql}
 		   ORDER BY rank
 		   LIMIT 50
 		 )
 		 ORDER BY book_id, chapter_position, position`,
-		{ $query: sanitized, $lang: lang }
+		params
 	);
 }

@@ -5,6 +5,7 @@
 	import NoScriptNotice from '$lib/NoScriptNotice.svelte';
 	import DbProgressBar from '$lib/DbProgressBar.svelte';
 	import { t, getCorpusLang, getUiLang } from '$lib/i18n';
+	import SlidersHorizontal from '@lucide/svelte/icons/sliders-horizontal';
 	import type { PageData } from './$types';
 
 	// Manifest comes from the root layout's load(); it prerenders the browse view
@@ -32,10 +33,54 @@
 	// blurbs follow the UI language.
 	const books = $derived(db.ready ? getBooks(corpusLang, uiLang) : data.manifest.books);
 
+	// Advanced-search filters: restrict FTS matches by source book and/or by
+	// annotated topic. Both narrow the query — an empty selection means "all".
+	let showAdvanced = $state(false);
+	let selectedBooks = $state<string[]>([]);
+	/** `type:value` of the chosen topic, or '' for any. */
+	let topicFilter = $state('');
+
+	function toggleBook(id: string) {
+		selectedBooks = selectedBooks.includes(id)
+			? selectedBooks.filter((b) => b !== id)
+			: [...selectedBooks, id];
+	}
+
+	// Topic options come from the manifest (same source as the /topics hub), so
+	// the panel works as soon as the DB does, labeled in the UI language.
+	const topicGroups = $derived.by(() => {
+		const groups = new Map<string, { value: string; label: string }[]>();
+		for (const tp of data.manifest.topics) {
+			const list = groups.get(tp.type) ?? [];
+			list.push({
+				value: `${tp.type}:${tp.value}`,
+				label: tp.descriptions?.[uiLang] ?? tp.description
+			});
+			groups.set(tp.type, list);
+		}
+		for (const list of groups.values()) list.sort((a, b) => a.label.localeCompare(b.label));
+		return groups;
+	});
+
+	const filtersActive = $derived(selectedBooks.length + (topicFilter ? 1 : 0));
+
+	function clearFilters() {
+		selectedBooks = [];
+		topicFilter = '';
+	}
+
 	const results = $derived.by(() => {
 		if (!db.ready || !query.trim()) return [];
+		const colon = topicFilter.indexOf(':');
+		const topic =
+			colon > 0
+				? { type: topicFilter.slice(0, colon), value: topicFilter.slice(colon + 1) }
+				: undefined;
 		try {
-			return searchParagraphs(query, corpusLang);
+			return searchParagraphs(query, corpusLang, {
+				bookIds: selectedBooks.length ? selectedBooks : undefined,
+				topic
+			});
 		} catch (e) {
 			console.error('[search] searchParagraphs threw', e);
 			return [];
@@ -75,6 +120,72 @@
 				       focus:outline-none focus:ring-2 focus:ring-ring
 				       font-serif text-lg"
 			/>
+			<div class="mt-2">
+				<button
+					type="button"
+					onclick={() => (showAdvanced = !showAdvanced)}
+					aria-expanded={showAdvanced}
+					class="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+				>
+					<SlidersHorizontal class="w-4 h-4" />
+					{t('search.advanced')}
+					{#if filtersActive}
+						<span
+							class="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary/10 px-1 text-xs font-medium text-primary"
+							>{filtersActive}</span
+						>
+					{/if}
+				</button>
+				{#if showAdvanced}
+					<div class="mt-2 space-y-3 rounded-lg border border-border p-3">
+						<fieldset>
+							<legend class="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+								{t('search.filterBooks')}
+							</legend>
+							<div class="flex flex-wrap gap-x-4 gap-y-1.5">
+								{#each books as book (book.id)}
+									<label class="flex items-center gap-1.5 text-sm text-foreground">
+										<input
+											type="checkbox"
+											checked={selectedBooks.includes(book.id)}
+											onchange={() => toggleBook(book.id)}
+											class="h-4 w-4 rounded border-border"
+										/>
+										<span class="font-serif">{book.title}</span>
+									</label>
+								{/each}
+							</div>
+						</fieldset>
+						<label class="block text-sm">
+							<span class="mb-1 block text-xs font-medium uppercase tracking-wide text-muted-foreground">
+								{t('search.filterTopic')}
+							</span>
+							<select
+								bind:value={topicFilter}
+								class="w-full rounded border border-input bg-background px-2 py-1.5 text-sm text-foreground"
+							>
+								<option value="">{t('search.anyTopic')}</option>
+								{#each topicGroups as [type, opts] (type)}
+									<optgroup label={t(`topics.typePlurals.${type}`)}>
+										{#each opts as o (o.value)}
+											<option value={o.value}>{o.label}</option>
+										{/each}
+									</optgroup>
+								{/each}
+							</select>
+						</label>
+						{#if filtersActive}
+							<button
+								type="button"
+								onclick={clearFilters}
+								class="text-sm text-muted-foreground underline transition-colors hover:text-primary"
+							>
+								{t('search.clearFilters')}
+							</button>
+						{/if}
+					</div>
+				{/if}
+			</div>
 		{:else if !db.error}
 			<!-- Rendered in the prerendered HTML so JS users see it from first paint
 			     (app loading → corpus downloading); `js-only` hides it when scripts
