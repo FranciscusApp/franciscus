@@ -8,6 +8,7 @@
     import Bookmark from '@lucide/svelte/icons/bookmark';
     import Info from '@lucide/svelte/icons/info';
     import HeartHandshake from '@lucide/svelte/icons/heart-handshake';
+    import Sparkles from '@lucide/svelte/icons/sparkles';
     import BookOpenText from '@lucide/svelte/icons/book-open-text';
     import GitPullRequest from '@lucide/svelte/icons/git-pull-request';
     import X from '@lucide/svelte/icons/x';
@@ -22,6 +23,7 @@
         '/': null,
         '/topics': 'nav.topics',
         '/about': 'nav.about',
+        '/ai': 'nav.aiDisclaimer',
         '/contribute': 'nav.contribute',
         '/bookmarks': 'nav.bookmarks',
         '/contributions': 'nav.myContributions'
@@ -187,6 +189,19 @@
                         >
                             <Info class="size-5 shrink-0 text-muted-foreground group-aria-[current=page]:text-primary" />
                             <span class="text-foreground">{t('nav.about')}</span>
+                        </a>
+                    {/snippet}
+                </Sheet.Close>
+                <Sheet.Close>
+                    {#snippet child({ props })}
+                        <a
+                            href="/ai"
+                            {...props}
+                            aria-current={routeId === '/ai' ? 'page' : undefined}
+                            class="group flex items-center gap-3 rounded-md px-3 py-2.5 transition-colors hover:bg-accent aria-[current=page]:bg-accent aria-[current=page]:font-medium"
+                        >
+                            <Sparkles class="size-5 shrink-0 text-muted-foreground group-aria-[current=page]:text-primary" />
+                            <span class="text-foreground">{t('nav.aiDisclaimer')}</span>
                         </a>
                     {/snippet}
                 </Sheet.Close>

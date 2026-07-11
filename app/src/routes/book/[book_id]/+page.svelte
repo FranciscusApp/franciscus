@@ -61,6 +61,9 @@
 					{t('book.notesHeading')}
 				</h2>
 				<p class="mt-1 text-sm text-muted-foreground font-serif">{note}</p>
+				<a href="/ai" class="mt-1 inline-block text-sm text-muted-foreground underline hover:text-primary transition-colors">
+					{t('book.aiNoteLink')}
+				</a>
 			</section>
 		{/if}
 	</header>

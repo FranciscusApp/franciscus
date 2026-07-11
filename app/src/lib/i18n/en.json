@@ -18,7 +18,8 @@
 		"bookmarks": "Bookmarks",
 		"about": "About",
 		"contribute": "Contribute",
-		"myContributions": "My Contributions"
+		"myContributions": "My Contributions",
+		"aiDisclaimer": "AI Disclaimer"
 	},
 	"footer": {
 		"projectBy": "A project by"
@@ -45,7 +46,8 @@
 			"draft": "This translation is a draft, undergoing editorial review.",
 			"human": "Reviewed human translation.",
 			"sourceFrom": "Source text from {source}."
-		}
+		},
+		"aiNoteLink": "How AI is used on this site"
 	},
 	"chapter": {
 		"notFound": "Chapter not found."
@@ -167,6 +169,10 @@
 		}
 	},
 	"pages": {
+		"ai": {
+			"title": "AI Disclaimer",
+			"body": "<p class='mb-4'>Franciscus uses artificial intelligence to make the Franciscan sources easier to read and explore. This page explains exactly what on this site is produced by AI, what is not, and how to tell the difference while reading.</p><h2 class='text-lg font-display text-foreground mt-8 mb-3'>What is produced by AI</h2><ul class='list-disc pl-6 mb-4 space-y-2'><li><strong>Translations.</strong> Unless a book's notes state otherwise, the translations of the Latin sources into modern languages are produced by AI models (Anthropic's Claude) and are undergoing editorial review. Each book's page carries a note stating the provenance and review status of the rendition you are reading.</li><li><strong>Thematic annotations.</strong> The topic labels attached to passages — virtues, themes, events, places, and people — are proposed by AI. An annotation marked with a check (✓) has been verified by a human editor; the others await review.</li><li><strong>Cross-references.</strong> The links connecting parallel passages across the sources are likewise AI-proposed unless verified.</li></ul><h2 class='text-lg font-display text-foreground mt-8 mb-3'>What is not produced by AI</h2><p class='mb-4'>The Latin source texts are transcriptions of the standard critical editions, not AI output, and they remain the reference at every step: the original text is always available alongside any translation. The editorial descriptions of the works and the pages of this site are written by the project's editors.</p><h2 class='text-lg font-display text-foreground mt-8 mb-3'>Limitations</h2><p class='mb-4'>AI models can mistranslate — medieval Latin especially, with its idioms, technical vocabulary, and scriptural echoes — and can propose annotations that a scholar would not. AI-generated content on this site is offered as an aid to reading and study, <strong>not as a scholarly edition, and it is not suitable for academic citation</strong>. For any serious use, consult the original Latin text and the printed critical editions.</p><h2 class='text-lg font-display text-foreground mt-8 mb-3'>Reporting errors</h2><p class='mb-4'>All texts, translations, and annotations are versioned in a public repository, and every correction is welcome — human review is precisely what turns these drafts into reliable aids. See the <a href='/contribute' class='underline'>Contribute</a> page to report a mistake or propose a fix.</p>"
+		},
 		"about": {
 			"title": "About",
 			"body": "<p class='mb-4'>Who was Brother Francis <em>really</em>? Eight hundred years after his death, the question still fascinates a great many people — those near to the Catholic faith and those far from it.</p><p class='mb-4'>Popular accounts often tell of Francis by speaking of his love for poverty as though it were a simple choice of a <em>simpler life</em>, a release from the cares of ownership. The little friar's passion for creation, too, is frequently portrayed as a kind of environmentalism, indebted to its Christian background only by accident of birth or convention.</p><p class='mb-4'>This reading is often paired with a narrative in which the Church is bent on normalising this controversial figure: first by imposing limits and controls on his charism, and then, after his death, by gradually replacing the authentic testimonies about him with contrived, domesticated, and embellished versions of his story.</p><p class='mb-4'>Thus would be born Saint Francis — or rather the <em>holy-card</em> Francis: a little shrine, an icon, something that has little or nothing left to do with the poor man <em>Brother Francis</em>.</p><p class='mb-4'>So who really was this man of Assisi? The friar or the holy card? The answer lies in the primary sources, and in his most precious Testament, and it is unequivocal: neither one nor the other. Between Celano, Bonaventure, the Three Companions, the Testament, and the other sources there are, to be sure, dissonances of interest and purpose: to bear witness to a friend, to recount the birth of a saint, to reflect theologically on his story so as to give a rule to an order that had grown beyond all expectation.</p><p class='mb-4'>Yet there is no difference of substance. Saint Francis — who was not, but <em>is</em>! — is the man whom all the sources recount in a chorus that is polyphonic but not dissonant: a man radically in love with Christ, and with Christ alone. And it is from this love that everything Francis was descends: a son of the Church, obedient to excess; a dramatic prophet who does not fear to serve a crust of begged bread in the house of a cardinal; a wonderworker; an awestruck lover of Creation — not of mere nature.</p><p class='mb-4'>This <em>alter Christus</em>, who conformed himself to his Lord even to the point of receiving the stigmata, surely suffers to see his memory divided; suffers, certainly, at pietistic and trivial portrayals, but above all at seeing himself used as a foil to paint the Church as revisionist and censorious.</p><p class='mb-4'>This is the very reason for this project: to hand you the primary sources — readable, searchable, explorable — in a way that is easy and pleasant.</p><p class='mb-4'>So that you may come to know, without filters or assumptions, the harmony they recount.</p><p class='mb-4 font-semibold text-primary'>Sancte Francisce, Sancte Bonaventura, orate pro nobis</p>",
