@@ -7,6 +7,7 @@
 	import Plus from '@lucide/svelte/icons/plus';
 	import Undo2 from '@lucide/svelte/icons/undo-2';
 	import * as edits from '$lib/edits.svelte.js';
+	import Modal from '$lib/Modal.svelte';
 
 	// Renders a paragraph's topic pills. Read-only mode (`editing = false`) matches
 	// the plain reader: pills link to their topic pages. Edit mode adds the four
@@ -36,6 +37,7 @@
 	let popover = $state<{ type: string; value: string; allowVerify: boolean } | null>(null);
 	let pickerOpen = $state(false);
 	let pickerFilter = $state('');
+	let pickerInput = $state<HTMLInputElement | null>(null);
 
 	// Draft state for the verify/comment popover, seeded from buffer + source.
 	let draftVerified = $state(false);
@@ -104,8 +106,15 @@
 			.slice(0, 60);
 	});
 
+	// Start each picker session with an empty filter (closing discards the query).
+	$effect(() => {
+		if (!pickerOpen) pickerFilter = '';
+	});
+
 	const adds = $derived(edits.pendingAdds(bookId, paragraphId));
-	const hasAny = $derived(annotations.length > 0 || (editing && (adds.length > 0 || pickerOpen)));
+	// Edit mode always shows the row: the add button must be reachable even on a
+	// paragraph with no annotations yet.
+	const hasAny = $derived(annotations.length > 0 || editing);
 </script>
 
 {#if hasAny}
@@ -214,53 +223,49 @@
 				</span>
 			{/each}
 
-			<div class="relative inline-flex">
-				<button
-					type="button"
-					onclick={() => (pickerOpen = !pickerOpen)}
-					aria-label={t('edit.add')}
-					aria-expanded={pickerOpen}
-					class="inline-flex items-center rounded-full border border-dashed border-muted-foreground/50 px-1.5 py-0.5 text-muted-foreground hover:text-primary hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring"
-				>
-					<Plus class="w-3.5 h-3.5" />
-				</button>
-				{#if pickerOpen}
-					<div
-						class="absolute left-0 top-full z-30 mt-1 w-64 rounded-md border border-border bg-popover p-2 shadow-lg"
-					>
-						<!-- svelte-ignore a11y_autofocus -->
-						<input
-							type="text"
-							bind:value={pickerFilter}
-							placeholder={t('edit.searchTopics')}
-							autofocus
-							onkeydown={(e) => e.key === 'Escape' && (pickerOpen = false)}
-							class="w-full rounded border border-input bg-background px-2 py-1 text-sm text-foreground"
-						/>
-						<ul class="mt-2 max-h-56 overflow-y-auto">
-							{#each filteredCandidates as c (`${c.type}:${c.value}`)}
-								<li>
-									<button
-										type="button"
-										onclick={() => addTopic(c.type, c.value)}
-										class="flex w-full items-center gap-1.5 rounded px-2 py-1 text-left text-sm hover:bg-accent focus:outline-none focus:bg-accent"
-									>
-										<span
-											class="inline-block h-2 w-2 shrink-0 rounded-full {topicColors(c.type)}"
-										></span>
-										<span class="truncate text-foreground">{c.label}</span>
-										<span class="ml-auto shrink-0 text-xs text-muted-foreground"
-											>{typeName(c.type)}</span
-										>
-									</button>
-								</li>
-							{:else}
-								<li class="px-2 py-1 text-sm text-muted-foreground">{t('edit.noTopics')}</li>
-							{/each}
-						</ul>
-					</div>
-				{/if}
-			</div>
+			<button
+				type="button"
+				onclick={() => (pickerOpen = true)}
+				aria-label={t('edit.add')}
+				aria-expanded={pickerOpen}
+				aria-haspopup="dialog"
+				class="inline-flex items-center rounded-full border border-dashed border-muted-foreground/50 px-1.5 py-0.5 text-muted-foreground hover:text-primary hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring"
+			>
+				<Plus class="w-3.5 h-3.5" />
+			</button>
+			<!-- Add-topic picker: a centered modal (not an inline dropdown), so the
+			     list is searchable comfortably on mobile and can't overflow small
+			     screens. -->
+			<Modal bind:open={pickerOpen} title={t('edit.add')} initialFocus={() => pickerInput}>
+				<input
+					type="text"
+					bind:this={pickerInput}
+					bind:value={pickerFilter}
+					placeholder={t('edit.searchTopics')}
+					class="w-full rounded border border-input bg-background px-2 py-1.5 text-sm text-foreground"
+				/>
+				<ul class="mt-2 max-h-[50vh] overflow-y-auto">
+					{#each filteredCandidates as c (`${c.type}:${c.value}`)}
+						<li>
+							<button
+								type="button"
+								onclick={() => addTopic(c.type, c.value)}
+								class="flex w-full items-center gap-1.5 rounded px-2 py-1.5 text-left text-sm hover:bg-accent focus:outline-none focus:bg-accent"
+							>
+								<span
+									class="inline-block h-2 w-2 shrink-0 rounded-full {topicColors(c.type)}"
+								></span>
+								<span class="truncate text-foreground">{c.label}</span>
+								<span class="ml-auto shrink-0 text-xs text-muted-foreground"
+									>{typeName(c.type)}</span
+								>
+							</button>
+						</li>
+					{:else}
+						<li class="px-2 py-1 text-sm text-muted-foreground">{t('edit.noTopics')}</li>
+					{/each}
+				</ul>
+			</Modal>
 		{/if}
 	</div>
 
