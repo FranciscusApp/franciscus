@@ -119,24 +119,14 @@ async function downloadDb(
 
 	const cached = cache ? await cache.match(DB_URL) : undefined;
 	if (cached) {
-		const etag = cached.headers.get('etag');
-		const lastMod = cached.headers.get('last-modified');
-		// Revalidate via HTTP validators; no validators => trust cache.
-		// Covers Vite dev (Last-Modified changes on rebuild) and static hosts.
-		if (!etag && !lastMod) return readWithProgress(cached, true, onProgress, totalBytes);
-		try {
-			const headers: Record<string, string> = {};
-			if (etag) headers['If-None-Match'] = etag;
-			else if (lastMod) headers['If-Modified-Since'] = lastMod;
-			const res = await fetch(DB_URL, { headers });
-			if (res.status === 304 || !res.ok) {
-				return readWithProgress(cached, true, onProgress, totalBytes);
-			}
-			return streamAndCache(res, cache, onProgress, totalBytes);
-		} catch (e) {
-			// Offline or network error: serve the cached copy.
-			return readWithProgress(cached, true, onProgress, totalBytes);
-		}
+		// Stale-while-revalidate: a cached corpus is fully usable, so serve it
+		// immediately and never gate the UI on the network — neither on the
+		// revalidation round-trip nor on downloading an updated db. The
+		// revalidation runs in the background; a fresher db lands in the cache
+		// and is picked up on the next load. (Covers Vite dev too: after a
+		// rebuild the new db arrives one reload later.)
+		if (cache) void revalidateInBackground(cache, cached);
+		return readWithProgress(cached, true, onProgress, totalBytes);
 	}
 
 	const response = await fetch(DB_URL);
@@ -167,6 +157,32 @@ async function streamAndCache(
 		}
 	}
 	return buffer;
+}
+
+/**
+ * Refresh the cached db behind the served (possibly stale) copy. Sends both
+ * HTTP validators when present — some hosts vary the ETag with the content
+ * encoding, so `If-None-Match` alone can miss and trigger a full 200 for an
+ * unchanged body; `If-Modified-Since` still catches that case. Any 200 body is
+ * stored (bytes and validators), so a drifted validator self-heals and later
+ * revalidations 304 again. No validators at all ⇒ nothing to revalidate
+ * against — trust the cache.
+ */
+async function revalidateInBackground(cache: Cache, cached: Response): Promise<void> {
+	const etag = cached.headers.get('etag');
+	const lastMod = cached.headers.get('last-modified');
+	if (!etag && !lastMod) return;
+	try {
+		const headers: Record<string, string> = {};
+		if (etag) headers['If-None-Match'] = etag;
+		if (lastMod) headers['If-Modified-Since'] = lastMod;
+		const res = await fetch(DB_URL, { headers });
+		if (res.status === 304 || !res.ok) return;
+		await cache.put(DB_URL, res);
+	} catch (e) {
+		// Offline or storage failure: the cached copy simply stays in place.
+		console.warn('[db] Background revalidation failed', e);
+	}
 }
 
 /** Read a response body, reporting progress as chunks arrive. `knownTotal` (the
