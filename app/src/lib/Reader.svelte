@@ -5,6 +5,8 @@
 	import QuoteIcon from '@lucide/svelte/icons/quote';
 	import CheckIcon from '@lucide/svelte/icons/check';
 	import AnnotationPills from '$lib/AnnotationPills.svelte';
+	import RelationPills from '$lib/RelationPills.svelte';
+	import type { RelationLink } from '$lib/db';
 	import ProseEditor from '$lib/ProseEditor.svelte';
 	import { parseCitation } from '$lib/scripture';
 	import { isBookmarked, toggleBookmark } from '$lib/bookmarks.svelte.js';
@@ -29,6 +31,8 @@
 		searchTerms = [],
 		topicLabel = (_type: string, value: string) => value,
 		candidates = [],
+		relationsByParagraph = null,
+		relationBooks = [],
 		onScriptureRef
 	}: {
 		blocks: ReaderBlock[];
@@ -42,6 +46,10 @@
 		searchTerms?: string[];
 		topicLabel?: (type: string, value: string) => string;
 		candidates?: { type: string; value: string; label: string }[];
+		/** Passage relations keyed by paragraph id; null hides the relation UI
+		 *  entirely (surfaces like topic pages that don't query relations). */
+		relationsByParagraph?: Map<string, RelationLink[]> | null;
+		relationBooks?: { id: string; title: string }[];
 		onScriptureRef: (to: string) => void;
 	} = $props();
 
@@ -345,6 +353,15 @@
 					{candidates}
 					{editing}
 				/>
+				{#if relationsByParagraph}
+					<RelationPills
+						{bookId}
+						paragraphId={block.id}
+						relations={relationsByParagraph.get(block.id) ?? []}
+						books={relationBooks}
+						{editing}
+					/>
+				{/if}
 				{#if block.comment}
 					<p class="mt-2 text-sm text-muted-foreground italic">{block.comment}</p>
 				{/if}

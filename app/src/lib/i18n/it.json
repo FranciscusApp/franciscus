@@ -87,6 +87,21 @@
 			"person": "Persone"
 		}
 	},
+	"relations": {
+		"types": {
+			"same_episode": "Stesso episodio",
+			"related_to": "Passo collegato"
+		},
+		"add": "Collega un passo parallelo",
+		"remove": "Rimuovi il collegamento",
+		"incoming": "Collegato dall'altro passo",
+		"missingTarget": "Passo non presente in questa edizione del corpus",
+		"typeLabel": "Tipo di collegamento",
+		"bookLabel": "Fonte",
+		"chapterLabel": "Capitolo",
+		"paragraphLabel": "Paragrafo",
+		"choose": "Scegli…"
+	},
 	"search": {
 		"heading": "Ricerca",
 		"placeholder": "Cerca nelle fonti…",

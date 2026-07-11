@@ -441,6 +441,65 @@ export function getAsideTranslations(
 	return map;
 }
 
+/** A relation viewed from one end: the passage in the currently-read chapter
+ *  (`anchor_paragraph_id`) and the passage on the other end, resolved for
+ *  linking. `other_*` join fields are null when the target passage isn't in
+ *  the DB (relations carry no FK on the target). */
+export interface RelationLink {
+	anchor_paragraph_id: string;
+	/** 'out': this chapter's paragraph is the relation's source (editable side —
+	 *  the entry lives in this book's sidecar); 'in': it is the target. */
+	direction: 'out' | 'in';
+	relation_type: string;
+	other_book_id: string;
+	other_paragraph_id: string;
+	other_book_title: string | null;
+	other_chapter_id: string | null;
+	other_paragraph_label: string | null;
+	provenance: string;
+	comment: string | null;
+}
+
+/** Both directions of every relation touching a chapter's paragraphs: rows
+ *  sourced here (outgoing) and rows pointing here (incoming). Book titles
+ *  follow the corpus language. */
+export function getChapterRelations(
+	bookId: string,
+	chapterId: string,
+	lang: string = 'la'
+): RelationLink[] {
+	return queryAll<RelationLink>(
+		`SELECT r.source_paragraph_id           AS anchor_paragraph_id,
+		        'out'                           AS direction,
+		        r.relation_type,
+		        r.target_book_id                AS other_book_id,
+		        r.target_paragraph_id           AS other_paragraph_id,
+		        COALESCE(bt.title, b.title)     AS other_book_title,
+		        op.chapter_id                   AS other_chapter_id,
+		        op.label                        AS other_paragraph_label,
+		        r.provenance, r.comment
+		 FROM relations r
+		 JOIN paragraphs ap ON r.source_book_id = ap.book_id AND r.source_paragraph_id = ap.id
+		 LEFT JOIN paragraphs op ON r.target_book_id = op.book_id AND r.target_paragraph_id = op.id
+		 LEFT JOIN books b ON b.id = r.target_book_id
+		 LEFT JOIN book_translations bt ON bt.book_id = b.id AND bt.lang = $lang
+		 WHERE r.source_book_id = $bookId AND ap.chapter_id = $chapterId
+		 UNION ALL
+		 SELECT r.target_paragraph_id, 'in', r.relation_type,
+		        r.source_book_id, r.source_paragraph_id,
+		        COALESCE(bt.title, b.title),
+		        op.chapter_id, op.label,
+		        r.provenance, r.comment
+		 FROM relations r
+		 JOIN paragraphs ap ON r.target_book_id = ap.book_id AND r.target_paragraph_id = ap.id
+		 JOIN paragraphs op ON r.source_book_id = op.book_id AND r.source_paragraph_id = op.id
+		 LEFT JOIN books b ON b.id = r.source_book_id
+		 LEFT JOIN book_translations bt ON bt.book_id = b.id AND bt.lang = $lang
+		 WHERE r.target_book_id = $bookId AND ap.chapter_id = $chapterId`,
+		{ $bookId: bookId, $chapterId: chapterId, $lang: lang }
+	);
+}
+
 export function getChapterAnnotations(bookId: string, chapterId: string): Annotation[] {
 	return queryAll<Annotation>(
 		`SELECT a.id, a.book_id, a.paragraph_id, a.paragraph_to_id, a.topic_type, a.topic_value, a.by_whom, a.provenance, a.comment

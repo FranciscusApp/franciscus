@@ -18,7 +18,10 @@ import type { Edit } from './edits.svelte';
  * isn't an item or its continuation.
  */
 
-const RELATION_TYPES = new Set(['same_episode', 'related_to']);
+/** The closed set of relation types (spec: annotations.md). An edit whose
+ * `topic_type` is one of these is a relation edit; its `topic_value` is the
+ * fully-qualified target key `<book_id>-<paragraph_id>`. */
+export const RELATION_TYPES = new Set(['same_episode', 'related_to']);
 
 /** A single annotation item in a paragraph's list (topic or relation). */
 interface Item {
@@ -29,7 +32,7 @@ interface Item {
 	comment?: string;
 }
 
-const isRelation = (type: string) => RELATION_TYPES.has(type);
+export const isRelation = (type: string) => RELATION_TYPES.has(type);
 const pairOf = (type: string, value: string) => `${type}:${value}`;
 
 function unquote(s: string): string {

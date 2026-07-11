@@ -7,6 +7,7 @@
 	import Plus from '@lucide/svelte/icons/plus';
 	import Undo2 from '@lucide/svelte/icons/undo-2';
 	import * as edits from '$lib/edits.svelte.js';
+	import { isRelation } from '$lib/annotationDiff';
 	import Modal from '$lib/Modal.svelte';
 
 	// Renders a paragraph's topic pills. Read-only mode (`editing = false`) matches
@@ -111,7 +112,10 @@
 		if (!pickerOpen) pickerFilter = '';
 	});
 
-	const adds = $derived(edits.pendingAdds(bookId, paragraphId));
+	// The buffer also holds relation adds (RelationPills renders those).
+	const adds = $derived(
+		edits.pendingAdds(bookId, paragraphId).filter((e) => !isRelation(e.topic_type))
+	);
 	// Edit mode always shows the row: the add button must be reachable even on a
 	// paragraph with no annotations yet.
 	const hasAny = $derived(annotations.length > 0 || editing);

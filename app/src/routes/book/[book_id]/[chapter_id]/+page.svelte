@@ -3,10 +3,12 @@
 	import { tick } from 'svelte';
 	import {
 		getBook,
+		getBooks,
 		getChapters,
 		getParagraphs,
 		getAsides,
 		getChapterAnnotations,
+		getChapterRelations,
 		getParagraphTranslations,
 		getAsideTranslations,
 		getTopicDescriptions,
@@ -21,6 +23,7 @@
 	import { recordPage } from '$lib/trail.svelte.js';
 	import { recordProgress } from '$lib/progress.svelte.js';
 	import ScriptureModal from '$lib/ScriptureModal.svelte';
+	import type { RelationLink } from '$lib/db';
 	import { isEditorMode } from '$lib/edits.svelte.js';
 	import { isLargeViewport } from '$lib/viewport.svelte.js';
 	import * as github from '$lib/github.svelte.js';
@@ -93,6 +96,23 @@
 	const allAnnotations = $derived(
 		book && chapter ? getChapterAnnotations(bookId, chapterId) : []
 	);
+	const allRelations = $derived(
+		book && chapter ? getChapterRelations(bookId, chapterId, corpusLang) : []
+	);
+
+	const relationsByParagraph = $derived.by(() => {
+		const map = new Map<string, RelationLink[]>();
+		for (const r of allRelations) {
+			const list = map.get(r.anchor_paragraph_id) ?? [];
+			list.push(r);
+			map.set(r.anchor_paragraph_id, list);
+		}
+		return map;
+	});
+
+	// Target picker for the relation editor: the corpus book list, titles in the
+	// corpus language once the DB is up (it is — this page needs it).
+	const relationBooks = $derived(getBooks(corpusLang, uiLang).map((b) => ({ id: b.id, title: b.title })));
 
 	const paraTranslations = $derived(
 		corpusLang !== 'la' && book && chapter
@@ -210,6 +230,8 @@
 			{searchTerms}
 			{topicLabel}
 			candidates={topicCandidates}
+			{relationsByParagraph}
+			{relationBooks}
 			onScriptureRef={(to) => (scriptureRef = to)}
 		/>
 

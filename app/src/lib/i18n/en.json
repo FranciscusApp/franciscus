@@ -87,6 +87,21 @@
 			"person": "People"
 		}
 	},
+	"relations": {
+		"types": {
+			"same_episode": "Same episode",
+			"related_to": "Related passage"
+		},
+		"add": "Link a parallel passage",
+		"remove": "Remove link",
+		"incoming": "Linked from the other passage",
+		"missingTarget": "Passage not present in this corpus build",
+		"typeLabel": "Relation type",
+		"bookLabel": "Source",
+		"chapterLabel": "Chapter",
+		"paragraphLabel": "Paragraph",
+		"choose": "Choose…"
+	},
 	"search": {
 		"heading": "Search",
 		"placeholder": "Search in the sources…",

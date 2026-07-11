@@ -13,6 +13,7 @@
 	} from '$lib/edits.svelte.js';
 	import { getDbState } from '$lib/dbState';
 	import { getTopicDescriptions } from '$lib';
+	import { isRelation } from '$lib/annotationDiff';
 	import NoScriptNotice from '$lib/NoScriptNotice.svelte';
 	import { topicColors } from '$lib/topicColors';
 	import {
@@ -115,6 +116,17 @@
 	const labels = $derived(db.ready ? getTopicDescriptions(uiLang) : new Map<string, string>());
 	function topicLabel(type: string, value: string): string {
 		return labels.get(`${type}:${value}`) ?? value.replaceAll('_', ' ');
+	}
+
+	// A relation edit's value is the target passage key (`<book>-<paragraph>`),
+	// not a vocab topic — show it verbatim, with the relation-type name.
+	function editLabel(e: Edit): string {
+		return isRelation(e.topic_type) ? e.topic_value : topicLabel(e.topic_type, e.topic_value);
+	}
+	function editTypeName(e: Edit): string {
+		return isRelation(e.topic_type)
+			? t(`relations.types.${e.topic_type}`)
+			: t(`topics.types.${e.topic_type}`);
 	}
 
 	// Map a raw error to display text: a known code gets a localized message, an
@@ -315,9 +327,9 @@
 												{t(`contributions.op.${e.op}`)}
 											</span>
 											<span class="min-w-0 flex-1 text-foreground">
-												{topicLabel(e.topic_type, e.topic_value)}
+												{editLabel(e)}
 												<span class="text-muted-foreground"
-													>({t(`topics.types.${e.topic_type}`).toLowerCase()})</span
+													>({editTypeName(e).toLowerCase()})</span
 												>
 												{#if e.op === 'comment' && e.comment}
 													<span class="block truncate text-xs text-muted-foreground italic"
