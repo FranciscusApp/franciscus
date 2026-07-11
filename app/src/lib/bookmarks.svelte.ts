@@ -13,6 +13,8 @@ export interface Bookmark {
 	label: string;
 	/** When it was added (newest first in the list). */
 	ts: number;
+	/** Optional personal note the reader attached to the bookmark. */
+	note?: string;
 }
 
 const STORAGE_KEY = 'franciscus-bookmarks';
@@ -51,5 +53,14 @@ export function toggleBookmark(href: string, label: string) {
 	bookmarks = isBookmarked(href)
 		? bookmarks.filter((b) => b.href !== href)
 		: [{ href, label, ts: Date.now() }, ...bookmarks];
+	persist(bookmarks);
+}
+
+/** Set (or clear, when empty) the personal note on a bookmark. */
+export function setBookmarkNote(href: string, note: string) {
+	const trimmed = note.trim();
+	bookmarks = bookmarks.map((b) =>
+		b.href === href ? { ...b, note: trimmed || undefined } : b
+	);
 	persist(bookmarks);
 }

@@ -62,7 +62,10 @@
 	},
 	"bookmarks": {
 		"heading": "Bookmarks",
-		"empty": "No bookmarks yet. Tap the bookmark icon next to any passage to save it here."
+		"empty": "No bookmarks yet. Tap the bookmark icon next to any passage to save it here.",
+		"addNote": "Add a note",
+		"editNote": "Edit note",
+		"notePlaceholder": "Your note about this passage…"
 	},
 	"topics": {
 		"heading": "Topics",
