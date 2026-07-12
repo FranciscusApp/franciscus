@@ -11,6 +11,7 @@
 	import * as edits from '$lib/edits.svelte.js';
 	import Modal from '$lib/Modal.svelte';
 	import Reader from '$lib/Reader.svelte';
+	import SearchResultList from '$lib/SearchResultList.svelte';
 	import type { ReaderBlock } from '$lib/reader';
 	import Check from '@lucide/svelte/icons/check';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
@@ -200,23 +201,13 @@
 
 		<div bind:this={contentEl} class="min-h-0 flex-1 overflow-y-auto rounded border border-border p-2">
 			{#if step === 'search'}
-				<ul>
-					{#each searchResults as r (`${r.book_id}-${r.paragraph_id}`)}
-						<li>
-							<button type="button" onclick={() => pickResult(r)} class={listItem}>
-								<span class="min-w-0">
-									<span class="block text-xs text-muted-foreground">
-										{r.book_title} — {r.chapter_title}
-										{#if r.paragraph_label}&sect;{r.paragraph_label}{/if}
-									</span>
-									<span class="block font-serif">{@html r.snippet}</span>
-								</span>
-							</button>
-						</li>
-					{:else}
-						<li class="px-2 py-1 text-sm text-muted-foreground">{t('search.noResults')}</li>
-					{/each}
-				</ul>
+				<!-- Same grouped-by-book results view as the home search; picking a
+				     passage jumps to the passage step preselected. -->
+				{#if searchResults.length > 0}
+					<SearchResultList results={searchResults} onPick={pickResult} />
+				{:else}
+					<p class="px-2 py-1 text-sm text-muted-foreground">{t('search.noResults')}</p>
+				{/if}
 			{:else if step === 'book'}
 				<ul>
 					{#each books as b (b.id)}

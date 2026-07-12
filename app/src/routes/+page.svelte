@@ -1,15 +1,13 @@
 <script lang="ts">
 	import { getBooks, searchParagraphs } from '$lib';
-	import { groupByBook } from '$lib/utils';
 	import { getDbState } from '$lib/dbState';
 	import { topicColors } from '$lib/topicColors';
 	import NoScriptNotice from '$lib/NoScriptNotice.svelte';
 	import DbProgressBar from '$lib/DbProgressBar.svelte';
+	import SearchResultList from '$lib/SearchResultList.svelte';
 	import { t, getCorpusLang, getUiLang } from '$lib/i18n';
 	import SlidersHorizontal from '@lucide/svelte/icons/sliders-horizontal';
 	import X from '@lucide/svelte/icons/x';
-	import PlusIcon from '@lucide/svelte/icons/plus';
-	import MinusIcon from '@lucide/svelte/icons/minus';
 	import type { PageData } from './$types';
 
 	// Manifest comes from the root layout's load(); it prerenders the browse view
@@ -45,8 +43,12 @@
 	let selectedBooks = $state<string[]>([]);
 	/** `type:value` keys of the selected topics, AND-joined. */
 	let selectedTopics = $state<string[]>([]);
-	/** Bound to the add-topic <select>; consumed and reset on change. */
-	let topicToAdd = $state('');
+	// Tags-combobox state: the topic filter is an autocomplete input that only
+	// accepts real topics (no freeform), rendering chosen topics as inline pills.
+	let topicQuery = $state('');
+	let topicFocused = $state(false);
+	let activeIndex = $state(0);
+	let topicInputEl = $state<HTMLInputElement | null>(null);
 
 	function toggleBook(id: string) {
 		selectedBooks = selectedBooks.includes(id)
@@ -54,14 +56,34 @@
 			: [...selectedBooks, id];
 	}
 
-	function addTopicFilter() {
-		if (topicToAdd && !selectedTopics.includes(topicToAdd)) {
-			selectedTopics = [...selectedTopics, topicToAdd];
-		}
-		topicToAdd = '';
+	function addTopicFilter(key: string) {
+		if (key && !selectedTopics.includes(key)) selectedTopics = [...selectedTopics, key];
+		topicQuery = '';
+		activeIndex = 0;
+		topicInputEl?.focus();
 	}
 	function removeTopicFilter(key: string) {
 		selectedTopics = selectedTopics.filter((k) => k !== key);
+	}
+
+	function onTopicKeydown(e: KeyboardEvent) {
+		if (e.key === 'ArrowDown') {
+			e.preventDefault();
+			activeIndex = Math.min(activeIndex + 1, topicSuggestions.length - 1);
+		} else if (e.key === 'ArrowUp') {
+			e.preventDefault();
+			activeIndex = Math.max(activeIndex - 1, 0);
+		} else if (e.key === 'Enter') {
+			const pick = topicSuggestions[activeIndex] ?? topicSuggestions[0];
+			if (pick) {
+				e.preventDefault();
+				addTopicFilter(pick.value);
+			}
+		} else if (e.key === 'Backspace' && topicQuery === '' && selectedTopics.length) {
+			selectedTopics = selectedTopics.slice(0, -1);
+		} else if (e.key === 'Escape') {
+			topicFocused = false;
+		}
 	}
 
 	// Topic options come from the manifest (same source as the /topics hub), so
@@ -78,6 +100,27 @@
 		}
 		for (const list of groups.values()) list.sort((a, b) => a.label.localeCompare(b.label));
 		return groups;
+	});
+
+	// Flattened topic options (value/label/type), the pool the combobox filters.
+	const allTopicOptions = $derived.by(() => {
+		const out: { value: string; label: string; type: string }[] = [];
+		for (const [type, opts] of topicGroups) for (const o of opts) out.push({ ...o, type });
+		return out;
+	});
+	// Autocomplete matches for the current query, minus already-selected topics.
+	const topicSuggestions = $derived.by(() => {
+		const q = topicQuery.trim().toLowerCase();
+		return allTopicOptions
+			.filter((o) => !selectedTopics.includes(o.value))
+			.filter((o) => !q || o.label.toLowerCase().includes(q))
+			.slice(0, 8);
+	});
+	const showTopicDropdown = $derived(topicFocused && topicSuggestions.length > 0);
+	// Reset the keyboard highlight whenever the query (and thus the list) changes.
+	$effect(() => {
+		void topicQuery;
+		activeIndex = 0;
 	});
 
 	const filtersActive = $derived(selectedBooks.length + selectedTopics.length);
@@ -117,20 +160,6 @@
 		}
 	});
 
-	// Results nest book → chapter like the topic pages' passage tree, but start
-	// expanded: a searcher wants the hits visible, the headers are for scanning.
-	const bookGroups = $derived(groupByBook(results));
-	let collapsedBooks = $state(new Set<string>());
-	function toggleResultBook(bookId: string) {
-		const next = new Set(collapsedBooks);
-		if (!next.delete(bookId)) next.add(bookId);
-		collapsedBooks = next;
-	}
-
-	function resultUrl(r: { book_id: string; chapter_id: string; paragraph_id: string }): string {
-		const q = query.trim() ? `?q=${encodeURIComponent(query)}` : '';
-		return `/book/${r.book_id}/${r.chapter_id}${q}#${r.paragraph_id}`;
-	}
 </script>
 
 <main id="main-content" tabindex="-1" class="max-w-3xl mx-auto px-4 py-8">
@@ -193,27 +222,78 @@
 								{/each}
 							</div>
 						</fieldset>
-						<label class="block text-sm">
+						<div class="block text-sm">
 							<span class="mb-1 block text-xs font-medium uppercase tracking-wide text-muted-foreground">
 								{t('search.filterTopic')}
 							</span>
-							<select
-								bind:value={topicToAdd}
-								onchange={addTopicFilter}
-								class="w-full rounded border border-input bg-background px-2 py-1.5 text-sm text-foreground"
-							>
-								<option value="">{t('search.addTopic')}</option>
-								{#each topicGroups as [type, opts] (type)}
-									<optgroup label={t(`topics.typePlurals.${type}`)}>
-										{#each opts as o (o.value)}
-											{#if !selectedTopics.includes(o.value)}
-												<option value={o.value}>{o.label}</option>
-											{/if}
+							<!-- Autocomplete tags input: selected topics render as inline pills,
+							     typing narrows a suggestion list, and only real topics are
+							     accepted (no freeform). Backspace on an empty field pops the last
+							     pill. The pills live here, inside the advanced box. -->
+							<div class="relative">
+								<div
+									class="flex flex-wrap items-center gap-1 rounded border border-input bg-background px-1.5 py-1 focus-within:ring-2 focus-within:ring-ring"
+								>
+									{#each topicPills as p (p.key)}
+										<span
+											class="inline-flex items-center gap-1 max-w-full break-words rounded-full px-2 py-0.5 text-xs {topicColors(p.type)}"
+										>
+											{p.label}
+											<button
+												type="button"
+												onclick={() => removeTopicFilter(p.key)}
+												aria-label={t('search.removeTopic')}
+												class="rounded-full hover:opacity-70 focus:outline-none focus:ring-2 focus:ring-ring"
+											>
+												<X class="h-3 w-3" />
+											</button>
+										</span>
+									{/each}
+									<input
+										type="text"
+										bind:this={topicInputEl}
+										bind:value={topicQuery}
+										onfocus={() => (topicFocused = true)}
+										onblur={() => setTimeout(() => (topicFocused = false), 120)}
+										onkeydown={onTopicKeydown}
+										placeholder={selectedTopics.length ? '' : t('search.addTopic')}
+										role="combobox"
+										aria-expanded={showTopicDropdown}
+										aria-controls="topic-suggestions"
+										aria-autocomplete="list"
+										aria-label={t('search.filterTopic')}
+										class="min-w-[8rem] flex-1 bg-transparent px-1 py-0.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+									/>
+								</div>
+								{#if showTopicDropdown}
+									<ul
+										id="topic-suggestions"
+										role="listbox"
+										class="absolute left-0 right-0 z-20 mt-1 max-h-60 overflow-y-auto rounded border border-border bg-popover shadow-lg"
+									>
+										{#each topicSuggestions as o, i (o.value)}
+											<li role="option" aria-selected={i === activeIndex}>
+												<button
+													type="button"
+													onmousedown={(e) => e.preventDefault()}
+													onclick={() => addTopicFilter(o.value)}
+													class="flex w-full items-center gap-1.5 px-2 py-1.5 text-left text-sm hover:bg-accent focus:outline-none {i ===
+													activeIndex
+														? 'bg-accent'
+														: ''}"
+												>
+													<span class="inline-block h-2 w-2 shrink-0 rounded-full {topicColors(o.type)}"></span>
+													<span class="truncate text-foreground">{o.label}</span>
+													<span class="ml-auto shrink-0 text-xs text-muted-foreground"
+														>{t(`topics.types.${o.type}`)}</span
+													>
+												</button>
+											</li>
 										{/each}
-									</optgroup>
-								{/each}
-							</select>
-						</label>
+									</ul>
+								{/if}
+							</div>
+						</div>
 						{#if filtersActive}
 							<button
 								type="button"
@@ -223,27 +303,6 @@
 								{t('search.clearFilters')}
 							</button>
 						{/if}
-					</div>
-				{/if}
-				{#if topicPills.length}
-					<!-- Active topic filters, dismissible in place — visible even with
-					     the advanced panel closed, since they alone drive a search. -->
-					<div class="mt-2 flex flex-wrap items-center gap-1.5">
-						{#each topicPills as p (p.key)}
-							<span
-								class="inline-flex items-center gap-1 max-w-full break-words rounded-full px-2 py-0.5 text-xs {topicColors(p.type)}"
-							>
-								{p.label}
-								<button
-									type="button"
-									onclick={() => removeTopicFilter(p.key)}
-									aria-label={t('search.removeTopic')}
-									class="rounded-full hover:opacity-70 focus:outline-none focus:ring-2 focus:ring-ring"
-								>
-									<X class="h-3 w-3" />
-								</button>
-							</span>
-						{/each}
 					</div>
 				{/if}
 			</div>
@@ -262,52 +321,8 @@
 			{results.length} {results.length === 1 ? t('search.resultCountOne') : t('search.resultCount')}
 		</p>
 
-		{#if bookGroups.length > 0}
-			<div class="space-y-6">
-				{#each bookGroups as bg (bg.book_id)}
-					{@const isOpen = !collapsedBooks.has(bg.book_id)}
-					<div>
-						<button
-							type="button"
-							onclick={() => toggleResultBook(bg.book_id)}
-							aria-expanded={isOpen}
-							aria-controls="results-{bg.book_id}"
-							class="flex w-full items-center gap-2 text-left text-foreground hover:text-primary focus:outline-none focus:ring-2 focus:ring-ring rounded transition-colors"
-						>
-							{#if isOpen}
-								<MinusIcon class="w-4 h-4 shrink-0 text-primary" />
-							{:else}
-								<PlusIcon class="w-4 h-4 shrink-0 text-primary" />
-							{/if}
-							<span class="font-display font-bold">{bg.book_title}</span>
-							<span class="text-sm text-muted-foreground">({bg.count})</span>
-						</button>
-						<hr class="divider-book" />
-						{#if isOpen}
-							<ul id="results-{bg.book_id}" class="space-y-4">
-								{#each bg.chapters as g (g.chapter_id)}
-									<li class="block p-4 rounded-lg border border-border hover:border-ring transition-colors">
-										<div class="text-sm text-muted-foreground mb-1">
-											<a
-												href="/book/{g.book_id}/{g.chapter_id}{query.trim() ? `?q=${encodeURIComponent(query)}` : ''}"
-												class="hover:text-primary"
-											>{g.chapter_title}</a>
-										</div>
-										<p class="font-serif text-foreground leading-relaxed">
-											{#each g.items as r, i}
-												{#if i > 0}<span class="text-muted-foreground">{r.position === g.items[i - 1].position + 1 ? ' ' : ' […] '}</span>{/if}<a
-													href={resultUrl(r)}
-													class="hover:text-primary"
-												>{#if r.paragraph_label}<span class="text-muted-foreground">&sect;{r.paragraph_label} </span>{/if}{@html r.snippet}</a>
-											{/each}
-										</p>
-									</li>
-								{/each}
-							</ul>
-						{/if}
-					</div>
-				{/each}
-			</div>
+		{#if results.length > 0}
+			<SearchResultList {results} {query} />
 		{:else}
 			<p class="text-muted-foreground mt-6 font-serif">{t('search.noResults')}</p>
 		{/if}
