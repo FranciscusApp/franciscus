@@ -429,6 +429,7 @@
 							paragraphId={block.id}
 							relations={rels}
 							books={relationBooks}
+							{candidates}
 							{editing}
 						/>
 					{/if}

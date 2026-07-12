@@ -1,13 +1,12 @@
 <script lang="ts">
 	import { getBooks, searchParagraphs } from '$lib';
 	import { getDbState } from '$lib/dbState';
-	import { topicColors } from '$lib/topicColors';
 	import NoScriptNotice from '$lib/NoScriptNotice.svelte';
 	import DbProgressBar from '$lib/DbProgressBar.svelte';
 	import SearchResultList from '$lib/SearchResultList.svelte';
+	import TopicFilterInput from '$lib/TopicFilterInput.svelte';
 	import { t, getCorpusLang, getUiLang } from '$lib/i18n';
 	import SlidersHorizontal from '@lucide/svelte/icons/sliders-horizontal';
-	import X from '@lucide/svelte/icons/x';
 	import type { PageData } from './$types';
 
 	// Manifest comes from the root layout's load(); it prerenders the browse view
@@ -43,47 +42,11 @@
 	let selectedBooks = $state<string[]>([]);
 	/** `type:value` keys of the selected topics, AND-joined. */
 	let selectedTopics = $state<string[]>([]);
-	// Tags-combobox state: the topic filter is an autocomplete input that only
-	// accepts real topics (no freeform), rendering chosen topics as inline pills.
-	let topicQuery = $state('');
-	let topicFocused = $state(false);
-	let activeIndex = $state(0);
-	let topicInputEl = $state<HTMLInputElement | null>(null);
 
 	function toggleBook(id: string) {
 		selectedBooks = selectedBooks.includes(id)
 			? selectedBooks.filter((b) => b !== id)
 			: [...selectedBooks, id];
-	}
-
-	function addTopicFilter(key: string) {
-		if (key && !selectedTopics.includes(key)) selectedTopics = [...selectedTopics, key];
-		topicQuery = '';
-		activeIndex = 0;
-		topicInputEl?.focus();
-	}
-	function removeTopicFilter(key: string) {
-		selectedTopics = selectedTopics.filter((k) => k !== key);
-	}
-
-	function onTopicKeydown(e: KeyboardEvent) {
-		if (e.key === 'ArrowDown') {
-			e.preventDefault();
-			activeIndex = Math.min(activeIndex + 1, topicSuggestions.length - 1);
-		} else if (e.key === 'ArrowUp') {
-			e.preventDefault();
-			activeIndex = Math.max(activeIndex - 1, 0);
-		} else if (e.key === 'Enter') {
-			const pick = topicSuggestions[activeIndex] ?? topicSuggestions[0];
-			if (pick) {
-				e.preventDefault();
-				addTopicFilter(pick.value);
-			}
-		} else if (e.key === 'Backspace' && topicQuery === '' && selectedTopics.length) {
-			selectedTopics = selectedTopics.slice(0, -1);
-		} else if (e.key === 'Escape') {
-			topicFocused = false;
-		}
 	}
 
 	// Topic options come from the manifest (same source as the /topics hub), so
@@ -102,25 +65,11 @@
 		return groups;
 	});
 
-	// Flattened topic options (value/label/type), the pool the combobox filters.
+	// Flattened topic options (value/label/type), the pool the tags input filters.
 	const allTopicOptions = $derived.by(() => {
 		const out: { value: string; label: string; type: string }[] = [];
 		for (const [type, opts] of topicGroups) for (const o of opts) out.push({ ...o, type });
 		return out;
-	});
-	// Autocomplete matches for the current query, minus already-selected topics.
-	const topicSuggestions = $derived.by(() => {
-		const q = topicQuery.trim().toLowerCase();
-		return allTopicOptions
-			.filter((o) => !selectedTopics.includes(o.value))
-			.filter((o) => !q || o.label.toLowerCase().includes(q))
-			.slice(0, 8);
-	});
-	const showTopicDropdown = $derived(topicFocused && topicSuggestions.length > 0);
-	// Reset the keyboard highlight whenever the query (and thus the list) changes.
-	$effect(() => {
-		void topicQuery;
-		activeIndex = 0;
 	});
 
 	const filtersActive = $derived(selectedBooks.length + selectedTopics.length);
@@ -129,18 +78,6 @@
 		selectedBooks = [];
 		selectedTopics = [];
 	}
-
-	// Selected-topic pills: resolve each key back to its UI-language label.
-	const topicPills = $derived(
-		selectedTopics.map((key) => {
-			const colon = key.indexOf(':');
-			const type = key.slice(0, colon);
-			const label =
-				[...topicGroups.get(type) ?? []].find((o) => o.value === key)?.label ??
-				key.slice(colon + 1).replaceAll('_', ' ');
-			return { key, type, label };
-		})
-	);
 
 	const searching = $derived(db.ready && (query.trim().length > 0 || selectedTopics.length > 0));
 
@@ -226,73 +163,11 @@
 							<span class="mb-1 block text-xs font-medium uppercase tracking-wide text-muted-foreground">
 								{t('search.filterTopic')}
 							</span>
-							<!-- Autocomplete tags input: selected topics render as inline pills,
-							     typing narrows a suggestion list, and only real topics are
-							     accepted (no freeform). Backspace on an empty field pops the last
-							     pill. The pills live here, inside the advanced box. -->
-							<div class="relative">
-								<div
-									class="flex flex-wrap items-center gap-1 rounded border border-input bg-background px-1.5 py-1 focus-within:ring-2 focus-within:ring-ring"
-								>
-									{#each topicPills as p (p.key)}
-										<span
-											class="inline-flex items-center gap-1 max-w-full break-words rounded-full px-2 py-0.5 text-xs {topicColors(p.type)}"
-										>
-											{p.label}
-											<button
-												type="button"
-												onclick={() => removeTopicFilter(p.key)}
-												aria-label={t('search.removeTopic')}
-												class="rounded-full hover:opacity-70 focus:outline-none focus:ring-2 focus:ring-ring"
-											>
-												<X class="h-3 w-3" />
-											</button>
-										</span>
-									{/each}
-									<input
-										type="text"
-										bind:this={topicInputEl}
-										bind:value={topicQuery}
-										onfocus={() => (topicFocused = true)}
-										onblur={() => setTimeout(() => (topicFocused = false), 120)}
-										onkeydown={onTopicKeydown}
-										placeholder={selectedTopics.length ? '' : t('search.addTopic')}
-										role="combobox"
-										aria-expanded={showTopicDropdown}
-										aria-controls="topic-suggestions"
-										aria-autocomplete="list"
-										aria-label={t('search.filterTopic')}
-										class="min-w-[8rem] flex-1 bg-transparent px-1 py-0.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
-									/>
-								</div>
-								{#if showTopicDropdown}
-									<ul
-										id="topic-suggestions"
-										role="listbox"
-										class="absolute left-0 right-0 z-20 mt-1 max-h-60 overflow-y-auto rounded border border-border bg-popover shadow-lg"
-									>
-										{#each topicSuggestions as o, i (o.value)}
-											<li role="option" aria-selected={i === activeIndex}>
-												<button
-													type="button"
-													onmousedown={(e) => e.preventDefault()}
-													onclick={() => addTopicFilter(o.value)}
-													class="flex w-full items-center gap-1.5 px-2 py-1.5 text-left text-sm hover:bg-accent focus:outline-none {i ===
-													activeIndex
-														? 'bg-accent'
-														: ''}"
-												>
-													<span class="inline-block h-2 w-2 shrink-0 rounded-full {topicColors(o.type)}"></span>
-													<span class="truncate text-foreground">{o.label}</span>
-													<span class="ml-auto shrink-0 text-xs text-muted-foreground"
-														>{t(`topics.types.${o.type}`)}</span
-													>
-												</button>
-											</li>
-										{/each}
-									</ul>
-								{/if}
-							</div>
+							<TopicFilterInput
+								options={allTopicOptions}
+								bind:selected={selectedTopics}
+								placeholder={t('search.addTopic')}
+							/>
 						</div>
 						{#if filtersActive}
 							<button

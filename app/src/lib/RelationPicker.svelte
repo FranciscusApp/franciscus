@@ -12,6 +12,7 @@
 	import Modal from '$lib/Modal.svelte';
 	import Reader from '$lib/Reader.svelte';
 	import SearchResultList from '$lib/SearchResultList.svelte';
+	import TopicFilterInput from '$lib/TopicFilterInput.svelte';
 	import type { ReaderBlock } from '$lib/reader';
 	import Check from '@lucide/svelte/icons/check';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
@@ -26,13 +27,16 @@
 		open = $bindable(false),
 		anchorBookId,
 		anchorParagraphId,
-		books
+		books,
+		candidates = []
 	}: {
 		open: boolean;
 		anchorBookId: string;
 		anchorParagraphId: string;
 		/** Corpus book list for step one: `{ id, title }`. */
 		books: { id: string; title: string }[];
+		/** Full topic set, for the passage-search topic filter. */
+		candidates?: { type: string; value: string; label: string }[];
 	} = $props();
 
 	const corpusLang = $derived(getCorpusLang());
@@ -46,6 +50,16 @@
 	let searchQuery = $state('');
 	let searchEl = $state<HTMLInputElement | null>(null);
 	let contentEl = $state<HTMLElement | null>(null);
+	/** `type:value` keys of the topic filters AND-joined into the passage search. */
+	let selectedTopics = $state<string[]>([]);
+
+	// Flattened topic options for the tags input (value is the `type:value` key),
+	// sorted by label like the advanced search.
+	const topicOptions = $derived(
+		candidates
+			.map((c) => ({ value: `${c.type}:${c.value}`, label: c.label, type: c.type }))
+			.sort((a, b) => a.label.localeCompare(b.label))
+	);
 
 	$effect(() => {
 		const val = searchInput;
@@ -62,6 +76,7 @@
 			selectedPara = '';
 			searchInput = '';
 			searchQuery = '';
+			selectedTopics = [];
 		}
 	});
 
@@ -89,10 +104,18 @@
 		}));
 	});
 
+	// A topic filter alone drives the search (no text needed), mirroring the
+	// advanced search's filter-only path.
+	const searchActive = $derived(!!searchQuery.trim() || selectedTopics.length > 0);
 	const searchResults = $derived.by<SearchResult[]>(() => {
-		if (!searchQuery.trim()) return [];
+		if (!searchActive) return [];
 		try {
-			return searchParagraphs(searchQuery, corpusLang);
+			return searchParagraphs(searchQuery, corpusLang, {
+				topics: selectedTopics.map((key) => {
+					const colon = key.indexOf(':');
+					return { type: key.slice(0, colon), value: key.slice(colon + 1) };
+				})
+			});
 		} catch (e) {
 			console.error('[relations] passage search threw', e);
 			return [];
@@ -100,7 +123,7 @@
 	});
 
 	const step = $derived(
-		searchQuery.trim() ? 'search' : !targetBook ? 'book' : !targetChapter ? 'chapter' : 'passage'
+		searchActive ? 'search' : !targetBook ? 'book' : !targetChapter ? 'chapter' : 'passage'
 	);
 
 	function pickBook(id: string) {
@@ -128,6 +151,7 @@
 		selectedPara = r.paragraph_id;
 		searchInput = '';
 		searchQuery = '';
+		selectedTopics = [];
 		void scrollToSelected(r.paragraph_id);
 	}
 
@@ -171,6 +195,16 @@
 				class="w-full rounded border border-input bg-background py-1.5 pl-8 pr-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
 			/>
 		</div>
+
+		{#if topicOptions.length}
+			<!-- Topic filter borrowed from the advanced search: narrows the passage
+			     search, and on its own (no text) drives it. -->
+			<TopicFilterInput
+				options={topicOptions}
+				bind:selected={selectedTopics}
+				placeholder={t('search.addTopic')}
+			/>
+		{/if}
 
 		<div class="flex flex-wrap items-center gap-1 text-sm">
 			<span class="text-xs font-medium uppercase tracking-wide text-muted-foreground">

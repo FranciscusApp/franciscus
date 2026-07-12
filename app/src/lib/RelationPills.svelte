@@ -19,6 +19,7 @@
 		paragraphId,
 		relations,
 		books,
+		candidates = [],
 		editing
 	}: {
 		bookId: string;
@@ -26,6 +27,8 @@
 		relations: RelationLink[];
 		/** Corpus book list for the target picker: `{ id, title }`. */
 		books: { id: string; title: string }[];
+		/** Full topic set, for the picker's passage-search topic filter. */
+		candidates?: { type: string; value: string; label: string }[];
 		editing: boolean;
 	} = $props();
 
@@ -175,6 +178,7 @@
 				anchorBookId={bookId}
 				anchorParagraphId={paragraphId}
 				{books}
+				{candidates}
 			/>
 		{/if}
 	</div>
