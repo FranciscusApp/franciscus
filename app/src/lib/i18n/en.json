@@ -110,8 +110,9 @@
 		"resultCountOne": "result",
 		"advanced": "Advanced search",
 		"filterBooks": "Sources",
-		"filterTopic": "Topic",
-		"anyTopic": "Any topic",
+		"filterTopic": "Topics",
+		"addTopic": "Add a topic…",
+		"removeTopic": "Remove topic filter",
 		"clearFilters": "Clear filters"
 	},
 	"language": {

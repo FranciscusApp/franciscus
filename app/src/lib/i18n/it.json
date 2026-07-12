@@ -110,8 +110,9 @@
 		"resultCountOne": "risultato",
 		"advanced": "Ricerca avanzata",
 		"filterBooks": "Fonti",
-		"filterTopic": "Argomento",
-		"anyTopic": "Qualsiasi argomento",
+		"filterTopic": "Argomenti",
+		"addTopic": "Aggiungi un argomento…",
+		"removeTopic": "Rimuovi il filtro",
 		"clearFilters": "Rimuovi i filtri"
 	},
 	"language": {

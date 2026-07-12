@@ -529,8 +529,8 @@ export function getChapterAnnotations(bookId: string, chapterId: string): Annota
 export interface SearchFilters {
 	/** Restrict matches to these books (empty or absent = all books). */
 	bookIds?: string[];
-	/** Restrict matches to paragraphs annotated with this topic. */
-	topic?: { type: string; value: string };
+	/** Restrict matches to paragraphs annotated with every one of these topics. */
+	topics?: { type: string; value: string }[];
 }
 
 export function searchParagraphs(
@@ -545,10 +545,9 @@ export function searchParagraphs(
 		.filter(Boolean)
 		.map(term => term + '*')
 		.join(' ');
-	if (!sanitized) return [];
 	console.log('[db] FTS5 query', { raw: query, sanitized, lang, filters });
 
-	const params: BindParams = { $query: sanitized, $lang: lang };
+	const params: BindParams = { $lang: lang };
 	const conds: string[] = [];
 	if (filters.bookIds?.length) {
 		const names = filters.bookIds.map((id, i) => {
@@ -557,16 +556,48 @@ export function searchParagraphs(
 		});
 		conds.push(`s.book_id IN (${names.join(', ')})`);
 	}
-	if (filters.topic) {
-		(params as Record<string, string>).$topicType = filters.topic.type;
-		(params as Record<string, string>).$topicValue = filters.topic.value;
+	filters.topics?.forEach((topic, i) => {
+		(params as Record<string, string>)[`$topicType${i}`] = topic.type;
+		(params as Record<string, string>)[`$topicValue${i}`] = topic.value;
 		conds.push(
 			`EXISTS (SELECT 1 FROM annotations fa
 			         WHERE fa.book_id = s.book_id AND fa.paragraph_id = s.paragraph_id
-			           AND fa.topic_type = $topicType AND fa.topic_value = $topicValue)`
+			           AND fa.topic_type = $topicType${i} AND fa.topic_value = $topicValue${i})`
+		);
+	});
+	const filterSql = conds.length ? ` AND ${conds.join(' AND ')}` : '';
+
+	// Filter-only search (no text): there is nothing to MATCH or rank, so list
+	// every passage carrying all the selected topics, in reading order — the
+	// truncated paragraph text stands in for the FTS snippet. Scanning the FTS
+	// table without MATCH is fine at this corpus size.
+	if (!sanitized) {
+		if (!filters.topics?.length) return [];
+		return queryAll<SearchResult>(
+			`SELECT s.book_id,
+			        COALESCE(bt.title, b.title) AS book_title,
+			        s.chapter_id,
+			        COALESCE(ct.title, c.title) AS chapter_title,
+			        s.paragraph_id, p.label AS paragraph_label,
+			        p.position, s.lang,
+			        CASE WHEN length(s.content) > 300
+			             THEN substr(s.content, 1, 300) || '…'
+			             ELSE s.content END AS snippet
+			 FROM search_index s
+			 JOIN books b      ON s.book_id = b.id
+			 JOIN chapters c   ON s.book_id = c.book_id AND s.chapter_id = c.id
+			 JOIN paragraphs p ON s.book_id = p.book_id AND s.paragraph_id = p.id
+			 LEFT JOIN book_translations bt
+			        ON bt.book_id = b.id AND bt.lang = $lang
+			 LEFT JOIN chapter_translations ct
+			        ON ct.book_id = c.book_id AND ct.chapter_id = c.id AND ct.lang = $lang
+			 WHERE s.lang = $lang${filterSql}
+			 ORDER BY s.book_id, c.position, p.position
+			 LIMIT 500`,
+			params
 		);
 	}
-	const filterSql = conds.length ? ` AND ${conds.join(' AND ')}` : '';
+	(params as Record<string, string>).$query = sanitized;
 
 	// Pick the top matches by relevance (rank), then re-sort that set by
 	// book → chapter → paragraph so groupByChapter sees contiguous chapters.

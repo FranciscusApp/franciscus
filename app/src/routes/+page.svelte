@@ -1,11 +1,15 @@
 <script lang="ts">
 	import { getBooks, searchParagraphs } from '$lib';
-	import { groupByChapter } from '$lib/utils';
+	import { groupByBook } from '$lib/utils';
 	import { getDbState } from '$lib/dbState';
+	import { topicColors } from '$lib/topicColors';
 	import NoScriptNotice from '$lib/NoScriptNotice.svelte';
 	import DbProgressBar from '$lib/DbProgressBar.svelte';
 	import { t, getCorpusLang, getUiLang } from '$lib/i18n';
 	import SlidersHorizontal from '@lucide/svelte/icons/sliders-horizontal';
+	import X from '@lucide/svelte/icons/x';
+	import PlusIcon from '@lucide/svelte/icons/plus';
+	import MinusIcon from '@lucide/svelte/icons/minus';
 	import type { PageData } from './$types';
 
 	// Manifest comes from the root layout's load(); it prerenders the browse view
@@ -34,16 +38,30 @@
 	const books = $derived(db.ready ? getBooks(corpusLang, uiLang) : data.manifest.books);
 
 	// Advanced-search filters: restrict FTS matches by source book and/or by
-	// annotated topic. Both narrow the query — an empty selection means "all".
+	// annotated topics. Books widen within the facet (IN); topics narrow
+	// (a passage must carry every selected topic). Topic filters work with an
+	// empty text query — selecting one is itself a search.
 	let showAdvanced = $state(false);
 	let selectedBooks = $state<string[]>([]);
-	/** `type:value` of the chosen topic, or '' for any. */
-	let topicFilter = $state('');
+	/** `type:value` keys of the selected topics, AND-joined. */
+	let selectedTopics = $state<string[]>([]);
+	/** Bound to the add-topic <select>; consumed and reset on change. */
+	let topicToAdd = $state('');
 
 	function toggleBook(id: string) {
 		selectedBooks = selectedBooks.includes(id)
 			? selectedBooks.filter((b) => b !== id)
 			: [...selectedBooks, id];
+	}
+
+	function addTopicFilter() {
+		if (topicToAdd && !selectedTopics.includes(topicToAdd)) {
+			selectedTopics = [...selectedTopics, topicToAdd];
+		}
+		topicToAdd = '';
+	}
+	function removeTopicFilter(key: string) {
+		selectedTopics = selectedTopics.filter((k) => k !== key);
 	}
 
 	// Topic options come from the manifest (same source as the /topics hub), so
@@ -62,24 +80,36 @@
 		return groups;
 	});
 
-	const filtersActive = $derived(selectedBooks.length + (topicFilter ? 1 : 0));
+	const filtersActive = $derived(selectedBooks.length + selectedTopics.length);
 
 	function clearFilters() {
 		selectedBooks = [];
-		topicFilter = '';
+		selectedTopics = [];
 	}
 
+	// Selected-topic pills: resolve each key back to its UI-language label.
+	const topicPills = $derived(
+		selectedTopics.map((key) => {
+			const colon = key.indexOf(':');
+			const type = key.slice(0, colon);
+			const label =
+				[...topicGroups.get(type) ?? []].find((o) => o.value === key)?.label ??
+				key.slice(colon + 1).replaceAll('_', ' ');
+			return { key, type, label };
+		})
+	);
+
+	const searching = $derived(db.ready && (query.trim().length > 0 || selectedTopics.length > 0));
+
 	const results = $derived.by(() => {
-		if (!db.ready || !query.trim()) return [];
-		const colon = topicFilter.indexOf(':');
-		const topic =
-			colon > 0
-				? { type: topicFilter.slice(0, colon), value: topicFilter.slice(colon + 1) }
-				: undefined;
+		if (!searching) return [];
 		try {
 			return searchParagraphs(query, corpusLang, {
 				bookIds: selectedBooks.length ? selectedBooks : undefined,
-				topic
+				topics: selectedTopics.map((key) => {
+					const colon = key.indexOf(':');
+					return { type: key.slice(0, colon), value: key.slice(colon + 1) };
+				})
 			});
 		} catch (e) {
 			console.error('[search] searchParagraphs threw', e);
@@ -87,12 +117,19 @@
 		}
 	});
 
-	const groups = $derived(groupByChapter(results));
-
-	const searching = $derived(db.ready && query.trim().length > 0);
+	// Results nest book → chapter like the topic pages' passage tree, but start
+	// expanded: a searcher wants the hits visible, the headers are for scanning.
+	const bookGroups = $derived(groupByBook(results));
+	let collapsedBooks = $state(new Set<string>());
+	function toggleResultBook(bookId: string) {
+		const next = new Set(collapsedBooks);
+		if (!next.delete(bookId)) next.add(bookId);
+		collapsedBooks = next;
+	}
 
 	function resultUrl(r: { book_id: string; chapter_id: string; paragraph_id: string }): string {
-		return `/book/${r.book_id}/${r.chapter_id}?q=${encodeURIComponent(query)}#${r.paragraph_id}`;
+		const q = query.trim() ? `?q=${encodeURIComponent(query)}` : '';
+		return `/book/${r.book_id}/${r.chapter_id}${q}#${r.paragraph_id}`;
 	}
 </script>
 
@@ -161,14 +198,17 @@
 								{t('search.filterTopic')}
 							</span>
 							<select
-								bind:value={topicFilter}
+								bind:value={topicToAdd}
+								onchange={addTopicFilter}
 								class="w-full rounded border border-input bg-background px-2 py-1.5 text-sm text-foreground"
 							>
-								<option value="">{t('search.anyTopic')}</option>
+								<option value="">{t('search.addTopic')}</option>
 								{#each topicGroups as [type, opts] (type)}
 									<optgroup label={t(`topics.typePlurals.${type}`)}>
 										{#each opts as o (o.value)}
-											<option value={o.value}>{o.label}</option>
+											{#if !selectedTopics.includes(o.value)}
+												<option value={o.value}>{o.label}</option>
+											{/if}
 										{/each}
 									</optgroup>
 								{/each}
@@ -183,6 +223,27 @@
 								{t('search.clearFilters')}
 							</button>
 						{/if}
+					</div>
+				{/if}
+				{#if topicPills.length}
+					<!-- Active topic filters, dismissible in place — visible even with
+					     the advanced panel closed, since they alone drive a search. -->
+					<div class="mt-2 flex flex-wrap items-center gap-1.5">
+						{#each topicPills as p (p.key)}
+							<span
+								class="inline-flex items-center gap-1 max-w-full break-words rounded-full px-2 py-0.5 text-xs {topicColors(p.type)}"
+							>
+								{p.label}
+								<button
+									type="button"
+									onclick={() => removeTopicFilter(p.key)}
+									aria-label={t('search.removeTopic')}
+									class="rounded-full hover:opacity-70 focus:outline-none focus:ring-2 focus:ring-ring"
+								>
+									<X class="h-3 w-3" />
+								</button>
+							</span>
+						{/each}
 					</div>
 				{/if}
 			</div>
@@ -201,29 +262,52 @@
 			{results.length} {results.length === 1 ? t('search.resultCountOne') : t('search.resultCount')}
 		</p>
 
-		{#if groups.length > 0}
-			<ul class="space-y-4">
-				{#each groups as g}
-					<li class="block p-4 rounded-lg border border-border hover:border-ring transition-colors">
-						<div class="text-sm text-muted-foreground mb-1">
-							<span class="font-medium text-foreground">{g.book_title}</span>
-							<span> &mdash; </span>
-							<a
-								href="/book/{g.book_id}/{g.chapter_id}?q={encodeURIComponent(query)}"
-								class="hover:text-primary"
-							>{g.chapter_title}</a>
-						</div>
-						<p class="font-serif text-foreground leading-relaxed">
-							{#each g.items as r, i}
-								{#if i > 0}<span class="text-muted-foreground">{r.position === g.items[i - 1].position + 1 ? ' ' : ' […] '}</span>{/if}<a
-									href={resultUrl(r)}
-									class="hover:text-primary"
-								>{#if r.paragraph_label}<span class="text-muted-foreground">&sect;{r.paragraph_label} </span>{/if}{@html r.snippet}</a>
-							{/each}
-						</p>
-					</li>
+		{#if bookGroups.length > 0}
+			<div class="space-y-6">
+				{#each bookGroups as bg (bg.book_id)}
+					{@const isOpen = !collapsedBooks.has(bg.book_id)}
+					<div>
+						<button
+							type="button"
+							onclick={() => toggleResultBook(bg.book_id)}
+							aria-expanded={isOpen}
+							aria-controls="results-{bg.book_id}"
+							class="flex w-full items-center gap-2 text-left text-foreground hover:text-primary focus:outline-none focus:ring-2 focus:ring-ring rounded transition-colors"
+						>
+							{#if isOpen}
+								<MinusIcon class="w-4 h-4 shrink-0 text-primary" />
+							{:else}
+								<PlusIcon class="w-4 h-4 shrink-0 text-primary" />
+							{/if}
+							<span class="font-display font-bold">{bg.book_title}</span>
+							<span class="text-sm text-muted-foreground">({bg.count})</span>
+						</button>
+						<hr class="divider-book" />
+						{#if isOpen}
+							<ul id="results-{bg.book_id}" class="space-y-4">
+								{#each bg.chapters as g (g.chapter_id)}
+									<li class="block p-4 rounded-lg border border-border hover:border-ring transition-colors">
+										<div class="text-sm text-muted-foreground mb-1">
+											<a
+												href="/book/{g.book_id}/{g.chapter_id}{query.trim() ? `?q=${encodeURIComponent(query)}` : ''}"
+												class="hover:text-primary"
+											>{g.chapter_title}</a>
+										</div>
+										<p class="font-serif text-foreground leading-relaxed">
+											{#each g.items as r, i}
+												{#if i > 0}<span class="text-muted-foreground">{r.position === g.items[i - 1].position + 1 ? ' ' : ' […] '}</span>{/if}<a
+													href={resultUrl(r)}
+													class="hover:text-primary"
+												>{#if r.paragraph_label}<span class="text-muted-foreground">&sect;{r.paragraph_label} </span>{/if}{@html r.snippet}</a>
+											{/each}
+										</p>
+									</li>
+								{/each}
+							</ul>
+						{/if}
+					</div>
 				{/each}
-			</ul>
+			</div>
 		{:else}
 			<p class="text-muted-foreground mt-6 font-serif">{t('search.noResults')}</p>
 		{/if}
