@@ -8,6 +8,44 @@ although it not being a library and not exposing any APIs means the definitions 
 might be somewhat loose or subjective.
 
 
+## [1.4.0] - 2026-07-12
+
+### Added
+- **Advanced search.** The home search gains a disclosure with per-source book
+  checkboxes and topic filters. Topic filters are a multiselect tags-combobox:
+  typing narrows a suggestion list, chosen topics render as dismissible pills,
+  and the filters AND-join. Selecting a topic with no text searches immediately,
+  returning that topic's passages in reading order. Results nest book → chapter
+  under collapsible headers.
+- **Passage relations in the reader.** Parallel-passage links now surface under
+  each paragraph in both directions, linking to the related passage with its
+  relation type and verified mark. In editor mode a stepped picker walks
+  book → chapter → passage in a modal, previewing the target through the reader
+  and offering a full-corpus passage search.
+- **Personal notes on bookmarks.** A bookmark can carry a free-text note, edited
+  inline on the bookmarks page and shown under the passage label.
+- **AI-usage disclaimer page** at `/ai` (English and Italian), detailing what is
+  and is not AI-generated, its limitations, and how to report errors. Linked
+  from the nav menu and from each book page's provenance note.
+- **Refined annotation editing.** The add-topic picker opens in a searchable,
+  focus-trapped modal with topic-category quick filters, and picking a topic
+  advances to a confirm step where an optional comment can be attached in the
+  same action.
+- **Quieter reading view.** Outside editor mode, the topic and relation pills
+  under each paragraph collapse to a single muted chip with a count that reveals
+  them on tap.
+
+### Fixed
+- **Faster corpus loads.** A cached database is served immediately while it
+  revalidates in the background (stale-while-revalidate); revalidation sends
+  both `If-None-Match` and `If-Modified-Since` so hosts that vary the ETag no
+  longer trigger needless re-downloads.
+- The decorative St. Francis figure now shrinks into the content gutter and
+  hides when there is no room, instead of running under the text on wide
+  viewports and the parallel reader.
+- The scrollbar gutter is reserved so the centered column no longer shifts
+  between short and tall pages.
+
 ## [1.3.0] - 2026-07-05
 
 ### Added
