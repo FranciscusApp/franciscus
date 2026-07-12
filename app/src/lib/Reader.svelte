@@ -4,13 +4,15 @@
 	import BookmarkIcon from '@lucide/svelte/icons/bookmark';
 	import QuoteIcon from '@lucide/svelte/icons/quote';
 	import CheckIcon from '@lucide/svelte/icons/check';
+	import XIcon from '@lucide/svelte/icons/x';
 	import TagsIcon from '@lucide/svelte/icons/tags';
 	import AnnotationPills from '$lib/AnnotationPills.svelte';
 	import RelationPills from '$lib/RelationPills.svelte';
 	import type { RelationLink } from '$lib/db';
 	import ProseEditor from '$lib/ProseEditor.svelte';
+	import Modal from '$lib/Modal.svelte';
 	import { parseCitation } from '$lib/scripture';
-	import { isBookmarked, toggleBookmark } from '$lib/bookmarks.svelte.js';
+	import { isBookmarked, toggleBookmark, addBookmark } from '$lib/bookmarks.svelte.js';
 	import { pendingProse } from '$lib/edits.svelte.js';
 	import { dbContentToSource, sourceToDisplay } from '$lib/proseDiff';
 	import type { ReaderBlock } from '$lib/reader';
@@ -130,6 +132,30 @@
 		const ref = `${bookTitle}, ${chapterTitle}, ${label ?? id}`;
 		const url = `${location.origin}${paraHref(id)}`;
 		return `${ref}. ${url}`;
+	}
+
+	// Bookmarking captures an optional note up front: tapping an unbookmarked
+	// passage opens a small modal (add + note); tapping a bookmarked one removes
+	// it directly. `noteInput` lets the modal focus the textarea on open.
+	let bookmarkModalOpen = $state(false);
+	let bookmarkTarget = $state<{ href: string; label: string } | null>(null);
+	let bookmarkNote = $state('');
+	let noteInput = $state<HTMLTextAreaElement | null>(null);
+
+	function onBookmarkClick(id: string, label: string | null) {
+		const href = paraHref(id);
+		if (isBookmarked(href)) {
+			toggleBookmark(href, paraLabel(id, label));
+			return;
+		}
+		bookmarkTarget = { href, label: paraLabel(id, label) };
+		bookmarkNote = '';
+		bookmarkModalOpen = true;
+	}
+
+	function confirmBookmark() {
+		if (bookmarkTarget) addBookmark(bookmarkTarget.href, bookmarkTarget.label, bookmarkNote);
+		bookmarkModalOpen = false;
 	}
 
 	async function copyCitation(id: string, label: string | null) {
@@ -337,7 +363,7 @@
 				<div class="float-right ml-2 flex items-center gap-0.5">
 					<button
 						type="button"
-						onclick={() => toggleBookmark(paraHref(block.id), paraLabel(block.id, block.label))}
+						onclick={() => onBookmarkClick(block.id, block.label)}
 						aria-pressed={isBookmarked(paraHref(block.id))}
 						aria-label={isBookmarked(paraHref(block.id)) ? t('a11y.removeBookmark') : t('a11y.addBookmark')}
 						class="p-1 pointer-coarse:p-2 rounded text-muted-foreground hover:text-primary focus:outline-none focus:ring-2 focus:ring-ring opacity-40 group-hover:opacity-100 focus:opacity-100 aria-pressed:opacity-100 aria-pressed:text-primary transition"
@@ -512,3 +538,40 @@
 		{/if}
 	{/each}
 </div>
+
+<Modal
+	bind:open={bookmarkModalOpen}
+	title={t('bookmarks.saveTitle')}
+	initialFocus={() => noteInput}
+>
+	{#if bookmarkTarget}
+		<p class="mb-2 text-sm font-medium text-foreground">{bookmarkTarget.label}</p>
+	{/if}
+	<label class="mb-1 block text-sm text-muted-foreground" for="bookmark-note">
+		{t('bookmarks.noteOptional')}
+	</label>
+	<textarea
+		id="bookmark-note"
+		bind:this={noteInput}
+		bind:value={bookmarkNote}
+		rows="3"
+		placeholder={t('bookmarks.notePlaceholder')}
+		class="w-full rounded border border-input bg-background px-2 py-1 text-sm text-foreground"
+	></textarea>
+	<div class="mt-3 flex justify-end gap-2">
+		<button
+			type="button"
+			onclick={() => (bookmarkModalOpen = false)}
+			class="inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1 text-sm text-foreground hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring"
+		>
+			<XIcon class="w-4 h-4" /> {t('edit.cancel')}
+		</button>
+		<button
+			type="button"
+			onclick={confirmBookmark}
+			class="inline-flex items-center gap-1 rounded-md bg-foreground px-2.5 py-1 text-sm text-background hover:bg-foreground/90 focus:outline-none focus:ring-2 focus:ring-ring"
+		>
+			<CheckIcon class="w-4 h-4" /> {t('edit.confirm')}
+		</button>
+	</div>
+</Modal>

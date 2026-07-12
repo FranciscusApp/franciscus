@@ -56,6 +56,17 @@ export function toggleBookmark(href: string, label: string) {
 	persist(bookmarks);
 }
 
+/**
+ * Add the passage with an optional note, unless it is already bookmarked.
+ * Used when bookmarking from the reader, where the note is captured up front.
+ */
+export function addBookmark(href: string, label: string, note?: string) {
+	if (isBookmarked(href)) return;
+	const trimmed = note?.trim();
+	bookmarks = [{ href, label, ts: Date.now(), note: trimmed || undefined }, ...bookmarks];
+	persist(bookmarks);
+}
+
 /** Set (or clear, when empty) the personal note on a bookmark. */
 export function setBookmarkNote(href: string, note: string) {
 	const trimmed = note.trim();

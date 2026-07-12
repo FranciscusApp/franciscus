@@ -66,6 +66,8 @@
 		"empty": "No bookmarks yet. Tap the bookmark icon next to any passage to save it here.",
 		"addNote": "Add a note",
 		"editNote": "Edit note",
+		"saveTitle": "Save bookmark",
+		"noteOptional": "Add a note (optional)",
 		"notePlaceholder": "Your note about this passage…"
 	},
 	"topics": {

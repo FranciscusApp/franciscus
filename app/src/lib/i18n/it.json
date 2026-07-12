@@ -66,6 +66,8 @@
 		"empty": "Nessun segnalibro. Tocca l'icona del segnalibro accanto a un passo per salvarlo qui.",
 		"addNote": "Aggiungi una nota",
 		"editNote": "Modifica la nota",
+		"saveTitle": "Salva il segnalibro",
+		"noteOptional": "Aggiungi una nota (facoltativa)",
 		"notePlaceholder": "La tua nota su questo passo…"
 	},
 	"topics": {
