@@ -4,6 +4,7 @@
 	import BookmarkIcon from '@lucide/svelte/icons/bookmark';
 	import QuoteIcon from '@lucide/svelte/icons/quote';
 	import CheckIcon from '@lucide/svelte/icons/check';
+	import TagsIcon from '@lucide/svelte/icons/tags';
 	import AnnotationPills from '$lib/AnnotationPills.svelte';
 	import RelationPills from '$lib/RelationPills.svelte';
 	import type { RelationLink } from '$lib/db';
@@ -67,6 +68,16 @@
 		if (e.key !== 'Enter' && e.key !== ' ') return;
 		e.preventDefault();
 		onSelectBlock?.(id);
+	}
+
+	// Reading mode keeps annotations (topics + relations) tucked behind a discreet
+	// per-paragraph toggle so they don't clutter the text; editor mode always shows
+	// them (the add/remove affordances must be reachable). Keyed by paragraph id.
+	let revealed = $state(new Set<string>());
+	function toggleAnnotations(id: string) {
+		const next = new Set(revealed);
+		if (!next.delete(id)) next.add(id);
+		revealed = next;
 	}
 
 	// The rendered content root; the enhancement effect scopes its queries and
@@ -302,6 +313,8 @@
 			<div class="text-center text-muted-foreground font-serif" aria-hidden="true">[…]</div>
 		{:else if block.kind === 'paragraph'}
 			{@const proseStaged = editing && !!pendingProse(bookId, corpusLang, block.id)}
+				{@const rels = relationsByParagraph?.get(block.id) ?? []}
+				{@const annCount = block.annotations.length + rels.length}
 			<!-- Selection mode drops the id (the same chapter may be mounted behind
 			     the picker) in favour of data-select-id, and the whole block becomes
 			     the press target. tabindex is only ever set together with
@@ -388,22 +401,50 @@
 							: paragraphDisplay(block.id, block.content)}
 					</span>
 				{/if}
-				<AnnotationPills
-					{bookId}
-					paragraphId={block.id}
-					annotations={block.annotations}
-					{topicLabel}
-					{candidates}
-					{editing}
-				/>
-				{#if relationsByParagraph}
-					<RelationPills
+				{#if editing || (annCount > 0 && revealed.has(block.id))}
+					{#if !editing}
+						<!-- Revealed in reading mode: the same collapse control, now active. -->
+						<button
+							type="button"
+							onclick={() => toggleAnnotations(block.id)}
+							aria-expanded={true}
+							class="mt-1 ml-0 sm:ml-10 inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-xs text-primary hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring transition-colors"
+							aria-label={t('reader.annotations')}
+						>
+							<TagsIcon class="w-3.5 h-3.5" />
+							{annCount}
+						</button>
+					{/if}
+					<AnnotationPills
 						{bookId}
 						paragraphId={block.id}
-						relations={relationsByParagraph.get(block.id) ?? []}
-						books={relationBooks}
+						annotations={block.annotations}
+						{topicLabel}
+						{candidates}
 						{editing}
 					/>
+					{#if relationsByParagraph}
+						<RelationPills
+							{bookId}
+							paragraphId={block.id}
+							relations={rels}
+							books={relationBooks}
+							{editing}
+						/>
+					{/if}
+				{:else if annCount > 0}
+					<!-- Reading mode, collapsed: one muted tag chip with the count; the
+					     pills expand only on demand so the prose stays uncluttered. -->
+					<button
+						type="button"
+						onclick={() => toggleAnnotations(block.id)}
+						aria-expanded={false}
+						class="mt-1 ml-0 sm:ml-10 inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-xs text-muted-foreground/60 opacity-70 hover:text-primary hover:bg-accent group-hover:opacity-100 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring transition-colors"
+						aria-label={t('reader.annotations')}
+					>
+						<TagsIcon class="w-3.5 h-3.5" />
+						{annCount}
+					</button>
 				{/if}
 				{#if block.comment}
 					<p class="mt-2 text-sm text-muted-foreground italic">{block.comment}</p>
