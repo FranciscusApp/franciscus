@@ -1,14 +1,12 @@
 <script lang="ts">
 	import type { RelationLink } from '$lib/db';
-	import { getChapters, getParagraphs } from '$lib';
-	import { t, getCorpusLang } from '$lib/i18n';
+	import { t } from '$lib/i18n';
 	import * as edits from '$lib/edits.svelte.js';
 	import { isRelation } from '$lib/annotationDiff';
-	import Modal from '$lib/Modal.svelte';
+	import RelationPicker from '$lib/RelationPicker.svelte';
 	import ArrowRightLeft from '@lucide/svelte/icons/arrow-right-left';
 	import X from '@lucide/svelte/icons/x';
 	import Undo2 from '@lucide/svelte/icons/undo-2';
-	import Check from '@lucide/svelte/icons/check';
 
 	// Renders a paragraph's cross-work relations (parallel passages), the
 	// counterpart of AnnotationPills for the relations table. Read mode links to
@@ -31,8 +29,6 @@
 		editing: boolean;
 	} = $props();
 
-	const corpusLang = $derived(getCorpusLang());
-
 	function relTypeLabel(type: string): string {
 		return t(`relations.types.${type}`);
 	}
@@ -51,37 +47,9 @@
 		return `/book/${r.other_book_id}/${r.other_chapter_id}#${r.other_paragraph_id}`;
 	}
 
-	// --- add-relation modal -------------------------------------------------
-
+	// The add flow lives in RelationPicker (stepped book → chapter → passage
+	// walk with a Reader preview); this component only opens it.
 	let modalOpen = $state(false);
-	let relType = $state('same_episode');
-	let targetBook = $state('');
-	let targetChapter = $state('');
-	let targetPara = $state('');
-
-	const targetChapters = $derived(targetBook ? getChapters(targetBook, corpusLang) : []);
-	const targetParagraphs = $derived(
-		targetBook && targetChapter ? getParagraphs(targetBook, targetChapter) : []
-	);
-
-	// Reset each picker session; also guards stale chapter/paragraph selections.
-	$effect(() => {
-		if (!modalOpen) {
-			relType = 'same_episode';
-			targetBook = '';
-			targetChapter = '';
-			targetPara = '';
-		}
-	});
-
-	const selfTarget = $derived(`${targetBook}-${targetPara}` === `${bookId}-${paragraphId}`);
-	const canStage = $derived(!!targetBook && !!targetChapter && !!targetPara && !selfTarget);
-
-	function stage() {
-		if (!canStage) return;
-		edits.stageAdd(bookId, paragraphId, relType, `${targetBook}-${targetPara}`);
-		modalOpen = false;
-	}
 
 	// Pending relation adds on this paragraph (the shared buffer also holds topic
 	// adds — filter to relation types).
@@ -202,75 +170,12 @@
 				<ArrowRightLeft class="h-3.5 w-3.5" />
 			</button>
 
-			<Modal bind:open={modalOpen} title={t('relations.add')}>
-				<div class="space-y-3">
-					<label class="block text-sm">
-						<span class="mb-1 block text-xs text-muted-foreground">{t('relations.typeLabel')}</span>
-						<select
-							bind:value={relType}
-							class="w-full rounded border border-input bg-background px-2 py-1.5 text-sm text-foreground"
-						>
-							<option value="same_episode">{t('relations.types.same_episode')}</option>
-							<option value="related_to">{t('relations.types.related_to')}</option>
-						</select>
-					</label>
-					<label class="block text-sm">
-						<span class="mb-1 block text-xs text-muted-foreground">{t('relations.bookLabel')}</span>
-						<select
-							bind:value={targetBook}
-							onchange={() => {
-								targetChapter = '';
-								targetPara = '';
-							}}
-							class="w-full rounded border border-input bg-background px-2 py-1.5 text-sm text-foreground"
-						>
-							<option value="" disabled>{t('relations.choose')}</option>
-							{#each books as b (b.id)}
-								<option value={b.id}>{b.title}</option>
-							{/each}
-						</select>
-					</label>
-					{#if targetBook}
-						<label class="block text-sm">
-							<span class="mb-1 block text-xs text-muted-foreground">{t('relations.chapterLabel')}</span>
-							<select
-								bind:value={targetChapter}
-								onchange={() => (targetPara = '')}
-								class="w-full rounded border border-input bg-background px-2 py-1.5 text-sm text-foreground"
-							>
-								<option value="" disabled>{t('relations.choose')}</option>
-								{#each targetChapters as c (c.id)}
-									<option value={c.id}>{c.title}</option>
-								{/each}
-							</select>
-						</label>
-					{/if}
-					{#if targetChapter}
-						<label class="block text-sm">
-							<span class="mb-1 block text-xs text-muted-foreground">{t('relations.paragraphLabel')}</span>
-							<select
-								bind:value={targetPara}
-								class="w-full rounded border border-input bg-background px-2 py-1.5 text-sm text-foreground"
-							>
-								<option value="" disabled>{t('relations.choose')}</option>
-								{#each targetParagraphs as p (p.id)}
-									<option value={p.id}>§{p.label ?? p.id}</option>
-								{/each}
-							</select>
-						</label>
-					{/if}
-					<div class="flex justify-end">
-						<button
-							type="button"
-							onclick={stage}
-							disabled={!canStage}
-							class="inline-flex items-center gap-1 rounded-md bg-foreground px-2.5 py-1 text-sm text-background hover:bg-foreground/90 focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
-						>
-							<Check class="h-4 w-4" /> {t('edit.confirm')}
-						</button>
-					</div>
-				</div>
-			</Modal>
+			<RelationPicker
+				bind:open={modalOpen}
+				anchorBookId={bookId}
+				anchorParagraphId={paragraphId}
+				{books}
+			/>
 		{/if}
 	</div>
 {/if}

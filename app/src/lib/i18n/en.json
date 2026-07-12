@@ -97,10 +97,12 @@
 		"incoming": "Linked from the other passage",
 		"missingTarget": "Passage not present in this corpus build",
 		"typeLabel": "Relation type",
-		"bookLabel": "Source",
-		"chapterLabel": "Chapter",
-		"paragraphLabel": "Paragraph",
-		"choose": "Choose…"
+		"searchPlaceholder": "Search all sources for a passage…",
+		"searchResults": "Search results",
+		"pickBook": "Choose a source",
+		"pickChapter": "Choose a chapter",
+		"pickPassage": "Select the passage to link",
+		"selfTarget": "A passage cannot be linked to itself"
 	},
 	"search": {
 		"heading": "Search",

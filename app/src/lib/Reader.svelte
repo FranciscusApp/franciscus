@@ -33,6 +33,8 @@
 		candidates = [],
 		relationsByParagraph = null,
 		relationBooks = [],
+		selectedId = null,
+		onSelectBlock,
 		onScriptureRef
 	}: {
 		blocks: ReaderBlock[];
@@ -50,8 +52,22 @@
 		 *  entirely (surfaces like topic pages that don't query relations). */
 		relationsByParagraph?: Map<string, RelationLink[]> | null;
 		relationBooks?: { id: string; title: string }[];
+		/** Paragraph highlighted as the current pick in selection mode. */
+		selectedId?: string | null;
+		/** Selection mode (pickers): paragraphs become click targets and the
+		 *  per-passage tools (bookmark, citation, deep links) are disabled. */
+		onSelectBlock?: (id: string) => void;
 		onScriptureRef: (to: string) => void;
 	} = $props();
+
+	// In selection mode the whole paragraph is one press target.
+	const selectMode = $derived(!!onSelectBlock);
+
+	function selectKeydown(e: KeyboardEvent, id: string) {
+		if (e.key !== 'Enter' && e.key !== ' ') return;
+		e.preventDefault();
+		onSelectBlock?.(id);
+	}
 
 	// The rendered content root; the enhancement effect scopes its queries and
 	// listeners here so a page mounting many readers never cross-wires them.
@@ -202,12 +218,16 @@
 		}
 
 		function onClick(e: MouseEvent) {
+			// Selection mode: the paragraph-level handler owns clicks; verse
+			// selection would rewrite the page URL from inside a modal.
+			if (selectMode) return;
 			const target = e.target as HTMLElement;
 			if (openScriptureRef(target)) return;
 			const v = target.closest('v[id]');
 			if (v) selectVerse(v);
 		}
 		function onKeydown(e: KeyboardEvent) {
+			if (selectMode) return;
 			const target = e.target as HTMLElement;
 			if (e.key === 'Escape' && target.tagName === 'REF') {
 				target.blur();
@@ -282,7 +302,25 @@
 			<div class="text-center text-muted-foreground font-serif" aria-hidden="true">[…]</div>
 		{:else if block.kind === 'paragraph'}
 			{@const proseStaged = editing && !!pendingProse(bookId, corpusLang, block.id)}
-			<div class="paragraph group" id={block.id}>
+			<!-- Selection mode drops the id (the same chapter may be mounted behind
+			     the picker) in favour of data-select-id, and the whole block becomes
+			     the press target. tabindex is only ever set together with
+			     role="button" (both gate on selectMode), which the static a11y
+			     check can't see. -->
+			<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+			<div
+				class="paragraph group {selectMode
+					? 'cursor-pointer rounded-md -mx-2 px-2 py-1 transition-colors hover:bg-accent/50'
+					: ''} {selectMode && selectedId === block.id ? 'bg-primary/5 ring-2 ring-primary' : ''}"
+				id={selectMode ? undefined : block.id}
+				data-select-id={selectMode ? block.id : undefined}
+				role={selectMode ? 'button' : undefined}
+				tabindex={selectMode ? 0 : undefined}
+				aria-pressed={selectMode ? selectedId === block.id : undefined}
+				onclick={selectMode ? () => onSelectBlock?.(block.id) : undefined}
+				onkeydown={selectMode ? (e) => selectKeydown(e, block.id) : undefined}
+			>
+				{#if !selectMode}
 				<div class="float-right ml-2 flex items-center gap-0.5">
 					<button
 						type="button"
@@ -319,6 +357,7 @@
 						{editing}
 					/>
 				</div>
+				{/if}
 				<span class="inline-block min-w-8 text-xs text-muted-foreground font-mono mr-2 align-top pt-1">
 					{block.label ?? block.id}
 				</span>
@@ -342,7 +381,11 @@
 							? 'rounded bg-primary/5 px-1 ring-1 ring-primary/30'
 							: ''}"
 					>
-						{@html paragraphDisplay(block.id, block.content)}
+						<!-- Verse ids are also dropped in selection mode: the page behind
+						     may already carry them, and verse deep links are inert here. -->
+						{@html selectMode
+							? stripVerseIds(paragraphDisplay(block.id, block.content))
+							: paragraphDisplay(block.id, block.content)}
 					</span>
 				{/if}
 				<AnnotationPills

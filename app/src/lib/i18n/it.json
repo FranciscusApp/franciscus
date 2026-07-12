@@ -97,10 +97,12 @@
 		"incoming": "Collegato dall'altro passo",
 		"missingTarget": "Passo non presente in questa edizione del corpus",
 		"typeLabel": "Tipo di collegamento",
-		"bookLabel": "Fonte",
-		"chapterLabel": "Capitolo",
-		"paragraphLabel": "Paragrafo",
-		"choose": "Scegli…"
+		"searchPlaceholder": "Cerca un passo in tutte le fonti…",
+		"searchResults": "Risultati della ricerca",
+		"pickBook": "Scegli una fonte",
+		"pickChapter": "Scegli un capitolo",
+		"pickPassage": "Seleziona il passo da collegare",
+		"selfTarget": "Un passo non può essere collegato a sé stesso"
 	},
 	"search": {
 		"heading": "Ricerca",
