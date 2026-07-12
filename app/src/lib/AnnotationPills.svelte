@@ -38,6 +38,8 @@
 	let popover = $state<{ type: string; value: string; allowVerify: boolean } | null>(null);
 	let pickerOpen = $state(false);
 	let pickerFilter = $state('');
+	/** Category quick filter ('' = all types). */
+	let pickerType = $state('');
 	let pickerInput = $state<HTMLInputElement | null>(null);
 
 	// Draft state for the verify/comment popover, seeded from buffer + source.
@@ -99,17 +101,24 @@
 			...edits.pendingAdds(bookId, paragraphId).map((e) => `${e.topic_type}:${e.topic_value}`)
 		])
 	);
+	// Category chips for the picker header, in the candidates' (manifest) order.
+	const candidateTypes = $derived([...new Set(candidates.map((c) => c.type))]);
+
 	const filteredCandidates = $derived.by(() => {
 		const q = pickerFilter.trim().toLowerCase();
 		return candidates
 			.filter((c) => !takenKeys.has(`${c.type}:${c.value}`))
+			.filter((c) => !pickerType || c.type === pickerType)
 			.filter((c) => !q || c.label.toLowerCase().includes(q) || c.value.includes(q))
 			.slice(0, 60);
 	});
 
-	// Start each picker session with an empty filter (closing discards the query).
+	// Start each picker session with empty filters (closing discards them).
 	$effect(() => {
-		if (!pickerOpen) pickerFilter = '';
+		if (!pickerOpen) {
+			pickerFilter = '';
+			pickerType = '';
+		}
 	});
 
 	// The buffer also holds relation adds (RelationPills renders those).
@@ -241,6 +250,32 @@
 			     list is searchable comfortably on mobile and can't overflow small
 			     screens. -->
 			<Modal bind:open={pickerOpen} title={t('edit.add')} initialFocus={() => pickerInput}>
+				<!-- Category quick filters: one tap narrows the list to a topic type;
+				     tapping the active chip (or "All") widens back out. -->
+				<div class="mb-2 flex flex-wrap gap-1" role="group" aria-label={t('edit.filterByType')}>
+					<button
+						type="button"
+						onclick={() => (pickerType = '')}
+						aria-pressed={pickerType === ''}
+						class="rounded-full px-2 py-0.5 text-xs transition-colors focus:outline-none focus:ring-2 focus:ring-ring {pickerType === ''
+							? 'bg-foreground text-background'
+							: 'border border-border text-muted-foreground hover:text-foreground'}"
+					>
+						{t('edit.allTypes')}
+					</button>
+					{#each candidateTypes as type (type)}
+						<button
+							type="button"
+							onclick={() => (pickerType = pickerType === type ? '' : type)}
+							aria-pressed={pickerType === type}
+							class="rounded-full px-2 py-0.5 text-xs transition-colors focus:outline-none focus:ring-2 focus:ring-ring {pickerType === type
+								? `${topicColors(type)} ring-1 ring-current`
+								: 'border border-border text-muted-foreground hover:text-foreground'}"
+						>
+							{t(`topics.typePlurals.${type}`)}
+						</button>
+					{/each}
+				</div>
 				<input
 					type="text"
 					bind:this={pickerInput}

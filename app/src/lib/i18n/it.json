@@ -141,6 +141,8 @@
 		"confirm": "Conferma",
 		"cancel": "Annulla",
 		"editAnnotation": "Modifica annotazione",
+		"allTypes": "Tutti",
+		"filterByType": "Filtra per tipo",
 		"searchTopics": "Cerca argomenti…",
 		"noTopics": "Nessun argomento corrispondente",
 		"verifyLabel": "Segna come corretto / verificato da persona",
