@@ -29,7 +29,8 @@
 		"textSmaller": "Decrease text size",
 		"textLarger": "Increase text size",
 		"parallel": "Parallel translation",
-		"parallelHelp": "Show the original source beside a translation (wide screens)."
+		"parallelHelp": "Show the original source beside a translation (wide screens).",
+		"annotations": "Annotations"
 	},
 	"home": {
 		"sourcesHeading": "Sources"
@@ -143,6 +144,8 @@
 		"confirm": "Confirm",
 		"cancel": "Cancel",
 		"editAnnotation": "Edit annotation",
+		"back": "Back",
+		"commentOptional": "Comment (optional)",
 		"allTypes": "All",
 		"filterByType": "Filter by type",
 		"searchTopics": "Search topics…",

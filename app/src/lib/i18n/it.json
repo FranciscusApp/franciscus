@@ -29,7 +29,8 @@
 		"textSmaller": "Riduci la dimensione del testo",
 		"textLarger": "Aumenta la dimensione del testo",
 		"parallel": "Traduzione a fronte",
-		"parallelHelp": "Mostra il testo originale accanto a una traduzione (schermi larghi)."
+		"parallelHelp": "Mostra il testo originale accanto a una traduzione (schermi larghi).",
+		"annotations": "Annotazioni"
 	},
 	"home": {
 		"sourcesHeading": "Fonti"
@@ -143,6 +144,8 @@
 		"confirm": "Conferma",
 		"cancel": "Annulla",
 		"editAnnotation": "Modifica annotazione",
+		"back": "Indietro",
+		"commentOptional": "Commento (facoltativo)",
 		"allTypes": "Tutti",
 		"filterByType": "Filtra per tipo",
 		"searchTopics": "Cerca argomenti…",

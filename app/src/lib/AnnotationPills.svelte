@@ -41,6 +41,15 @@
 	/** Category quick filter ('' = all types). */
 	let pickerType = $state('');
 	let pickerInput = $state<HTMLInputElement | null>(null);
+	// Second stage of the add flow: after picking a topic the modal switches to a
+	// small confirm view carrying an optional comment, so an editorial note can be
+	// attached at add time (not only afterwards via the pill).
+	let pickerChosen = $state<{ type: string; value: string; label: string } | null>(null);
+	let pickerComment = $state('');
+	let pickerCommentEl = $state<HTMLTextAreaElement | null>(null);
+	$effect(() => {
+		if (pickerChosen) pickerCommentEl?.focus();
+	});
 
 	// Draft state for the verify/comment popover, seeded from buffer + source.
 	let draftVerified = $state(false);
@@ -88,10 +97,19 @@
 		popover = null;
 	}
 
-	function addTopic(type: string, value: string) {
+	// Stage one: choosing a candidate advances to the comment stage rather than
+	// closing, so a note can ride along with the add.
+	function chooseTopic(c: { type: string; value: string; label: string }) {
+		pickerChosen = c;
+		pickerComment = '';
+	}
+	// Stage two: commit the add plus its optional comment.
+	function confirmAdd() {
+		if (!pickerChosen) return;
+		const { type, value } = pickerChosen;
 		edits.stageAdd(bookId, paragraphId, type, value);
+		if (pickerComment.trim()) edits.setComment(bookId, paragraphId, type, value, pickerComment);
 		pickerOpen = false;
-		pickerFilter = '';
 	}
 
 	// Topics not already present (as annotations or pending adds) — the pickable set.
@@ -113,11 +131,14 @@
 			.slice(0, 60);
 	});
 
-	// Start each picker session with empty filters (closing discards them).
+	// Start each picker session on the list stage with empty filters (closing
+	// discards them and any in-progress comment).
 	$effect(() => {
 		if (!pickerOpen) {
 			pickerFilter = '';
 			pickerType = '';
+			pickerChosen = null;
+			pickerComment = '';
 		}
 	});
 
@@ -250,6 +271,7 @@
 			     list is searchable comfortably on mobile and can't overflow small
 			     screens. -->
 			<Modal bind:open={pickerOpen} title={t('edit.add')} initialFocus={() => pickerInput}>
+				{#if !pickerChosen}
 				<!-- Category quick filters: one tap narrows the list to a topic type;
 				     tapping the active chip (or "All") widens back out. -->
 				<div class="mb-2 flex flex-wrap gap-1" role="group" aria-label={t('edit.filterByType')}>
@@ -288,7 +310,7 @@
 						<li>
 							<button
 								type="button"
-								onclick={() => addTopic(c.type, c.value)}
+								onclick={() => chooseTopic(c)}
 								class="flex w-full items-center gap-1.5 rounded px-2 py-1.5 text-left text-sm hover:bg-accent focus:outline-none focus:bg-accent"
 							>
 								<span
@@ -304,6 +326,45 @@
 						<li class="px-2 py-1 text-sm text-muted-foreground">{t('edit.noTopics')}</li>
 					{/each}
 				</ul>
+				{:else}
+					{@const chosen = pickerChosen}
+					<!-- Confirm stage: the chosen topic plus an optional editorial note,
+					     committed together. "Back" returns to the list unchanged. -->
+					<div class="space-y-3">
+						<span
+							class="inline-flex max-w-full items-center gap-1.5 break-words rounded-full px-2 py-0.5 text-sm {topicColors(
+								chosen.type
+							)}"
+						>
+							{chosen.label} ({typeName(chosen.type)})
+						</span>
+						<label class="block text-sm text-foreground">
+							<span class="mb-1 block text-xs text-muted-foreground">{t('edit.commentOptional')}</span>
+							<textarea
+								bind:this={pickerCommentEl}
+								bind:value={pickerComment}
+								rows="3"
+								class="w-full rounded border border-input bg-background px-2 py-1.5 text-sm text-foreground"
+							></textarea>
+						</label>
+						<div class="flex justify-end gap-2">
+							<button
+								type="button"
+								onclick={() => (pickerChosen = null)}
+								class="inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1 text-sm text-foreground hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring"
+							>
+								{t('edit.back')}
+							</button>
+							<button
+								type="button"
+								onclick={confirmAdd}
+								class="inline-flex items-center gap-1 rounded-md bg-foreground px-2.5 py-1 text-sm text-background hover:bg-foreground/90 focus:outline-none focus:ring-2 focus:ring-ring"
+							>
+								<Plus class="h-4 w-4" /> {t('edit.add')}
+							</button>
+						</div>
+					</div>
+				{/if}
 			</Modal>
 		{/if}
 	</div>
