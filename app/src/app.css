@@ -306,6 +306,11 @@ mark.search-highlight {
 		   rem, so bumping the root size zooms the interface proportionally. The
 		   reader's --reader-scale knob still compounds on top of this. */
 		font-size: 110%;
+		/* Always reserve the vertical scrollbar's gutter, so a short page (e.g.
+		   search with no results) and a tall one (results) frame the centered
+		   column at the same width — no horizontal shift/shrink as content
+		   crosses the viewport-height threshold. */
+		scrollbar-gutter: stable;
 	}
 	/* Capitalis-style display face for major titles (manuscript header feel),
 	   with a short gilt flourish underline drawn from the logo gold. */
