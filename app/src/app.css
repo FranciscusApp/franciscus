@@ -88,6 +88,15 @@
 	--font-display: "Cinzel", "Trajan Pro", ui-serif, Georgia, serif;
 }
 
+/* Editorial apparatus in paragraph content (see franciscus-data/spec/books.md).
+   Hidden by default — psalm-pointing marks and psalter-recension sigla are not
+   part of the running text. Kept in the DOM so they can be revealed/styled
+   later (e.g. a "show pointing" reading mode) without a data migration. */
+caesura,
+var[psalter] {
+	display: none;
+}
+
 /* Biblical references in paragraph content */
 ref {
 	text-decoration: underline dotted;
