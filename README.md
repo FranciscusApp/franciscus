@@ -42,6 +42,7 @@ annotated, without losing the original Latin.
 | **LMj**  | Legenda Maior | Bonaventure |
 | **3Soc** | Legenda Trium Sociorum | The Three Companions |
 | **Testamentum** | Testamentum Sancti Francisci | Francis of Assisi |
+| **Opuscula** | Opuscula Omnia (the writings of Francis) | Francis of Assisi |
 
 ### What you can do
 
@@ -68,7 +69,7 @@ it **directly in the browser** via `sql.js` (SQLite compiled to WebAssembly).
 ```
 franciscus-data/        server/ (Rust CLI)        app/ (SvelteKit SPA)
   books/*.md       →   parse + import   →   franciscus.db  →  sql.js (WASM)
-  annotations/*.yaml                        (static asset)     in the browser
+  books/*.yaml                              (static asset)     in the browser
 ```
 
 That's the whole architecture: free to host, fast to read, offline by default.
@@ -105,15 +106,20 @@ For a production build (`app/build/` — a self-contained static site), run
 `make app`. More detail, and how the GitHub Pages deploy works, is in
 [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## Future plans
+Already shipped since 1.0: a **parallel side-by-side reader**, **English
+translations**, the **Opuscula** (Francis's own writings), redesigned
+reader-based **topic pages**, **advanced search** with book and topic filters,
+**passage relations** in the reader, and **in-app GitHub contributions** (login,
+edit, and open a pull request — fork/commit/PR run client-side against your own
+token, with an OAuth Worker as the only backend). See the
+[CHANGELOG](CHANGELOG.md).
 
-- 📚 **Side-by-side reader** for comparing parallel texts and translations.
-- 📜 **Nova Vulgata edition** added to the corpus, with language-aware
-  scripture links.
+Still ahead:
+
 - 🧭 **Fuller wiki-like pages** for persons, places, and events, with
   cross-referenced passages.
-- ✍️ **In-app contributions** — GitHub login for proposing corrections,
-  translations, and annotations (backed by an Axum API).
+- 🔎 **Human review** of the machine transcriptions, translations, and
+  annotations.
 
 See [ROADMAP.md](ROADMAP.md) for the full list.
 

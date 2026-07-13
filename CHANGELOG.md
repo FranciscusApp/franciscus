@@ -34,6 +34,9 @@ might be somewhat loose or subjective.
 - **Quieter reading view.** Outside editor mode, the topic and relation pills
   under each paragraph collapse to a single muted chip with a count that reveals
   them on tap.
+- **Sung-psalm rendering.** Chanted texts in the newly added *Opuscula* display
+  their psalm-pointing pauses (`<caesura>`) and Roman/Gallican psalter sigla
+  (`<var psalter>`) from the reference edition.
 
 ### Fixed
 - **Faster corpus loads.** A cached database is served immediately while it
