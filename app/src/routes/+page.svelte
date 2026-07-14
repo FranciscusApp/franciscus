@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { getBooks, searchParagraphs } from '$lib';
+	import { getBooks, searchParagraphs, groupByCategory } from '$lib';
+	import type { ManifestBook, BookMeta } from '$lib';
 	import { getDbState } from '$lib/dbState';
 	import NoScriptNotice from '$lib/NoScriptNotice.svelte';
 	import DbProgressBar from '$lib/DbProgressBar.svelte';
@@ -33,6 +34,12 @@
 	// ready, upgrade to the DB so titles follow the corpus language and the
 	// blurbs follow the UI language.
 	const books = $derived(db.ready ? getBooks(corpusLang, uiLang) : data.manifest.books);
+
+	// Browse view: the same ordered book list, cut into category groups with a
+	// localized heading + subtext (from the manifest, available before the DB).
+	const bookGroups = $derived(
+		groupByCategory<ManifestBook | BookMeta>(books, data.manifest.categories ?? [], uiLang)
+	);
 
 	// Advanced-search filters: restrict FTS matches by source book and/or by
 	// annotated topics. Books widen within the facet (IN); topics narrow
@@ -210,27 +217,37 @@
 
 		<section>
 			<h2 class="text-xl font-display text-foreground mb-4">{t('home.sourcesHeading')}</h2>
-			<ul class="space-y-3">
-				{#each books as book}
-					<li>
-						<!-- /book/<id> is prerendered static HTML (metadata + chapter TOC,
-						     no DB), so these links work without JS or the DB loaded. -->
-						<a
-							href="/book/{book.id}"
-							class="group block p-4 rounded-lg border border-border transition-colors hover:border-ring"
-						>
-							<strong class="font-serif text-lg text-foreground group-hover:text-primary">{book.title}</strong>
-							<span class="text-muted-foreground"> — {book.author}</span>
-							{#if book.date}
-								<span class="text-muted-foreground"> ({book.date})</span>
-							{/if}
-							{#if book.description_short}
-								<span class="block text-sm text-muted-foreground mt-1 font-serif">{book.description_short}</span>
-							{/if}
-						</a>
-					</li>
-				{/each}
-			</ul>
+			{#each bookGroups as group (group.id ?? '')}
+				{#if group.title}
+					<h3 class="mt-6 mb-2 font-display text-lg font-semibold text-foreground first:mt-0">
+						{group.title}
+					</h3>
+					{#if group.description}
+						<p class="mb-3 text-sm text-muted-foreground font-serif">{group.description}</p>
+					{/if}
+				{/if}
+				<ul class="space-y-3">
+					{#each group.books as book (book.id)}
+						<li>
+							<!-- /book/<id> is prerendered static HTML (metadata + chapter TOC,
+							     no DB), so these links work without JS or the DB loaded. -->
+							<a
+								href="/book/{book.id}"
+								class="group block p-4 rounded-lg border border-border transition-colors hover:border-ring"
+							>
+								<strong class="font-serif text-lg text-foreground group-hover:text-primary">{book.title}</strong>
+								<span class="text-muted-foreground"> — {book.author}</span>
+								{#if book.date}
+									<span class="text-muted-foreground"> ({book.date})</span>
+								{/if}
+								{#if book.description_short}
+									<span class="block text-sm text-muted-foreground mt-1 font-serif">{book.description_short}</span>
+								{/if}
+							</a>
+						</li>
+					{/each}
+				</ul>
+			{/each}
 		</section>
 	{/if}
 </main>

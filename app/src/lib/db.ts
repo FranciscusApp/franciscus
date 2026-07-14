@@ -16,7 +16,7 @@ const DB_CACHE = 'franciscus-db';
 // revalidated eagerly over HTTP while the app code only refreshes through the
 // service-worker lifecycle, a rebuilt db can reach an out-of-date client — this
 // guard catches that mismatch instead of running old code against a new schema.
-const EXPECTED_SCHEMA_VERSION = 3;
+const EXPECTED_SCHEMA_VERSION = 4;
 
 /** Thrown when the loaded db's schema doesn't match this build of the app.
  *  The layout treats it as "app out of date" and drives a service-worker
@@ -268,18 +268,25 @@ const BOOK_COLS = `COALESCE(bc.title, b.title) AS title,
 		        bc.provenance AS provenance,
 		        bc.status AS status,
 		        bc.translation_source AS translation_source,
-		        b.source AS source`;
+		        b.source AS source,
+			        b.category AS category,
+			        b.sequence AS sequence`;
 
 const BOOK_JOINS = `LEFT JOIN book_translations bc ON bc.book_id = b.id AND bc.lang = $corpusLang
 		 LEFT JOIN book_descriptions du ON du.book_id = b.id AND du.lang = $uiLang
 		 LEFT JOIN book_descriptions den ON den.book_id = b.id AND den.lang = 'en'`;
 
 export function getBooks(corpusLang: string = 'la', uiLang: string = 'en'): BookMeta[] {
+	// Grouped by category (category position), then the book's in-category
+	// sequence; uncategorized / unsequenced books sort last. Matches the Rust
+	// manifest ordering so the pre-DB and post-DB book lists agree.
 	return queryAll<BookMeta>(
 		`SELECT b.id, ${BOOK_COLS}
 		 FROM books b
 		 ${BOOK_JOINS}
-		 ORDER BY b.id`,
+		 LEFT JOIN categories cat ON cat.id = b.category
+		 ORDER BY COALESCE(cat.position, 2147483647),
+		          COALESCE(b.sequence, 2147483647), b.id`,
 		{ $corpusLang: corpusLang, $uiLang: uiLang }
 	);
 }

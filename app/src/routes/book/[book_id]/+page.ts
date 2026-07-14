@@ -28,7 +28,9 @@ export const load: PageLoad = async ({ params, parent }) => {
 		provenance: null,
 		status: null,
 		translation_source: null,
-		source: null
+		source: null,
+		category: book.category,
+		sequence: book.sequence
 	};
 	return { book: meta, chapters: book.chapters };
 };

@@ -6,7 +6,7 @@ use crate::models::*;
 /// Shape version of the DB the app expects. Bump whenever the table layout
 /// changes; mirrored into `PRAGMA user_version` and a `meta` row so the app
 /// can detect an incompatible build. Stored but not gated on yet.
-pub const SCHEMA_VERSION: u32 = 3;
+pub const SCHEMA_VERSION: u32 = 4;
 
 pub fn open_or_create(path: &str) -> Connection {
     let conn = Connection::open(path).expect("Failed to open database");
@@ -24,7 +24,27 @@ pub fn create_tables(conn: &Connection) {
             author          TEXT NOT NULL,
             date            TEXT,
             ref_edition     TEXT,
-            source          TEXT
+            source          TEXT,
+            -- Browsing hierarchy: `category` is a soft key into `categories`
+            -- (no FK — a book may be uncategorized); `sequence` orders within it.
+            category        TEXT,
+            sequence        INTEGER
+        );
+
+        -- Browsing collections (books/categories.yaml). `position` is the
+        -- category's own display order; titles/descriptions are per UI language.
+        CREATE TABLE IF NOT EXISTS categories (
+            id              TEXT PRIMARY KEY,
+            position        INTEGER NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS category_descriptions (
+            category_id     TEXT NOT NULL,
+            lang            TEXT NOT NULL,
+            title           TEXT NOT NULL,
+            description     TEXT,
+            PRIMARY KEY (category_id, lang),
+            FOREIGN KEY (category_id) REFERENCES categories(id)
         );
 
         -- Editorial cover descriptions, keyed by UI language (not corpus
@@ -274,13 +294,18 @@ pub fn build_manifest(conn: &Connection, db_bytes: u64) -> Manifest {
         // The manifest prerenders before the DB loads, so it carries the
         // default-UI-language (English) cover description; the client swaps to
         // the actual UI language once the DB is available.
+        // Group order matches `categories` (category position, then the book's
+        // in-category sequence); uncategorized / unsequenced books sort last.
+        // The hub pages iterate this list in order and cut groups on `category`.
         let mut stmt = conn
             .prepare(
                 "SELECT b.id, b.title, b.author, b.date, b.ref_edition,
-                        d.description_short, d.description
+                        d.description_short, d.description, b.category, b.sequence
                  FROM books b
                  LEFT JOIN book_descriptions d ON d.book_id = b.id AND d.lang = 'en'
-                 ORDER BY b.id",
+                 LEFT JOIN categories cat ON cat.id = b.category
+                 ORDER BY COALESCE(cat.position, 2147483647),
+                          COALESCE(b.sequence, 2147483647), b.id",
             )
             .expect("prepare books");
         let rows = stmt
@@ -293,6 +318,8 @@ pub fn build_manifest(conn: &Connection, db_bytes: u64) -> Manifest {
                     reference_edition: r.get(4)?,
                     description_short: r.get(5)?,
                     description: r.get(6)?,
+                    category: r.get(7)?,
+                    sequence: r.get(8)?,
                     chapters: Vec::new(),
                     translations: Vec::new(),
                 })
@@ -386,6 +413,52 @@ pub fn build_manifest(conn: &Connection, db_bytes: u64) -> Manifest {
             .collect()
     };
 
+    // Browsing categories, in display order. Localized title/description are
+    // folded in per language (keyed by UI language, `en` the app's fallback).
+    let mut cat_desc: std::collections::HashMap<String, BTreeMap<String, (String, Option<String>)>> =
+        std::collections::HashMap::new();
+    {
+        let mut stmt = conn
+            .prepare("SELECT category_id, lang, title, description FROM category_descriptions")
+            .expect("prepare category descriptions");
+        let rows = stmt
+            .query_map([], |r| {
+                Ok((
+                    r.get::<_, String>(0)?,
+                    r.get::<_, String>(1)?,
+                    r.get::<_, String>(2)?,
+                    r.get::<_, Option<String>>(3)?,
+                ))
+            })
+            .expect("query category descriptions");
+        for (id, lang, title, desc) in rows.filter_map(|r| r.ok()) {
+            cat_desc.entry(id).or_default().insert(lang, (title, desc));
+        }
+    }
+
+    let categories: Vec<ManifestCategory> = {
+        let mut stmt = conn
+            .prepare("SELECT id, position FROM categories ORDER BY position, id")
+            .expect("prepare categories");
+        let rows = stmt
+            .query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, i64>(1)?)))
+            .expect("query categories");
+        rows.filter_map(|r| r.ok())
+            .map(|(id, position)| {
+                let per_lang = cat_desc.remove(&id).unwrap_or_default();
+                let mut title = BTreeMap::new();
+                let mut description = BTreeMap::new();
+                for (lang, (t, d)) in per_lang {
+                    title.insert(lang.clone(), t);
+                    if let Some(d) = d {
+                        description.insert(lang, d);
+                    }
+                }
+                ManifestCategory { id, sequence: position, title, description }
+            })
+            .collect()
+    };
+
     Manifest {
         schema: MANIFEST_SCHEMA,
         corpus: ManifestCorpus {
@@ -398,6 +471,7 @@ pub fn build_manifest(conn: &Connection, db_bytes: u64) -> Manifest {
         },
         books,
         topics,
+        categories,
     }
 }
 
@@ -421,12 +495,41 @@ pub fn insert_book_descriptions(
     }
 }
 
+/// Insert the browsing categories (`books/categories.yaml`), one `categories`
+/// row per entry plus one `category_descriptions` row per UI language. Called
+/// before the books so a later `ORDER BY` join always finds its category.
+pub fn insert_categories(conn: &Connection, categories: &[CategoryDef]) {
+    for cat in categories {
+        conn.execute(
+            "INSERT OR REPLACE INTO categories (id, position) VALUES (?1, ?2)",
+            params![cat.category, cat.sequence],
+        )
+        .expect("Failed to insert category");
+
+        let langs: std::collections::BTreeSet<&String> =
+            cat.title.keys().chain(cat.description.keys()).collect();
+        for lang in langs {
+            conn.execute(
+                "INSERT OR REPLACE INTO category_descriptions (category_id, lang, title, description)
+                 VALUES (?1, ?2, ?3, ?4)",
+                params![
+                    cat.category,
+                    lang,
+                    cat.title.get(lang).cloned().unwrap_or_default(),
+                    cat.description.get(lang)
+                ],
+            )
+            .expect("Failed to insert category description");
+        }
+    }
+}
+
 pub fn insert_book(conn: &Connection, book: &ParsedBook) {
     let m = &book.meta;
     conn.execute(
-        "INSERT OR REPLACE INTO books (id, title, author, date, ref_edition, source)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-        params![m.id, m.title, m.author, m.date, m.reference_edition, m.source],
+        "INSERT OR REPLACE INTO books (id, title, author, date, ref_edition, source, category, sequence)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+        params![m.id, m.title, m.author, m.date, m.reference_edition, m.source, m.category, m.sequence],
     )
     .expect("Failed to insert book");
 

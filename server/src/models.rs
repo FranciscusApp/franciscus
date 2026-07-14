@@ -21,6 +21,13 @@ pub struct BookMeta {
     /// the counterpart of `translation_source` for translations.
     #[serde(default)]
     pub source: Option<String>,
+    /// Browsing-hierarchy placement: `category` is a machine key into
+    /// `categories.yaml`; `sequence` orders this work within that category.
+    /// Language-invariant, so present only on the source `<id>.md` (like `date`).
+    #[serde(default)]
+    pub category: Option<String>,
+    #[serde(default)]
+    pub sequence: Option<i64>,
     // Editorial descriptions live in the per-book sidecar (`books/<id>.yaml`,
     // keyed by UI language); they describe the work, not any one rendition.
     // See `BookSidecar`.
@@ -123,6 +130,20 @@ pub enum AnnotationItem {
     },
 }
 
+/// One entry in `books/categories.yaml` — a browsing collection. `category` is
+/// the machine key books reference via their `category` frontmatter; `title` /
+/// `description` are keyed by UI language (the heading is app chrome, not corpus
+/// text). The file is a YAML list of these.
+#[derive(Debug, Clone, Deserialize)]
+pub struct CategoryDef {
+    pub category: String,
+    pub sequence: i64,
+    #[serde(default)]
+    pub title: BTreeMap<String, String>,
+    #[serde(default)]
+    pub description: BTreeMap<String, String>,
+}
+
 /// Human contributor registry (`franciscus-data/contributors.yaml`), keyed by
 /// GitHub login (an email-only contributor uses a plain handle). Claude is never
 /// listed — it is the default author.
@@ -171,7 +192,7 @@ pub struct TopicPage {
 // `app/src/lib/types.ts`; keep them in sync manually (no codegen).
 
 /// Bump when the manifest layout changes incompatibly (the app may gate on it).
-pub const MANIFEST_SCHEMA: u32 = 3;
+pub const MANIFEST_SCHEMA: u32 = 4;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Manifest {
@@ -179,6 +200,19 @@ pub struct Manifest {
     pub corpus: ManifestCorpus,
     pub books: Vec<ManifestBook>,
     pub topics: Vec<ManifestTopic>,
+    /// Browsing collections, in display order (by their own sequence). The hub
+    /// pages group `books` (already ordered to match) under these headings.
+    pub categories: Vec<ManifestCategory>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct ManifestCategory {
+    pub id: String,
+    pub sequence: i64,
+    /// Group heading per UI language; `en` is the fallback.
+    pub title: BTreeMap<String, String>,
+    /// Optional subtext per UI language.
+    pub description: BTreeMap<String, String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -210,6 +244,11 @@ pub struct ManifestBook {
     /// provenance (DB-only), so it is not carried here.
     pub description_short: Option<String>,
     pub description: Option<String>,
+    /// Machine key of the collection this book belongs to (`None` when
+    /// uncategorized); orders/groups the hub book lists alongside `categories`.
+    pub category: Option<String>,
+    /// Ordinal within the category (ascending); `None` sorts last.
+    pub sequence: Option<i64>,
     /// Source-language chapter list, in reading order, so `/book/<id>` can
     /// prerender its table of contents without the sql.js DB.
     pub chapters: Vec<ManifestChapter>,

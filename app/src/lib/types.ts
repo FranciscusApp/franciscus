@@ -19,6 +19,11 @@ export interface BookMeta {
 	/** Where the source-language (Latin) text was obtained; the source
 	 *  rendition's counterpart to translation_source. Book-level. */
 	source: string | null;
+	/** Machine key of the browsing collection this book belongs to (null when
+	 *  uncategorized); see `categories.yaml`. */
+	category: string | null;
+	/** Ordinal within the category (ascending); null sorts last. */
+	sequence: number | null;
 }
 
 export interface Chapter {
@@ -104,6 +109,18 @@ export interface Manifest {
 	corpus: ManifestCorpus;
 	books: ManifestBook[];
 	topics: ManifestTopic[];
+	/** Browsing collections, in display order; the hub pages group `books`
+	 *  (already ordered to match) under these headings. */
+	categories: ManifestCategory[];
+}
+
+export interface ManifestCategory {
+	id: string;
+	sequence: number;
+	/** Group heading per UI language (`en` is the fallback). */
+	title: Record<string, string>;
+	/** Optional subtext per UI language. */
+	description: Record<string, string>;
 }
 
 export interface ManifestCorpus {
@@ -129,6 +146,11 @@ export interface ManifestBook {
 	 *  UI-language variant swaps in from the DB once it loads. */
 	description_short: string | null;
 	description: string | null;
+	/** Browsing collection this book belongs to (null when uncategorized);
+	 *  matches an entry in `Manifest.categories`. */
+	category: string | null;
+	/** Ordinal within the category (ascending); null sorts last. */
+	sequence: number | null;
 	/** Source-language chapter list (reading order), for the prerendered TOC. */
 	chapters: ManifestChapter[];
 	translations: string[];

@@ -1,7 +1,9 @@
 <script lang="ts">
     import * as Sheet from '$lib/components/ui/sheet/index.js';
     import { page } from '$app/stores';
-    import { t } from '$lib/i18n';
+    import { t, getUiLang } from '$lib/i18n';
+    import { groupByCategory } from '$lib';
+    import type { ManifestBook } from '$lib';
     import { getTrail } from '$lib/trail.svelte.js';
     import House from '@lucide/svelte/icons/house';
     import Tags from '@lucide/svelte/icons/tags';
@@ -45,6 +47,12 @@
     // menu lists every source without waiting on the (12 MB) sql.js DB. Titles
     // are the canonical source-language titles, matching the home sources list.
     const books = $derived($page.data.manifest?.books ?? []);
+
+    // Group the sources by category (localized heading), matching the home page.
+    // Books arrive from the manifest already in category order.
+    const bookGroups = $derived(
+        groupByCategory<ManifestBook>(books, $page.data.manifest?.categories ?? [], getUiLang())
+    );
 
     // Highlight the entry matching the current route. Books match by id so the
     // open book stays lit while reading its chapters.
@@ -142,38 +150,46 @@
                 {/if}
             </div>
 
-            <!-- Sources: every book in the corpus, avatar-style chip + title -->
+            <!-- Sources: every book in the corpus, grouped by category, each an
+                 avatar-style chip + title -->
             {#if books.length}
                 <div class="my-2 border-t border-border"></div>
                 <p class="px-3 pb-1 pt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                     {t('nav.sources')}
                 </p>
-                <div class="flex flex-col">
-                    {#each books as book}
-                        <Sheet.Close>
-                            {#snippet child({ props })}
-                                <a
-                                    href="/book/{book.id}"
-                                    {...props}
-                                    aria-current={activeBookId === book.id ? 'page' : undefined}
-                                    class="group flex items-center gap-3 rounded-md px-3 py-2 transition-colors hover:bg-accent aria-[current=page]:bg-accent"
-                                >
-                                    <span
-                                        class="flex size-7 shrink-0 items-center justify-center rounded-md bg-accent text-muted-foreground transition-colors group-hover:bg-primary/10 group-hover:text-primary group-aria-[current=page]:bg-primary/10 group-aria-[current=page]:text-primary"
+                {#each bookGroups as group (group.id ?? '')}
+                    {#if group.title}
+                        <p class="px-3 pb-1 pt-2 text-xs font-medium text-muted-foreground/80">
+                            {group.title}
+                        </p>
+                    {/if}
+                    <div class="flex flex-col">
+                        {#each group.books as book (book.id)}
+                            <Sheet.Close>
+                                {#snippet child({ props })}
+                                    <a
+                                        href="/book/{book.id}"
+                                        {...props}
+                                        aria-current={activeBookId === book.id ? 'page' : undefined}
+                                        class="group flex items-center gap-3 rounded-md px-3 py-2 transition-colors hover:bg-accent aria-[current=page]:bg-accent"
                                     >
-                                        <BookOpenText class="size-4" />
-                                    </span>
-                                    <span class="min-w-0 flex-1">
-                                        <span class="block truncate font-serif text-foreground group-aria-[current=page]:font-medium" title={book.title}>{book.title}</span>
-                                        {#if book.author}
-                                            <span class="block truncate text-xs text-muted-foreground">{book.author}</span>
-                                        {/if}
-                                    </span>
-                                </a>
-                            {/snippet}
-                        </Sheet.Close>
-                    {/each}
-                </div>
+                                        <span
+                                            class="flex size-7 shrink-0 items-center justify-center rounded-md bg-accent text-muted-foreground transition-colors group-hover:bg-primary/10 group-hover:text-primary group-aria-[current=page]:bg-primary/10 group-aria-[current=page]:text-primary"
+                                        >
+                                            <BookOpenText class="size-4" />
+                                        </span>
+                                        <span class="min-w-0 flex-1">
+                                            <span class="block truncate font-serif text-foreground group-aria-[current=page]:font-medium" title={book.title}>{book.title}</span>
+                                            {#if book.author}
+                                                <span class="block truncate text-xs text-muted-foreground">{book.author}</span>
+                                            {/if}
+                                        </span>
+                                    </a>
+                                {/snippet}
+                            </Sheet.Close>
+                        {/each}
+                    </div>
+                {/each}
             {/if}
 
             <!-- Meta pages -->

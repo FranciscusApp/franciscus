@@ -120,6 +120,17 @@ fn run_build(data_dir: &PathBuf, output: &PathBuf) {
     };
 
     let books_dir = data_dir.join("books");
+
+    // Browsing categories (optional): insert first so the books that reference
+    // them, and the manifest's ORDER BY join, resolve. A `.yaml` list; a missing
+    // file just leaves books uncategorized.
+    if let Ok(text) = std::fs::read_to_string(books_dir.join("categories.yaml")) {
+        let categories: Vec<models::CategoryDef> =
+            serde_yaml::from_str(&text).unwrap_or_else(|e| panic!("Invalid categories.yaml: {e}"));
+        db::insert_categories(&conn, &categories);
+        println!("  categories: {}", categories.len());
+    }
+
     let mut translation_files: Vec<PathBuf> = Vec::new();
     let mut annotation_files: Vec<PathBuf> = Vec::new();
 
@@ -147,7 +158,13 @@ fn run_build(data_dir: &PathBuf, output: &PathBuf) {
                     }
                 }
                 // Annotation sidecar; deferred so its paragraphs exist first (FK).
-                Some("yaml") | Some("yml") => annotation_files.push(path),
+                // `categories.yaml` is the browsing-collection registry (already
+                // ingested above), not a per-book sidecar — skip it here.
+                Some("yaml") | Some("yml")
+                    if path.file_name().and_then(|n| n.to_str()) != Some("categories.yaml") =>
+                {
+                    annotation_files.push(path)
+                }
                 _ => {}
             }
         }
