@@ -44,25 +44,30 @@ fn parse_yaml_frontmatter(yaml: &str) -> Result<BookMeta, String> {
     Ok(meta)
 }
 
-/// Extract `(id, label, provenance, by)` from a `<p>` tag's attribute string.
-/// `id` is required; the rest are optional and inherit frontmatter defaults later.
+/// Extract `(id, label, label_format, provenance, by)` from a `<p>` tag's
+/// attribute string. `id` is required; the rest are optional and inherit
+/// frontmatter defaults later.
 fn p_attrs(
     attrs: &str,
     re_attr: &Regex,
-) -> Result<(String, Option<String>, Option<String>, Option<String>), String> {
-    let (mut id, mut label, mut provenance, mut by) = (None, None, None, None);
+) -> Result<PAttrs, String> {
+    let (mut id, mut label, mut label_format, mut provenance, mut by) =
+        (None, None, None, None, None);
     for c in re_attr.captures_iter(attrs) {
         let val = c[2].to_string();
         match &c[1] {
             "id" => id = Some(val),
             "label" => label = Some(val),
+            "label_format" => label_format = Some(val),
             "provenance" => provenance = Some(val),
             "by" => by = Some(val),
             _ => {}
         }
     }
-    Ok((id.ok_or("<p> missing id attribute")?, label, provenance, by))
+    Ok((id.ok_or("<p> missing id attribute")?, label, label_format, provenance, by))
 }
+
+type PAttrs = (String, Option<String>, Option<String>, Option<String>, Option<String>);
 
 fn replace_verse_markers(content: &str, paragraph_id: &str) -> String {
     let re = Regex::new(r"\[(\d+)\]").unwrap();
@@ -91,6 +96,7 @@ fn parse_body(body: &str) -> Result<Vec<ParsedChapter>, String> {
         InParagraph {
             id: String,
             label: Option<String>,
+            label_format: Option<String>,
             provenance: Option<String>,
             by: Option<String>,
             lines: Vec<String>,
@@ -125,7 +131,7 @@ fn parse_body(body: &str) -> Result<Vec<ParsedChapter>, String> {
         match &mut state {
             State::Idle => {
                 if let Some(caps) = re_p_open.captures(line) {
-                    let (id, label, provenance, by) = p_attrs(&caps[1], &re_attr)?;
+                    let (id, label, label_format, provenance, by) = p_attrs(&caps[1], &re_attr)?;
                     let rest = re_p_open.replace(line, "").trim().to_string();
                     let mut lines = Vec::new();
                     if !rest.is_empty() && !re_p_close.is_match(&rest) {
@@ -139,6 +145,7 @@ fn parse_body(body: &str) -> Result<Vec<ParsedChapter>, String> {
                             ch.blocks.push(Block::Paragraph {
                                 id,
                                 label,
+                                label_format,
                                 content,
                                 position: block_pos,
                                 provenance,
@@ -146,13 +153,13 @@ fn parse_body(body: &str) -> Result<Vec<ParsedChapter>, String> {
                             });
                         }
                     } else {
-                        state = State::InParagraph { id, label, provenance, by, lines };
+                        state = State::InParagraph { id, label, label_format, provenance, by, lines };
                     }
                 } else if re_aside_open.is_match(line) {
                     state = State::InAside { lines: Vec::new() };
                 }
             }
-            State::InParagraph { id, label, provenance, by, lines } => {
+            State::InParagraph { id, label, label_format, provenance, by, lines } => {
                 if re_p_close.is_match(line) {
                     block_pos += 1;
                     let raw = lines.join("\n").trim().to_string();
@@ -161,6 +168,7 @@ fn parse_body(body: &str) -> Result<Vec<ParsedChapter>, String> {
                         ch.blocks.push(Block::Paragraph {
                             id: id.clone(),
                             label: label.clone(),
+                            label_format: label_format.clone(),
                             content,
                             position: block_pos,
                             provenance: provenance.clone(),

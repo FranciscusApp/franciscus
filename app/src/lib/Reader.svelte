@@ -359,6 +359,13 @@
 				onclick={selectMode ? () => onSelectBlock?.(block.id) : undefined}
 				onkeydown={selectMode ? (e) => selectKeydown(e, block.id) : undefined}
 			>
+				{#if block.labelFormat === 'heading' && block.label}
+				<!-- A work's internal chapter (label_format="heading"): the
+				     paragraph's label promoted to a section heading. -->
+				<h3 class="clear-both mb-2 mt-1 font-serif text-lg font-semibold text-foreground">
+					{block.label}
+				</h3>
+				{/if}
 				{#if !selectMode}
 				<div class="float-right ml-2 flex items-center gap-0.5">
 					<button
@@ -398,7 +405,7 @@
 				</div>
 				{/if}
 				<span class="inline-block min-w-8 text-xs text-muted-foreground font-mono mr-2 align-top pt-1">
-					{block.label ?? block.id}
+					{block.labelFormat === 'heading' ? '' : (block.label ?? block.id)}
 				</span>
 				{#if parallel}
 					<div class="grid grid-cols-2 gap-6">

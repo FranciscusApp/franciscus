@@ -44,6 +44,10 @@ pub enum Block {
     Paragraph {
         id: String,
         label: Option<String>,
+        /// `normal` (default) or `heading`; see spec/books.md. Renders the label
+        /// as a section heading when `heading`. Source-only; translations inherit
+        /// it (only the label text localizes).
+        label_format: Option<String>,
         content: String,
         position: u32,
         // Per-paragraph translation provenance; inherits frontmatter defaults.

@@ -35,6 +35,9 @@ export interface Paragraph {
 	position: number;
 	content: string;
 	label: string | null;
+	/** `'heading'` renders the label as a section heading; `null`/`'normal'` is
+	 * the inline paragraph marker. See spec/books.md. */
+	label_format: string | null;
 }
 
 export interface Aside {
@@ -81,6 +84,8 @@ export interface ParagraphTranslation {
 	paragraph_id: string;
 	lang: string;
 	content: string;
+	/** Localized heading text, when the source `<p>` uses `label_format`. */
+	label: string | null;
 }
 
 export interface AsideTranslation {

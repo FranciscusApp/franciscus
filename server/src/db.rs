@@ -55,6 +55,7 @@ pub fn create_tables(conn: &Connection) {
             position        INTEGER NOT NULL,
             content         TEXT NOT NULL,
             label           TEXT,
+            label_format    TEXT,
             PRIMARY KEY (book_id, id),
             FOREIGN KEY (book_id, chapter_id) REFERENCES chapters(book_id, id)
         );
@@ -109,6 +110,7 @@ pub fn create_tables(conn: &Connection) {
             paragraph_id    TEXT NOT NULL,
             lang            TEXT NOT NULL,
             content         TEXT NOT NULL,
+            label           TEXT,
             provenance      TEXT,
             by_whom         TEXT,
             PRIMARY KEY (book_id, paragraph_id, lang),
@@ -438,11 +440,11 @@ pub fn insert_book(conn: &Connection, book: &ParsedBook) {
 
         for block in &ch.blocks {
             match block {
-                Block::Paragraph { id, label, content, position, .. } => {
+                Block::Paragraph { id, label, label_format, content, position, .. } => {
                     conn.execute(
-                        "INSERT OR REPLACE INTO paragraphs (id, book_id, chapter_id, position, content, label)
-                         VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-                        params![id, m.id, ch.id, position, content, label],
+                        "INSERT OR REPLACE INTO paragraphs (id, book_id, chapter_id, position, content, label, label_format)
+                         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+                        params![id, m.id, ch.id, position, content, label, label_format],
                     )
                     .expect("Failed to insert paragraph");
                 }
@@ -525,11 +527,11 @@ pub fn insert_translations(conn: &Connection, book: &ParsedBook, lang: &str) {
 
         for block in &ch.blocks {
             match block {
-                Block::Paragraph { id, content, provenance, by, .. } => {
+                Block::Paragraph { id, label, content, provenance, by, .. } => {
                     conn.execute(
-                        "INSERT OR REPLACE INTO paragraph_translations (book_id, paragraph_id, lang, content, provenance, by_whom)
-                         VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-                        params![book_id, id, lang, content, provenance, by],
+                        "INSERT OR REPLACE INTO paragraph_translations (book_id, paragraph_id, lang, content, label, provenance, by_whom)
+                         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+                        params![book_id, id, lang, content, label, provenance, by],
                     )
                     .expect("Failed to insert paragraph translation");
                 }

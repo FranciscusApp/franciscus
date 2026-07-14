@@ -313,7 +313,7 @@ export function getChapters(bookId: string, lang: string = 'la'): Chapter[] {
 
 export function getParagraphs(bookId: string, chapterId: string): Paragraph[] {
 	return queryAll<Paragraph>(
-		`SELECT id, book_id, chapter_id, position, content, label FROM paragraphs
+		`SELECT id, book_id, chapter_id, position, content, label, label_format FROM paragraphs
 		 WHERE book_id = $bookId AND chapter_id = $chapterId ORDER BY position`,
 		{ $bookId: bookId, $chapterId: chapterId }
 	);
@@ -437,6 +437,29 @@ export function getParagraphTranslations(
 	);
 	const map = new Map<string, string>();
 	for (const r of rows) map.set(r.paragraph_id, r.content);
+	return map;
+}
+
+/**
+ * Localized heading labels (`label_format="heading"` paragraphs), keyed by
+ * paragraph id. Only rows whose translation carries a non-empty label are
+ * returned; callers fall back to the source `label` otherwise.
+ */
+export function getParagraphTranslationLabels(
+	bookId: string,
+	chapterId: string,
+	lang: string
+): Map<string, string> {
+	const rows = queryAll<{ paragraph_id: string; label: string | null }>(
+		`SELECT pt.paragraph_id, pt.label
+		 FROM paragraph_translations pt
+		 JOIN paragraphs p ON pt.book_id = p.book_id AND pt.paragraph_id = p.id
+		 WHERE pt.book_id = $bookId AND p.chapter_id = $chapterId AND pt.lang = $lang
+		   AND pt.label IS NOT NULL AND pt.label <> ''`,
+		{ $bookId: bookId, $chapterId: chapterId, $lang: lang }
+	);
+	const map = new Map<string, string>();
+	for (const r of rows) if (r.label) map.set(r.paragraph_id, r.label);
 	return map;
 }
 

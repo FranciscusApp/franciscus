@@ -10,6 +10,7 @@
 		getChapterAnnotations,
 		getChapterRelations,
 		getParagraphTranslations,
+		getParagraphTranslationLabels,
 		getAsideTranslations,
 		getTopicDescriptions,
 		type Paragraph,
@@ -124,6 +125,13 @@
 			? getAsideTranslations(bookId, chapterId, corpusLang)
 			: new Map<string, string>()
 	);
+	// Localized heading labels for `label_format="heading"` paragraphs; falls
+	// back to the source (Latin) label when a rendition omits one.
+	const paraLabels = $derived(
+		corpusLang !== 'la' && book && chapter
+			? getParagraphTranslationLabels(bookId, chapterId, corpusLang)
+			: new Map<string, string>()
+	);
 
 	const annotationsByParagraph = $derived.by(() => {
 		const map = new Map<string, Annotation[]>();
@@ -151,7 +159,8 @@
 			items.push({
 				kind: 'paragraph',
 				id: p.id,
-				label: p.label,
+				label: paraLabels.get(p.id) ?? p.label,
+				labelFormat: p.label_format,
 				content: paragraphContent(p),
 				contentLa: p.content,
 				annotations: annotationsByParagraph.get(p.id) ?? [],

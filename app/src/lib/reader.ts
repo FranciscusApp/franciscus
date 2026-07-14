@@ -11,6 +11,8 @@ export type ReaderBlock =
 			kind: 'paragraph';
 			id: string;
 			label: string | null;
+			/** `'heading'` promotes `label` to a section heading above the text. */
+			labelFormat?: string | null;
 			content: string;
 			contentLa: string;
 			annotations: Annotation[];
