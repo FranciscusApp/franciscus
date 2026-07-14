@@ -49,7 +49,7 @@ export default defineConfig({
 	server: {
 		// Bind loopback only; Caddy reverse-proxies the public host to here.
 		host: '127.0.0.1',
-		port: 1337,
+		port: 5173,
 		strictPort: true,
 		allowedHosts
 	},
