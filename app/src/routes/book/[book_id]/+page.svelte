@@ -2,6 +2,7 @@
 	import { getBook, getChapters } from '$lib';
 	import { getDbState } from '$lib/dbState';
 	import Breadcrumbs from '$lib/Breadcrumbs.svelte';
+	import ExpandableDescription from '$lib/ExpandableDescription.svelte';
 	import NoScriptNotice from '$lib/NoScriptNotice.svelte';
 	import { recordPage } from '$lib/trail.svelte.js';
 	import { getProgress } from '$lib/progress.svelte.js';
@@ -50,10 +51,9 @@
 		<h1 class="text-2xl font-display font-bold text-foreground">{book.title}</h1>
 		<p class="text-muted-foreground mt-1">{meta}</p>
 		{#if book.description}
-			<!-- Rendered to HTML at build time (Markdown); see server render_markdown. -->
-			<div class="prose prose-stone dark:prose-invert max-w-none mt-4 font-serif leading-relaxed text-foreground">
-				{@html book.description}
-			</div>
+			<!-- Rendered to HTML at build time (Markdown); see server render_markdown.
+			     Long blurbs collapse to a preview with a [read more] toggle. -->
+			<ExpandableDescription html={book.description} />
 		{/if}
 		{#if note}
 			<section class="mt-4">

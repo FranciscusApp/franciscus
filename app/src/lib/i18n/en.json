@@ -47,7 +47,9 @@
 			"human": "Reviewed human translation.",
 			"sourceFrom": "Source text from {source}."
 		},
-		"aiNoteLink": "How AI is used on this site"
+		"aiNoteLink": "How AI is used on this site",
+		"readMore": "Read more",
+		"readLess": "Read less"
 	},
 	"chapter": {
 		"notFound": "Chapter not found."

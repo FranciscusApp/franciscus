@@ -47,7 +47,9 @@
 			"human": "Traduzione umana revisionata.",
 			"sourceFrom": "Testo originale da {source}."
 		},
-		"aiNoteLink": "Come viene usata l'IA su questo sito"
+		"aiNoteLink": "Come viene usata l'IA su questo sito",
+		"readMore": "Leggi di più",
+		"readLess": "Leggi di meno"
 	},
 	"chapter": {
 		"notFound": "Capitolo non trovato."
