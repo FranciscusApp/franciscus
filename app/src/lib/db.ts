@@ -16,7 +16,7 @@ const DB_CACHE = 'franciscus-db';
 // revalidated eagerly over HTTP while the app code only refreshes through the
 // service-worker lifecycle, a rebuilt db can reach an out-of-date client — this
 // guard catches that mismatch instead of running old code against a new schema.
-const EXPECTED_SCHEMA_VERSION = 4;
+const EXPECTED_SCHEMA_VERSION = 5;
 
 /** Thrown when the loaded db's schema doesn't match this build of the app.
  *  The layout treats it as "app out of date" and drives a service-worker
@@ -256,13 +256,14 @@ function queryOne<T>(sql: string, params: BindParams = {}): T | null {
 }
 
 // Three axes, joined separately:
-//  - title follows the corpus language (it is the source work's title),
+//  - title and author follow the corpus language (they belong to the source
+//    work's rendition; the source `books` row is the fallback),
 //  - description follows the UI language (an editorial blurb about the work,
 //    from book_descriptions; English is the default fallback),
 //  - provenance follows the corpus rendition being read (book_translations),
 //    and the page turns it into an editorial note in the UI language.
 const BOOK_COLS = `COALESCE(bc.title, b.title) AS title,
-		        b.author, b.date, b.ref_edition,
+		        COALESCE(bc.author, b.author) AS author, b.date, b.ref_edition,
 		        COALESCE(du.description_short, den.description_short) AS description_short,
 		        COALESCE(du.description, den.description) AS description,
 		        bc.provenance AS provenance,

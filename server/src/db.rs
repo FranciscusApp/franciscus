@@ -6,7 +6,7 @@ use crate::models::*;
 /// Shape version of the DB the app expects. Bump whenever the table layout
 /// changes; mirrored into `PRAGMA user_version` and a `meta` row so the app
 /// can detect an incompatible build. Stored but not gated on yet.
-pub const SCHEMA_VERSION: u32 = 4;
+pub const SCHEMA_VERSION: u32 = 5;
 
 pub fn open_or_create(path: &str) -> Connection {
     let conn = Connection::open(path).expect("Failed to open database");
@@ -150,6 +150,10 @@ pub fn create_tables(conn: &Connection) {
             book_id  TEXT NOT NULL,
             lang     TEXT NOT NULL,
             title    TEXT NOT NULL,
+            -- The author name in this rendition's language (Thomas of Celano
+            -- vs Tommaso da Celano); the reader shows the form matching the
+            -- corpus language, falling back to the source books.author.
+            author   TEXT,
             -- Rendition provenance (this translation's own frontmatter). The book
             -- page generates its editorial note from these, in the UI language.
             provenance         TEXT,
@@ -606,12 +610,13 @@ pub fn insert_translations(conn: &Connection, book: &ParsedBook, lang: &str) {
     // ingested after sources), so the FK is satisfied.
     conn.execute(
         "INSERT OR REPLACE INTO book_translations
-            (book_id, lang, title, provenance, status, translator, translation_source)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+            (book_id, lang, title, author, provenance, status, translator, translation_source)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
         params![
             book_id,
             lang,
             book.meta.title,
+            book.meta.author,
             book.meta.provenance,
             book.meta.status,
             book.meta.translator,

@@ -1,9 +1,10 @@
 <script lang="ts">
     import * as Sheet from '$lib/components/ui/sheet/index.js';
     import { page } from '$app/stores';
-    import { t, getUiLang } from '$lib/i18n';
-    import { groupByCategory } from '$lib';
-    import type { ManifestBook } from '$lib';
+    import { t, getUiLang, getCorpusLang } from '$lib/i18n';
+    import { groupByCategory, getBooks } from '$lib';
+    import type { ManifestBook, BookMeta } from '$lib';
+    import { getDbState } from '$lib/dbState';
     import { getTrail } from '$lib/trail.svelte.js';
     import House from '@lucide/svelte/icons/house';
     import Tags from '@lucide/svelte/icons/tags';
@@ -43,15 +44,23 @@
         return trail.length ? trail[trail.length - 1].label : null;
     });
 
-    // The book list comes from the hub manifest loaded by the root layout, so the
-    // menu lists every source without waiting on the (12 MB) sql.js DB. Titles
-    // are the canonical source-language titles, matching the home sources list.
-    const books = $derived($page.data.manifest?.books ?? []);
+    // Before the DB lands, list every source from the hub manifest (canonical
+    // Latin titles/author) so the menu works without waiting on the 12 MB sql.js
+    // DB. Once ready, upgrade to the DB so title and author follow the reader's
+    // corpus language — matching the home sources list.
+    const db = getDbState();
+    const books = $derived(
+        db.ready ? getBooks(getCorpusLang(), getUiLang()) : ($page.data.manifest?.books ?? [])
+    );
 
     // Group the sources by category (localized heading), matching the home page.
-    // Books arrive from the manifest already in category order.
+    // Books arrive already in category order.
     const bookGroups = $derived(
-        groupByCategory<ManifestBook>(books, $page.data.manifest?.categories ?? [], getUiLang())
+        groupByCategory<ManifestBook | BookMeta>(
+            books,
+            $page.data.manifest?.categories ?? [],
+            getUiLang()
+        )
     );
 
     // Highlight the entry matching the current route. Books match by id so the
