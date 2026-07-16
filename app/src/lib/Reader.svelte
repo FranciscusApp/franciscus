@@ -116,6 +116,13 @@
 		return html.replace(/<v id="[^"]*">/g, '<v>');
 	}
 
+	// Non-prose paragraphs (hymns, pointed psalms) carry a `layout` that tells the
+	// text container to preserve its line structure (CSS in app.css). Prose is the
+	// default and needs no class.
+	function layoutClass(layout: string | null | undefined): string {
+		return layout === 'verse' || layout === 'psalm' ? layout : '';
+	}
+
 	function paraHref(id: string): string {
 		return `/book/${bookId}/${chapterId}#${id}`;
 	}
@@ -409,11 +416,11 @@
 				</span>
 				{#if parallel}
 					<div class="grid grid-cols-2 gap-6">
-						<div class="para-text font-serif text-foreground leading-relaxed" lang="la">
+						<div class="para-text font-serif text-foreground leading-relaxed {layoutClass(block.layout)}" lang="la">
 							{@html originalDisplay(block.id, block.contentLa)}
 						</div>
 						<div
-							class="para-text font-serif text-foreground leading-relaxed {proseStaged
+							class="para-text font-serif text-foreground leading-relaxed {layoutClass(block.layout)} {proseStaged
 								? 'rounded bg-primary/5 px-1 ring-1 ring-primary/30'
 								: ''}"
 							lang={corpusLang}
@@ -423,7 +430,7 @@
 					</div>
 				{:else}
 					<span
-						class="para-text font-serif text-foreground leading-relaxed {proseStaged
+						class="para-text font-serif text-foreground leading-relaxed {layoutClass(block.layout)} {proseStaged
 							? 'rounded bg-primary/5 px-1 ring-1 ring-primary/30'
 							: ''}"
 					>

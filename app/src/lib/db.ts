@@ -321,7 +321,7 @@ export function getChapters(bookId: string, lang: string = 'la'): Chapter[] {
 
 export function getParagraphs(bookId: string, chapterId: string): Paragraph[] {
 	return queryAll<Paragraph>(
-		`SELECT id, book_id, chapter_id, position, content, label, label_format FROM paragraphs
+		`SELECT id, book_id, chapter_id, position, content, label, label_format, layout FROM paragraphs
 		 WHERE book_id = $bookId AND chapter_id = $chapterId ORDER BY position`,
 		{ $bookId: bookId, $chapterId: chapterId }
 	);

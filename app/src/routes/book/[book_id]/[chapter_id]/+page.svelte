@@ -161,6 +161,7 @@
 				id: p.id,
 				label: paraLabels.get(p.id) ?? p.label,
 				labelFormat: p.label_format,
+				layout: p.layout,
 				content: paragraphContent(p),
 				contentLa: p.content,
 				annotations: annotationsByParagraph.get(p.id) ?? [],

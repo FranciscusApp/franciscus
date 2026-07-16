@@ -97,6 +97,26 @@ var[psalter] {
 	display: none;
 }
 
+/* Verse & psalm layouts (spec/books.md). A `layout="verse"|"psalm"` paragraph's
+   line structure is part of the text, so preserve the source newlines the parser
+   keeps in the body instead of reflowing them into running prose. */
+.para-text.verse,
+.para-text.psalm {
+	white-space: pre-line;
+}
+
+/* Pointed chant (`layout="psalm"`): reveal the caesura marks — hidden as bare
+   apparatus everywhere else — as the intra-verse line breaks, so each verse
+   displays as its pointed half-lines (mediant, and flexa within a long first
+   limb). The <var> psalter sigla stay hidden. */
+.para-text.psalm caesura {
+	display: inline;
+}
+.para-text.psalm caesura::after {
+	content: "\A";
+	white-space: pre;
+}
+
 /* Biblical references in paragraph content */
 ref {
 	text-decoration: underline dotted;

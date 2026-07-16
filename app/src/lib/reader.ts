@@ -13,6 +13,9 @@ export type ReaderBlock =
 			label: string | null;
 			/** `'heading'` promotes `label` to a section heading above the text. */
 			labelFormat?: string | null;
+			/** `'verse'`/`'psalm'` preserve the body's line structure (see
+			 *  spec/books.md); absent/`'prose'` reflows as running text. */
+			layout?: string | null;
 			content: string;
 			contentLa: string;
 			annotations: Annotation[];

@@ -76,6 +76,7 @@ pub fn create_tables(conn: &Connection) {
             content         TEXT NOT NULL,
             label           TEXT,
             label_format    TEXT,
+            layout          TEXT,
             PRIMARY KEY (book_id, id),
             FOREIGN KEY (book_id, chapter_id) REFERENCES chapters(book_id, id)
         );
@@ -547,11 +548,11 @@ pub fn insert_book(conn: &Connection, book: &ParsedBook) {
 
         for block in &ch.blocks {
             match block {
-                Block::Paragraph { id, label, label_format, content, position, .. } => {
+                Block::Paragraph { id, label, label_format, layout, content, position, .. } => {
                     conn.execute(
-                        "INSERT OR REPLACE INTO paragraphs (id, book_id, chapter_id, position, content, label, label_format)
-                         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
-                        params![id, m.id, ch.id, position, content, label, label_format],
+                        "INSERT OR REPLACE INTO paragraphs (id, book_id, chapter_id, position, content, label, label_format, layout)
+                         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+                        params![id, m.id, ch.id, position, content, label, label_format, layout],
                     )
                     .expect("Failed to insert paragraph");
                 }

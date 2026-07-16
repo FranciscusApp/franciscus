@@ -43,6 +43,9 @@ export interface Paragraph {
 	/** `'heading'` renders the label as a section heading; `null`/`'normal'` is
 	 * the inline paragraph marker. See spec/books.md. */
 	label_format: string | null;
+	/** `'verse'`/`'psalm'` preserve the body's line structure; `null`/`'prose'`
+	 * reflows as a running paragraph. See spec/books.md. */
+	layout: string | null;
 }
 
 export interface Aside {

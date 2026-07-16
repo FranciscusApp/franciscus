@@ -55,6 +55,11 @@ pub enum Block {
         /// as a section heading when `heading`. Source-only; translations inherit
         /// it (only the label text localizes).
         label_format: Option<String>,
+        /// `prose` (default), `verse`, or `psalm`; see spec/books.md. Tells the
+        /// renderer to preserve the body's line structure (and, for `psalm`, to
+        /// break each verse at its `<caesura>` marks). Source-only; translations
+        /// inherit it.
+        layout: Option<String>,
         content: String,
         position: u32,
         // Per-paragraph translation provenance; inherits frontmatter defaults.
