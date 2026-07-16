@@ -123,6 +123,18 @@
 		return layout === 'verse' || layout === 'psalm' ? layout : '';
 	}
 
+	// The muted margin marker: an explicit label wins; otherwise show the plain
+	// paragraph *number*, not the raw id. By the spec's id construction
+	// (`<chapter-id>-<number>`, or a bare integer under continuous numbering) the
+	// segment after the last hyphen is that number — so `prolog-1` reads `1`,
+	// `offpass-2` reads `2`, and a bare `1` stays `1`. Deep links and citations
+	// keep using the full `block.id`; this is display only.
+	function markerLabel(label: string | null, id: string): string {
+		if (label) return label;
+		const i = id.lastIndexOf('-');
+		return i >= 0 ? id.slice(i + 1) : id;
+	}
+
 	function paraHref(id: string): string {
 		return `/book/${bookId}/${chapterId}#${id}`;
 	}
@@ -136,7 +148,10 @@
 	let copiedTimer: ReturnType<typeof setTimeout> | undefined;
 
 	function citationText(id: string, label: string | null): string {
-		const ref = `${bookTitle}, ${chapterTitle}, ${label ?? id}`;
+		// Human-readable reference uses the same marker the reader sees (label, or
+		// the paragraph number derived from the id); the deep link below still
+		// carries the full id, so the citation stays unambiguous.
+		const ref = `${bookTitle}, ${chapterTitle}, ${markerLabel(label, id)}`;
 		const url = `${location.origin}${paraHref(id)}`;
 		return `${ref}. ${url}`;
 	}
@@ -412,7 +427,7 @@
 				</div>
 				{/if}
 				<span class="inline-block min-w-8 text-xs text-muted-foreground font-mono mr-2 align-top pt-1">
-					{block.labelFormat === 'heading' ? '' : (block.label ?? block.id)}
+					{block.labelFormat === 'heading' ? '' : markerLabel(block.label, block.id)}
 				</span>
 				{#if parallel}
 					<div class="grid grid-cols-2 gap-6">
