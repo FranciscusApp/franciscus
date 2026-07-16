@@ -8,6 +8,7 @@
 	import TopicFilterInput from '$lib/TopicFilterInput.svelte';
 	import { t, getCorpusLang, getUiLang } from '$lib/i18n';
 	import SlidersHorizontal from '@lucide/svelte/icons/sliders-horizontal';
+  	import Tags from '@lucide/svelte/icons/tags';
 	import type { PageData } from './$types';
 
 	// Manifest comes from the root layout's load(); it prerenders the browse view
@@ -146,6 +147,14 @@
 						>
 					{/if}
 				</button>
+				<a
+					type="button"
+					href="/topics"
+					class="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+				>
+					<Tags class="w-4 h-4" />
+					{t('nav.topics')} &rarr;
+				</a>
 				{#if showAdvanced}
 					<div class="mt-2 space-y-3 rounded-lg border border-border p-3">
 						<fieldset>
@@ -209,23 +218,18 @@
 			<p class="text-muted-foreground mt-6 font-serif">{t('search.noResults')}</p>
 		{/if}
 	{:else}
-		<nav aria-label={t('nav.topics')} class="mb-6 flex gap-4">
-			<a href="/topics" class="text-muted-foreground hover:text-primary transition-colors font-serif">
-				{t('nav.topics')} &rarr;
-			</a>
-		</nav>
 
 		<section>
-			<h2 class="text-xl font-display text-foreground mb-4">{t('home.sourcesHeading')}</h2>
 			{#each bookGroups as group (group.id ?? '')}
 				{#if group.title}
-					<h3 class="mt-6 mb-2 font-display text-lg font-semibold text-foreground first:mt-0">
+					<h3 class="mt-10 font-display text-lg font-semibold text-foreground first:mt-0">
 						{group.title}
 					</h3>
 					{#if group.description}
 						<p class="mb-3 text-sm text-muted-foreground font-serif">{group.description}</p>
 					{/if}
 				{/if}
+				<hr class="divider-book" />
 				<ul class="space-y-3">
 					{#each group.books as book (book.id)}
 						<li>

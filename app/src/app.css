@@ -380,14 +380,14 @@ mark.search-highlight {
 	   chapter. Left-anchored gradients so they read as underlines, not full-width
 	   breaks. */
 	hr.divider-book {
-		height: 2px;
-		margin: 0.5rem 0 1rem;
-		background: linear-gradient(to right, var(--color-gold-500), transparent);
+		height: 1px;
+		margin: 0.25rem 0 1rem;
+		background: linear-gradient(to right, var(--color-crimson-600), transparent);
 	}
 	hr.divider-chapter {
 		height: 1px;
 		margin: 0.25rem 0 0.75rem;
-		background: linear-gradient(to right, var(--color-crimson-600), transparent);
+		background: linear-gradient(to right, var(--color-slate-900), transparent);
 	}
 	/* Reader body: slightly larger base size with a user-tweakable scale knob
 	   (set on <html> by the size control; defaults to 1). */
