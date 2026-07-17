@@ -8,6 +8,49 @@ although it not being a library and not exposing any APIs means the definitions 
 might be somewhat loose or subjective.
 
 
+## [1.5.0] - 2026-07-17
+
+### Added
+- **Study view.** Open any two chapters side by side at `/study` to compare
+  accounts — e.g. Bonaventure's telling of an episode against Celano's. Each
+  pane independently shows either a chapter or corpus search results (with the
+  advanced-search book and topic filters), and a share button copies a link
+  that encodes the whole setup — query, filters, and both panes.
+- **Wide layout.** A navbar toggle on large screens reclaims the decorative
+  gutters: the ornamental figure steps aside and the wide reading surfaces
+  (parallel reader, study view) stretch to the full viewport. The preference
+  persists across visits.
+- **Book collections.** The home page and the books menu now group the corpus
+  into collections (biographies, the writings of Francis, …) with localized
+  headings, driven by the corpus's new `categories.yaml` and per-book
+  `category` / `sequence` frontmatter.
+- **Verse and psalm layouts.** Non-prose texts keep their line structure: a
+  `layout="verse"` paragraph preserves its authored line breaks (hymns such as
+  the *Canticum fratris solis*), and `layout="psalm"` additionally breaks each
+  verse at its `<caesura>` marks so pointed chant reads as half-lines (the
+  *Officium Passionis* psalters).
+- **In-work section headings.** A paragraph's label can render as a section
+  heading (`label_format="heading"`), giving sub-chapter divisions inside a
+  work real visual weight.
+- **Collapsible book descriptions.** Long cover descriptions on the book page
+  fold behind a "read more" control (fully expanded under NoScript).
+
+### Changed
+- The corpus gained four works split out of the *Opuscula* into their own
+  books — *Admonitiones*, *Officium Passionis Domini*, *Regula bullata*, and
+  *Regula non bullata* (see the `franciscus-data` changelog).
+- Paragraph-id markers in the reader are trimmed to a quieter form.
+- Previously hard-coded UI chrome is now localized, and unused
+  Franciscan-source cross-reference plumbing was removed.
+- Reworked the About page copy.
+
+### Fixed
+- The centered column no longer shifts between short and tall pages (scrollbar
+  gutter), and the study view no longer causes horizontal overflow.
+- The decorative St. Francis figure and the floating logo now cooperate with
+  wide mode instead of overlapping the stretched reading surfaces.
+
+
 ## [1.4.0] - 2026-07-12
 
 ### Added

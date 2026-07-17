@@ -93,7 +93,11 @@ Also the gold should match the Verbum Caro logo gold.
 - [x] **Bookmarks & reading progress.** Let readers mark passages and resume where they left off — client-side only, no account required.
 - [x] **Parallel reader (source + translation).** A settings flag that splits the reader into two columns: the original source text beside a translation. Only offered on large screens (lg / xl / 2xl); hidden on smaller. Navigation stays shared and behaves like the normal reader. While on, the corpus/original language can't be the source column — the reader must pick a translation to pair against the original.
 - [x] **Topic-page reader = the reader, read-only.** Render topic-page passages through the *same* renderer as the chapter reader (verse/ref interaction, scripture modal, parallel mode), with editing always disabled, and group matches into collapsible book containers (default collapsed: toggle · title · count · primary `<hr>`) → chapter groups (secondary `<hr>`) → passages with no added padding. Needs the reader's block renderer extracted into a shared component. Design + task breakdown: [`docs/topic-reader-refactor.md`](docs/topic-reader-refactor.md).
-- [ ] **Study view (compare any two chapters).** _(on hold)_ Open any two chapters side by side to compare accounts — e.g. Bonaventure's telling of the fiery-chariot vision against 3 Soc or Celano. More complex than the parallel reader (arbitrary chapter pairing, independent navigation).
+- [x] **Study view (compare any two chapters).** Open any two chapters side by side to compare accounts — e.g. Bonaventure's telling of the fiery-chariot vision against 3 Soc or Celano. Shipped in 1.5.0 at `/study`: two independent panes, each showing a chapter or corpus search results, with a shareable link that encodes the whole setup.
+- [x] **Wide layout toggle.** Reclaim the decorative gutters on large screens so the parallel reader and study view can use the full viewport width. *(1.5.0)*
+- [x] **Book collections.** Home page and books menu grouped into corpus-defined categories with localized headings (`categories.yaml`, `category`/`sequence` frontmatter). *(1.5.0)*
+- [x] **Verse & psalm layouts.** `layout="verse"` preserves authored line breaks; `layout="psalm"` renders pointed chant as caesura-split half-lines. *(1.5.0)*
+- [x] **In-work section headings.** `label_format="heading"` promotes a paragraph label to a section heading for sub-chapter divisions. *(1.5.0)*
 - [x] **Copy citation.** One-click copy of a formatted, shareable reference for any passage.
 
 ### Scripture cross-referencing

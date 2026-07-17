@@ -43,6 +43,10 @@ annotated, without losing the original Latin.
 | **3Soc** | Legenda Trium Sociorum | The Three Companions |
 | **Testamentum** | Testamentum Sancti Francisci | Francis of Assisi |
 | **Opuscula** | Opuscula Omnia (the writings of Francis) | Francis of Assisi |
+| **Adm** | Admonitiones | Francis of Assisi |
+| **OffPass** | Officium Passionis Domini | Francis of Assisi |
+| **RegB** | Regula bullata | Francis of Assisi |
+| **RegNB** | Regula non bullata | Francis of Assisi |
 
 ### What you can do
 
@@ -51,6 +55,8 @@ annotated, without losing the original Latin.
   passage, with the matched terms highlighted in the reader.
 - 🏷️ **Follow themes** — virtues, persons, places and events get their own
   topic pages that gather every relevant passage across all the works.
+- 🆚 **Compare accounts** — the study view opens any two chapters side by
+  side, each pane pairable with a corpus-wide search.
 - 🔗 **Link deeply** — every paragraph and verse has a stable, shareable URL
   (e.g. `/book/1Cel/c1#prolog-1`).
 - 📑 **View scriptural citations** — biblical quotations highlit, straight from the reference editions.
@@ -106,13 +112,15 @@ For a production build (`app/build/` — a self-contained static site), run
 `make app`. More detail, and how the GitHub Pages deploy works, is in
 [CONTRIBUTING.md](CONTRIBUTING.md).
 
-Already shipped since 1.0: a **parallel side-by-side reader**, **English
-translations**, the **Opuscula** (Francis's own writings), redesigned
-reader-based **topic pages**, **advanced search** with book and topic filters,
-**passage relations** in the reader, and **in-app GitHub contributions** (login,
-edit, and open a pull request — fork/commit/PR run client-side against your own
-token, with an OAuth Worker as the only backend). See the
-[CHANGELOG](CHANGELOG.md).
+Already shipped since 1.0: a **parallel side-by-side reader**, a **study view**
+comparing any two chapters, **English translations**, the **Opuscula**
+(Francis's own writings, with the *Admonitiones*, *Officium Passionis*, and the
+two Rules as standalone books), redesigned reader-based **topic pages**,
+**advanced search** with book and topic filters, **passage relations** in the
+reader, **book collections** on the home page, a **wide layout** for large
+screens, and **in-app GitHub contributions** (login, edit, and open a pull
+request — fork/commit/PR run client-side against your own token, with an OAuth
+Worker as the only backend). See the [CHANGELOG](CHANGELOG.md).
 
 Still ahead:
 
