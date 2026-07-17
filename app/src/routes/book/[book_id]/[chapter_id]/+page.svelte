@@ -27,6 +27,7 @@
 	import type { RelationLink } from '$lib/db';
 	import { isEditorMode } from '$lib/edits.svelte.js';
 	import { isLargeViewport } from '$lib/viewport.svelte.js';
+	import { getWideLayout } from '$lib/wide.svelte.js';
 	import * as github from '$lib/github.svelte.js';
 
 	const bookId = $derived($page.params.book_id ?? '');
@@ -222,7 +223,7 @@
 	<main
 		id="main-content"
 		tabindex="-1"
-		class="{parallel ? 'max-w-6xl' : 'max-w-3xl'} mx-auto px-4 py-8"
+		class="{parallel ? (getWideLayout() ? 'max-w-none' : 'max-w-6xl') : 'max-w-3xl'} mx-auto px-4 py-8"
 	>
 		<Breadcrumbs />
 

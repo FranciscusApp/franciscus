@@ -15,6 +15,7 @@
 	import MinusIcon from '@lucide/svelte/icons/minus';
 	import Columns2 from '@lucide/svelte/icons/columns-2';
 	import { studyHref } from '$lib/study';
+	import { getWideLayout } from '$lib/wide.svelte.js';
 
 	const topicType = $derived($page.params.topic_type ?? '');
 	// Canonical URL is /topics/<type>/<topic_value> (the source-file value).
@@ -68,7 +69,7 @@
 	});
 </script>
 
-<main id="main-content" tabindex="-1" class="{parallel ? 'max-w-6xl' : 'max-w-3xl'} mx-auto px-4 py-8">
+<main id="main-content" tabindex="-1" class="{parallel ? (getWideLayout() ? 'max-w-none' : 'max-w-6xl') : 'max-w-3xl'} mx-auto px-4 py-8">
 	<Breadcrumbs />
 
 	<div class="mb-6">

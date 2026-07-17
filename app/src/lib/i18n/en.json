@@ -152,7 +152,9 @@
 		"addBookmark": "Bookmark this passage",
 		"removeBookmark": "Remove bookmark",
 		"copyCitation": "Copy citation",
-		"citationCopied": "Citation copied"
+		"citationCopied": "Citation copied",
+		"widenLayout": "Widen the reading area",
+		"narrowLayout": "Back to the regular layout"
 	},
 	"edit": {
 		"editorMode": "Editor mode",

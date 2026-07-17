@@ -15,6 +15,9 @@
 	import UpdatePrompt from '$lib/UpdatePrompt.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { t, getUiLang } from '$lib/i18n';
+	import { getWideLayout, setWideLayout } from '$lib/wide.svelte.js';
+	import UnfoldHorizontal from '@lucide/svelte/icons/unfold-horizontal';
+	import FoldHorizontal from '@lucide/svelte/icons/fold-horizontal';
 	import type { Snippet } from 'svelte';
 	import type { LayoutData } from './$types';
 
@@ -83,6 +86,11 @@
 	$effect(() => {
 		dark = document.documentElement.classList.contains('dark');
 	});
+
+	// Wide layout: trade the decorative gutters for reading width (parallel
+	// reader / study view). The toggle only shows from xl up — below that the
+	// gutters don't exist, so there is nothing to reclaim.
+	const wide = $derived(getWideLayout());
 
 	function toggleTheme() {
 		dark = !dark;
@@ -187,6 +195,21 @@
 		<LanguagePicker languages={data.manifest.corpus.languages} />
 		<Button
 			variant="ghost"
+			size="icon-lg"
+			onclick={() => setWideLayout(!wide)}
+			class="hidden xl:inline-flex rounded-full text-muted-foreground hover:text-foreground hover:bg-accent"
+			aria-pressed={wide}
+			aria-label={wide ? t('a11y.narrowLayout') : t('a11y.widenLayout')}
+			title={wide ? t('a11y.narrowLayout') : t('a11y.widenLayout')}
+		>
+			{#if wide}
+				<FoldHorizontal class="w-6 h-6" />
+			{:else}
+				<UnfoldHorizontal class="w-6 h-6" />
+			{/if}
+		</Button>
+		<Button
+			variant="ghost"
 			onclick={toggleTheme}
 			size="icon-lg"
 			class="rounded-full pointer-coarse:size-11 text-muted-foreground hover:text-foreground hover:bg-accent"
@@ -209,8 +232,10 @@
 	     immediately. DB-dependent routes (book / topic-detail) wrap themselves in
 	     DbGate (their nested +layout) to show the loading/progress screen. -->
 	{@render children()}
-	<DecorativeImage />
-	<Footer {dark} />
+	{#if !wide}
+		<DecorativeImage />
+		<Footer {dark} />
+	{/if}
 </div>
 
 <UpdatePrompt />

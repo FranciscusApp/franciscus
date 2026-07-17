@@ -152,7 +152,9 @@
 		"addBookmark": "Aggiungi questo passo ai segnalibri",
 		"removeBookmark": "Rimuovi il segnalibro",
 		"copyCitation": "Copia la citazione",
-		"citationCopied": "Citazione copiata"
+		"citationCopied": "Citazione copiata",
+		"widenLayout": "Allarga l'area di lettura",
+		"narrowLayout": "Torna alla disposizione normale"
 	},
 	"edit": {
 		"editorMode": "Modalità redazione",

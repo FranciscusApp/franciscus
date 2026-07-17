@@ -10,6 +10,7 @@
 	import ScriptureModal from '$lib/ScriptureModal.svelte';
 	import { decodeStudyState, encodeStudyState, type StudyPaneState } from '$lib/study';
 	import { t, getCorpusLang, getUiLang } from '$lib/i18n';
+	import { getWideLayout } from '$lib/wide.svelte.js';
 	import SlidersHorizontal from '@lucide/svelte/icons/sliders-horizontal';
 	import MonitorSmartphone from '@lucide/svelte/icons/monitor-smartphone';
 	import LinkIcon from '@lucide/svelte/icons/link';
@@ -148,7 +149,7 @@
 	}
 </script>
 
-<main id="main-content" tabindex="-1" class="mx-auto w-full max-w-6xl px-4 py-8">
+<main id="main-content" tabindex="-1" class="mx-auto w-full {getWideLayout() ? 'max-w-none' : 'max-w-6xl'} px-4 py-8">
 	<header class="mb-6">
 		<h1 class="font-display text-3xl font-bold text-foreground">{t('study.heading')}</h1>
 		<p class="mt-1 text-muted-foreground">{t('study.subtitle')}</p>
