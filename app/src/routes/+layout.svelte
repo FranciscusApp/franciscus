@@ -14,7 +14,7 @@
 	import Footer from '$lib/Footer.svelte';
 	import UpdatePrompt from '$lib/UpdatePrompt.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
-	import { t, getUiLang } from '$lib/i18n';
+	import { t, getUiLang, getCorpusLang, getParallelReader } from '$lib/i18n';
 	import { getWideLayout, setWideLayout } from '$lib/wide.svelte.js';
 	import UnfoldHorizontal from '@lucide/svelte/icons/unfold-horizontal';
 	import FoldHorizontal from '@lucide/svelte/icons/fold-horizontal';
@@ -96,6 +96,24 @@
 	// and the page itself must not scroll, so it drops the decorative chrome and
 	// the fixed-footer bottom gutter entirely (it locks its own <main> height).
 	const isStudy = $derived($page.route.id === '/study');
+
+	// The wide toggle only means something where the layout actually widens: the
+	// reader routes when parallel columns are engaged (needs a non-Latin corpus +
+	// the parallel pref on — same gate the pages use). Elsewhere widening does
+	// nothing but hide the friar/logo for no benefit, so we neither apply it nor
+	// offer the button there.
+	const isReaderRoute = $derived(
+		$page.route.id === '/book/[book_id]/[chapter_id]' ||
+			$page.route.id === '/topics/[topic_type]/[topic_value]'
+	);
+	const parallelEligible = $derived(
+		isReaderRoute && getParallelReader() && getCorpusLang() !== 'la'
+	);
+	// Where the toggle is offered (study or a parallel reader) and where wide is
+	// actually in effect — the pref only bites on those same pages, so toggling it
+	// on the home page or a single-column reader leaves the friar/logo alone.
+	const canWiden = $derived(isStudy || parallelEligible);
+	const wideActive = $derived(wide && canWiden);
 
 	function toggleTheme() {
 		dark = !dark;
@@ -198,6 +216,7 @@
 			</span>
 		{/if}
 		<LanguagePicker languages={data.manifest.corpus.languages} />
+		{#if canWiden}
 		<Button
 			variant="ghost"
 			size="icon-lg"
@@ -213,6 +232,7 @@
 				<UnfoldHorizontal class="w-6 h-6" />
 			{/if}
 		</Button>
+		{/if}
 		<Button
 			variant="ghost"
 			onclick={toggleTheme}
@@ -237,9 +257,9 @@
 	     immediately. DB-dependent routes (book / topic-detail) wrap themselves in
 	     DbGate (their nested +layout) to show the loading/progress screen. -->
 	{@render children()}
-	{#if !wide && !isStudy}
+	{#if !wideActive}
 		<DecorativeImage />
-		<Footer {dark} />
+		<Footer {dark} gutterOnly={isStudy} />
 	{/if}
 </div>
 
