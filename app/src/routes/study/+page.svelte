@@ -149,7 +149,14 @@
 	}
 </script>
 
-<main id="main-content" tabindex="-1" class="mx-auto w-full {getWideLayout() ? 'max-w-none' : 'max-w-6xl'} px-4 py-8">
+<!-- Locked to the viewport under the fixed nav (md:pt-24 = 6rem) so the page
+     itself never scrolls; the two panes below scroll internally instead. -->
+<main
+	id="main-content"
+	tabindex="-1"
+	class="mx-auto flex w-full flex-col {getWideLayout() ? 'max-w-none' : 'max-w-6xl'} px-4 py-8"
+	style="height: calc(100dvh - 6rem)"
+>
 	<header class="mb-6">
 		<h1 class="font-display text-3xl font-bold text-foreground">{t('study.heading')}</h1>
 		<p class="mt-1 text-muted-foreground">{t('study.subtitle')}</p>
@@ -169,7 +176,7 @@
 		</div>
 	</div>
 
-	<div class="js-only hidden lg:block">
+	<div class="js-only hidden min-h-0 flex-1 lg:flex lg:flex-col">
 		{#if db.ready}
 			<div class="mb-4">
 				<input
@@ -264,7 +271,7 @@
 				</p>
 			{/if}
 
-			<div class="study-panes grid grid-cols-2 items-stretch gap-4">
+			<div class="study-panes grid min-h-0 flex-1 grid-cols-2 items-stretch gap-4">
 				{#each [0, 1] as i (i)}
 					<StudyPane
 						pane={panes[i]}
@@ -295,9 +302,10 @@
 </main>
 
 <style>
-	/* Each pane scrolls internally so the two readers navigate independently;
-	   the height tracks the viewport under the fixed chrome + search bar. */
-	.study-panes > :global(section) {
-		height: min(calc(100vh - 16rem), 52rem);
+	/* The panes grid flex-fills the remaining height under the search bar; pin its
+	   single row to that height (minmax(0,1fr), not auto) so the stretched pane
+	   sections get a definite height to scroll their content within. */
+	.study-panes {
+		grid-template-rows: minmax(0, 1fr);
 	}
 </style>

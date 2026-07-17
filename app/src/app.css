@@ -233,6 +233,9 @@ mark.search-highlight {
 	--sidebar-accent-foreground: var(--color-crimson-800);
 	--sidebar-border: var(--color-parchment-200);
 	--sidebar-ring: var(--color-gold-500);
+	/* Scrollbar thumb — a muted parchment tone so overflow gutters read as part
+	   of the manuscript surface rather than the browser default gray. */
+	--scrollbar-thumb: var(--color-parchment-300);
 }
 
 .dark {
@@ -267,6 +270,7 @@ mark.search-highlight {
 	--sidebar-accent-foreground: oklch(0.945 0.014 85);
 	--sidebar-border: oklch(0.44 0 0);
 	--sidebar-ring: var(--color-gold-400);
+	--scrollbar-thumb: var(--color-slate-700);
 }
 
 @theme inline {
@@ -423,6 +427,32 @@ mark.search-highlight {
 		outline: 2px solid var(--ring);
 		outline-offset: 2px;
 		border-radius: 2px;
+	}
+	/* Themed scrollbars everywhere (page + internal scrollers like the study
+	   panes), so overflow gutters match the manuscript palette instead of the
+	   OS default. Firefox: the standard two-value form. WebKit/Blink: a slim
+	   rounded thumb floated inside a transparent track via a padding-box border,
+	   darkening to the muted foreground on hover. */
+	* {
+		scrollbar-width: thin;
+		scrollbar-color: var(--scrollbar-thumb) transparent;
+	}
+	*::-webkit-scrollbar {
+		width: 10px;
+		height: 10px;
+	}
+	*::-webkit-scrollbar-track {
+		background: transparent;
+	}
+	*::-webkit-scrollbar-thumb {
+		background: var(--scrollbar-thumb);
+		border-radius: 9999px;
+		border: 2px solid transparent;
+		background-clip: padding-box;
+	}
+	*::-webkit-scrollbar-thumb:hover {
+		background: var(--muted-foreground);
+		background-clip: padding-box;
 	}
 }
 

@@ -92,6 +92,11 @@
 	// gutters don't exist, so there is nothing to reclaim.
 	const wide = $derived(getWideLayout());
 
+	// The study view is a full-height workspace: its two panes scroll internally
+	// and the page itself must not scroll, so it drops the decorative chrome and
+	// the fixed-footer bottom gutter entirely (it locks its own <main> height).
+	const isStudy = $derived($page.route.id === '/study');
+
 	function toggleTheme() {
 		dark = !dark;
 		document.documentElement.classList.toggle('dark', dark);
@@ -141,7 +146,7 @@
 	{t('a11y.skipToContent')}
 </a>
 
-<div class="flex min-h-screen flex-col bg-background transition-colors pt-20 md:pt-24 md:pb-20">
+<div class="flex min-h-screen flex-col bg-background transition-colors pt-20 md:pt-24 {isStudy ? '' : 'md:pb-20'}">
 	<!-- Body-matched navbar over the floating chrome. On scroll it gains a soft
 	     drop shadow tinted with the page background, so body text appears to
 	     fade out as it passes underneath rather than ending at a hard edge. -->
@@ -232,7 +237,7 @@
 	     immediately. DB-dependent routes (book / topic-detail) wrap themselves in
 	     DbGate (their nested +layout) to show the loading/progress screen. -->
 	{@render children()}
-	{#if !wide}
+	{#if !wide && !isStudy}
 		<DecorativeImage />
 		<Footer {dark} />
 	{/if}
