@@ -11,6 +11,7 @@ const p = (n: number, word = 'word'): string => `<p>${Array(n).fill(word).join('
 	const s = splitDescription(html);
 	assert.equal(s.truncated, false);
 	assert.equal(s.preview, html);
+	assert.equal(s.rest, '');
 }
 
 // Long text keeps whole paragraphs until the 50-word budget, then hides the rest.
@@ -21,6 +22,7 @@ const p = (n: number, word = 'word'): string => `<p>${Array(n).fill(word).join('
 	// First paragraph (40) is under 50; the second crosses the budget and is
 	// kept whole; the third is hidden.
 	assert.equal(s.preview, p(40) + '\n' + p(40));
+	assert.equal(s.rest, p(40));
 }
 
 // A single long paragraph has no interior newline to round to — show it whole.

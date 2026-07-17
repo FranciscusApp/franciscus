@@ -10,8 +10,10 @@ const THRESHOLD_WORDS = 80;
 const PREVIEW_WORDS = 50;
 
 export interface DescriptionSplit {
-	/** HTML to show when collapsed (whole paragraphs, up to the word budget). */
+	/** HTML always shown (whole paragraphs, up to the word budget). */
 	preview: string;
+	/** The remaining paragraphs, hidden behind [read more] (empty if none). */
+	rest: string;
 	/** True when the text was long enough to hide a tail behind [read more]. */
 	truncated: boolean;
 }
@@ -33,26 +35,32 @@ function countWords(html: string): number {
  */
 export function splitDescription(html: string): DescriptionSplit {
 	if (countWords(html) <= THRESHOLD_WORDS) {
-		return { preview: html, truncated: false };
+		return { preview: html, rest: '', truncated: false };
 	}
 
 	const paragraphs = html.match(/<p\b[^>]*>[\s\S]*?<\/p>/gi);
 	if (!paragraphs || paragraphs.length <= 1) {
-		return { preview: html, truncated: false };
+		return { preview: html, rest: '', truncated: false };
 	}
 
 	let words = 0;
-	const kept: string[] = [];
-	for (const p of paragraphs) {
-		kept.push(p);
-		words += countWords(p);
-		if (words >= PREVIEW_WORDS) break;
+	let cut = 0;
+	for (; cut < paragraphs.length; cut++) {
+		words += countWords(paragraphs[cut]);
+		if (words >= PREVIEW_WORDS) {
+			cut++; // keep the paragraph that crossed the budget
+			break;
+		}
 	}
 
 	// Everything fit within the budget — nothing to hide.
-	if (kept.length >= paragraphs.length) {
-		return { preview: html, truncated: false };
+	if (cut >= paragraphs.length) {
+		return { preview: html, rest: '', truncated: false };
 	}
 
-	return { preview: kept.join('\n'), truncated: true };
+	return {
+		preview: paragraphs.slice(0, cut).join('\n'),
+		rest: paragraphs.slice(cut).join('\n'),
+		truncated: true
+	};
 }
