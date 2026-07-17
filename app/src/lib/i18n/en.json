@@ -19,7 +19,22 @@
 		"about": "About",
 		"contribute": "Contribute",
 		"myContributions": "My Contributions",
-		"aiDisclaimer": "AI Disclaimer"
+		"aiDisclaimer": "AI Disclaimer",
+		"study": "Study view"
+	},
+	"study": {
+		"heading": "Study view",
+		"subtitle": "Search the sources and compare passages side by side.",
+		"wideScreenOnly": "This functionality is only available on a wider screen. Try Franciscus from a tablet or desktop!",
+		"pickHint": "Search above, then pick a result to read it in this panel.",
+		"closeReader": "Close and return to the results",
+		"copyLink": "Copy link to this setup",
+		"linkCopied": "Link copied",
+		"openRelatedTitle": "Related passage",
+		"openRelatedBody": "Open {passage} in the other panel to compare?",
+		"openRelatedBodyPlain": "Open this passage in the other panel to compare?",
+		"openInOther": "Open in the other panel",
+		"openInStudy": "Open in study view"
 	},
 	"footer": {
 		"projectBy": "A project by"

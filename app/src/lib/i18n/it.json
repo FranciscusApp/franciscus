@@ -19,7 +19,22 @@
 		"about": "Il progetto",
 		"contribute": "Contribuisci",
 		"myContributions": "I miei contributi",
-		"aiDisclaimer": "Uso dell'IA"
+		"aiDisclaimer": "Uso dell'IA",
+		"study": "Vista studio"
+	},
+	"study": {
+		"heading": "Vista studio",
+		"subtitle": "Cerca nelle fonti e confronta i passi fianco a fianco.",
+		"wideScreenOnly": "Questa funzionalità è disponibile solo su uno schermo più ampio. Prova Franciscus da tablet o desktop!",
+		"pickHint": "Cerca qui sopra, poi scegli un risultato per leggerlo in questo pannello.",
+		"closeReader": "Chiudi e torna ai risultati",
+		"copyLink": "Copia il link a questa disposizione",
+		"linkCopied": "Link copiato",
+		"openRelatedTitle": "Passo collegato",
+		"openRelatedBody": "Aprire {passage} nell'altro pannello per confrontarli?",
+		"openRelatedBodyPlain": "Aprire questo passo nell'altro pannello per confrontarli?",
+		"openInOther": "Apri nell'altro pannello",
+		"openInStudy": "Apri nella vista studio"
 	},
 	"footer": {
 		"projectBy": "Un progetto di"

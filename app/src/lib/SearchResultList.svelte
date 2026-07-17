@@ -12,13 +12,17 @@
 	let {
 		results,
 		query = '',
-		onPick
+		onPick,
+		onPickChapter
 	}: {
 		results: SearchResult[];
 		/** Live text query, threaded into deep links so the reader lands highlighted. */
 		query?: string;
 		/** When set, passages become pick buttons (picker) instead of links (home). */
 		onPick?: (r: SearchResult) => void;
+		/** Pick mode only: makes chapter titles pickable too (the study view opens
+		 *  the chapter at its top instead of at a specific passage). */
+		onPickChapter?: (bookId: string, chapterId: string) => void;
 	} = $props();
 
 	const pickMode = $derived(!!onPick);
@@ -63,7 +67,13 @@
 					{#each bg.chapters as g (g.chapter_id)}
 						<li class="block p-4 rounded-lg border border-border hover:border-ring transition-colors">
 							<div class="text-sm text-muted-foreground mb-1">
-								{#if pickMode}
+								{#if pickMode && onPickChapter}
+									<button
+										type="button"
+										onclick={() => onPickChapter?.(g.book_id, g.chapter_id)}
+										class="text-left hover:text-primary"
+									>{g.chapter_title}</button>
+								{:else if pickMode}
 									<span>{g.chapter_title}</span>
 								{:else}
 									<a

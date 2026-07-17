@@ -13,6 +13,8 @@
 	import { t, getCorpusLang, getUiLang, getParallelReader } from '$lib/i18n';
 	import PlusIcon from '@lucide/svelte/icons/plus';
 	import MinusIcon from '@lucide/svelte/icons/minus';
+	import Columns2 from '@lucide/svelte/icons/columns-2';
+	import { studyHref } from '$lib/study';
 
 	const topicType = $derived($page.params.topic_type ?? '');
 	// Canonical URL is /topics/<type>/<topic_value> (the source-file value).
@@ -84,9 +86,20 @@
 
 	{#if occurrences.length > 0}
 		<section>
-			<h2 class="text-lg font-display text-foreground mb-4">
-				{t('topics.passagesHeading')} ({occurrences.length})
-			</h2>
+			<div class="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+				<h2 class="text-lg font-display text-foreground">
+					{t('topics.passagesHeading')} ({occurrences.length})
+				</h2>
+				<!-- Discreet hand-off: the study view opens with this topic as a
+				     filter, listing the same passages in its two-pane reader. -->
+				<a
+					href={studyHref({ topics: [`${topicType}:${topicValue}`] })}
+					class="inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-primary"
+				>
+					<Columns2 class="h-3.5 w-3.5" />
+					{t('study.openInStudy')}
+				</a>
+			</div>
 			<div class="space-y-6">
 				{#each bookGroups as bg}
 					{@const isOpen = expanded.has(bg.book_id)}

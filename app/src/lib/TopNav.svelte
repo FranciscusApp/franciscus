@@ -9,6 +9,7 @@
     import House from '@lucide/svelte/icons/house';
     import Tags from '@lucide/svelte/icons/tags';
     import Bookmark from '@lucide/svelte/icons/bookmark';
+    import Columns2 from '@lucide/svelte/icons/columns-2';
     import Info from '@lucide/svelte/icons/info';
     import HeartHandshake from '@lucide/svelte/icons/heart-handshake';
     import Sparkles from '@lucide/svelte/icons/sparkles';
@@ -25,6 +26,7 @@
     const HUB_LABELS: Record<string, string | null> = {
         '/': null,
         '/topics': 'nav.topics',
+        '/study': 'nav.study',
         '/about': 'nav.about',
         '/ai': 'nav.aiDisclaimer',
         '/contribute': 'nav.contribute',
@@ -126,6 +128,19 @@
                         >
                             <Tags class="size-5 shrink-0 text-muted-foreground group-aria-[current=page]:text-primary" />
                             <span class="text-foreground">{t('nav.topics')}</span>
+                        </a>
+                    {/snippet}
+                </Sheet.Close>
+                <Sheet.Close>
+                    {#snippet child({ props })}
+                        <a
+                            href="/study"
+                            {...props}
+                            aria-current={routeId === '/study' ? 'page' : undefined}
+                            class="group flex items-center gap-3 rounded-md px-3 py-2.5 transition-colors hover:bg-accent aria-[current=page]:bg-accent aria-[current=page]:font-medium"
+                        >
+                            <Columns2 class="size-5 shrink-0 text-muted-foreground group-aria-[current=page]:text-primary" />
+                            <span class="text-foreground">{t('nav.study')}</span>
                         </a>
                     {/snippet}
                 </Sheet.Close>

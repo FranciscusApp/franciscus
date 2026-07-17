@@ -9,6 +9,7 @@
 	import { t, getCorpusLang, getUiLang } from '$lib/i18n';
 	import SlidersHorizontal from '@lucide/svelte/icons/sliders-horizontal';
   	import Tags from '@lucide/svelte/icons/tags';
+	import Columns2 from '@lucide/svelte/icons/columns-2';
 	import type { PageData } from './$types';
 
 	// Manifest comes from the root layout's load(); it prerenders the browse view
@@ -154,6 +155,13 @@
 				>
 					<Tags class="w-4 h-4" />
 					{t('nav.topics')} &rarr;
+				</a>
+				<a
+					href="/study"
+					class="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+				>
+					<Columns2 class="w-4 h-4" />
+					{t('nav.study')} &rarr;
 				</a>
 				{#if showAdvanced}
 					<div class="mt-2 space-y-3 rounded-lg border border-border p-3">
