@@ -48,7 +48,7 @@
 {#if split.truncated}
 	<button
 		type="button"
-		class="expandable-toggle group mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-secondary-foreground transition-colors hover:text-primary"
+		class="float-right expandable-toggle group mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-secondary-foreground transition-colors hover:text-primary"
 		aria-expanded={expanded}
 		onclick={() => (expanded = !expanded)}
 	>
@@ -60,4 +60,5 @@
 		</span>
 		{expanded ? t('book.readLess') : t('book.readMore')}
 	</button>
+	<div class="clear-both"></div>
 {/if}
